@@ -1,2 +1,2 @@
-# https://bitbucket.org/infuy/lumino-light-client-sdk
+# lumino-light-client-sdk
 
