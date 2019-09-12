@@ -1,0 +1,45 @@
+{
+  "name": "lumino-light-client-sdk",
+  "version": "0.0.1",
+  "description": "Lumino Light Client SDK for JS",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "jest",
+    "start": "node index.js",
+    "build": "gulp babel"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://dperaltainfuy@bitbucket.org/infuy/lumino-light-client-sdk.git"
+  },
+  "keywords": [
+    "lumino",
+    "web3"
+  ],
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/infuy/lumino-light-client-sdk#readme",
+  "dependencies": {
+    "axios": "^0.19.0",
+    "redux": "^4.0.4",
+    "redux-thunk": "^2.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
+    "@babel/polyfill": "^7.4.4",
+    "@babel/preset-env": "^7.5.5",
+    "babel-polyfill": "^6.26.0",
+    "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
+    "gulp-connect": "^5.7.0",
+    "gulp-eslint": "^6.0.0",
+    "gulp-jsdoc3": "^2.0.0",
+    "istanbul": "^0.4.5",
+    "jest": "^24.9.0",
+    "json-loader": "^0.5.7",
+    "path": "^0.12.7",
+    "redux-devtools-extension": "^2.13.8",
+    "webpack": "^4.39.3"
+  }
+}
