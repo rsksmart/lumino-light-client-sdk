@@ -5,14 +5,14 @@ const initialState = [];
 const channel = (state = initialState, action) => {
   switch (action.type) {
     case OPEN_CHANNEL:
-      return state.concat({...action.channel, balance: 0});
+      return state.concat({...action.channel});
     case NEW_DEPOSIT:
-      const i = state.findIndex(e => e.channelId === action.data.channelId);
-      if (i != -1) {
-        const newChannelData = [...state];
-        newChannelData[i].balance = action.data.balance;
-        return newChannelData;
-      }
+      const actionChannelId = action.channel.channel_identifier;
+      const newData = state.map(e =>
+        e.channel_identifier === actionChannelId ? action.channel : e,
+      );
+      debugger;
+      return newData;
     default:
       return state;
   }
