@@ -1,14 +1,14 @@
-import {createStore, applyMiddleware, bindActionCreators} from 'redux';
-import thunkMiddleware from 'redux-thunk';
-import {composeWithDevTools} from 'redux-devtools-extension';
+import { createStore, applyMiddleware, bindActionCreators } from "redux";
+import thunkMiddleware from "redux-thunk";
+import { composeWithDevTools } from "redux-devtools-extension";
 
-import rootReducer from './reducers';
+import rootReducer from "./reducers";
 
 let store = null;
-const defaultStore = {channelReducer: []};
+const defaultStore = { channelReducer: [] };
 const defaultStorage = {
   getLuminoData: () => defaultStore,
-  saveLuminoData: () => {},
+  saveLuminoData: () => {}
 };
 let storage = defaultStorage;
 
@@ -19,11 +19,11 @@ const initStore = async (storageImpl, luminoHandler) => {
   if (dataFromStorage) {
     data = dataFromStorage;
   }
-  const lh = {sign: luminoHandler, storage};
+  const lh = { sign: luminoHandler, storage };
   store = createStore(
     rootReducer,
     data,
-    composeWithDevTools(applyMiddleware(thunkMiddleware.withExtraArgument(lh))),
+    composeWithDevTools(applyMiddleware(thunkMiddleware.withExtraArgument(lh)))
   );
   return store;
 };
@@ -33,6 +33,6 @@ const bindActions = (actions, dispatch) =>
 
 const getStore = () => store;
 
-const Store = {initStore, getStore, bindActions};
+const Store = { initStore, getStore, bindActions };
 
 export default Store;

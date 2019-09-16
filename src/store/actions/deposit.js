@@ -2,6 +2,14 @@ import { NEW_DEPOSIT } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 
+/**
+ * Create a deposit.
+ * @param {string} unsigned_approval_tx - An unsigned approval TX
+ * @param {string} unsigned_deposit_tx -  An unsigned deposit TX
+ * @param {string} address -  The address that wants to deposit
+ * @param {string} partner -  The target address to receive the deposit
+ * @param {string} total_deposit -  The amount to deposit
+ */
 export const createDeposit = params => async (dispatch, getState, lh) => {
   try {
     const signed_approval_tx = await resolver(params.unsigned_approval_tx, lh);
