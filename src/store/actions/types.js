@@ -7,3 +7,7 @@ export const SET_CHANNEL_SETTLED = 'SET_CHANNEL_SETTLED';
 // Deposit actions
 
 export const NEW_DEPOSIT = 'NEW_DEPOSIT';
+
+// Payment actions
+
+export const CREATE_PAYMENT = 'CREATE_PAYMENT';

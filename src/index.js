@@ -1,5 +1,5 @@
-import Store from './store/index';
-import Actions from './store/actions';
+import Store from "./store/index";
+import Actions from "./store/actions";
 
 let actions = Actions;
 let store = null;
@@ -18,22 +18,22 @@ const init = async (endpoint, luminoHandler, storage) => {
     const changesHook = fn => store.subscribe(fn);
     const luminoInternalState = store.getState();
     const getLuminoInternalState = () => store.getState();
-    actions = {...actions};
+    actions = { ...actions };
     luminoFns = {
       actions,
       changesHook,
       getLuminoInternalState,
-      luminoInternalState,
+      luminoInternalState
     };
   }
-  return {...luminoFns};
+  return { ...luminoFns };
 };
 
 const get = () => {
-  if (luminoFns) return {...luminoFns};
-  throw new Error('Lumino has not been initialized');
+  if (luminoFns) return { ...luminoFns };
+  throw new Error("Lumino has not been initialized");
 };
 
-const Lumino = {init, get};
+const Lumino = { init, get };
 
 export default Lumino;

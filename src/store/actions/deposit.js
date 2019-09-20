@@ -1,4 +1,5 @@
 import {NEW_DEPOSIT} from './types';
+import {CHANNEL_OPENED} from '../../config/channelStates';
 import client from '../../apiRest';
 import resolver from '../../utils/handlerResolver';
 
@@ -26,7 +27,7 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
       const res = await client.patch(url, {...requestBody});
       dispatch({
         type: NEW_DEPOSIT,
-        channel: {...res.data},
+        channel: {...res.data, sdk_status: CHANNEL_OPENED},
       });
       const allData = getState();
       return await lh.storage.saveLuminoData(allData);

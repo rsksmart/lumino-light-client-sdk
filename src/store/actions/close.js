@@ -30,7 +30,7 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
 
       dispatch({
         type: SET_CHANNEL_CLOSED,
-        channel: {...res.data, sdk_state: CHANNEL_CLOSED},
+        channel: {...res.data, sdk_status: CHANNEL_CLOSED},
       });
       const allData = getState();
       return await lh.storage.saveLuminoData(allData);
