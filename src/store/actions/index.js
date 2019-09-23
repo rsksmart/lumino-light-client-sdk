@@ -1,13 +1,13 @@
-import * as channelActions from './channel';
-import * as depositActions from './deposit';
-import * as closeActions from './close';
-import * as paymentActions from './payment';
+import * as openActions from "./open";
+import * as depositActions from "./deposit";
+import * as closeActions from "./close";
+import * as paymentActions from "./payment";
 
 const Actions = {
-  ...channelActions,
+  ...openActions,
   ...depositActions,
   ...closeActions,
-  ...paymentActions,
+  ...paymentActions
 };
 
 export default Actions;

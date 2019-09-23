@@ -21,10 +21,13 @@ const channel = (state = initialState, action) => {
       );
       return newData;
     case CREATE_PAYMENT:
-      const actionChannelId2 = action.payment.channel_identifier;
+      const actionChannelId2 = action.payment.message.channel_identifier;
       const newData2 = state.map(e =>
         e.channel_identifier === actionChannelId2
-          ? { ...e, ...action.channel }
+          ? {
+              ...e,
+              payments: e.payments.concat(action.payment)
+            }
           : e
       );
       return newData2;

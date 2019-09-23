@@ -19,7 +19,11 @@ const initStore = async (storageImpl, luminoHandler) => {
   if (dataFromStorage) {
     data = dataFromStorage;
   }
-  const lh = { sign: luminoHandler, storage };
+  const lh = {
+    sign: luminoHandler.sign,
+    offChainSign: luminoHandler.offChainSign,
+    storage
+  };
   store = createStore(
     rootReducer,
     data,
