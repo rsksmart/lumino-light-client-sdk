@@ -8,17 +8,12 @@
     "start": "node index.js",
     "build": "gulp babel"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://dperaltainfuy@bitbucket.org/infuy/lumino-light-client-sdk.git"
-  },
   "keywords": [
     "lumino",
     "web3"
   ],
   "author": "",
   "license": "ISC",
-  "homepage": "https://bitbucket.org/infuy/lumino-light-client-sdk#readme",
   "dependencies": {
     "axios": "^0.19.0",
     "keccak": "^2.0.0",
