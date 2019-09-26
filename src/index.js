@@ -30,7 +30,7 @@ const Lumino = () => {
   };
 
   /**
-   * Returns actual lumino instance
+   * Returns the actual lumino instance
    */
   const get = () => {
     if (store) return { ...luminoFns };

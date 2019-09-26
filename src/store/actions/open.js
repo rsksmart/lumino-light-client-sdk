@@ -3,9 +3,6 @@ import { CHANNEL_OPENED } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 
-export const getChannels = () => (dispatch, getState) =>
-  getState().channelReducer;
-
 /**
  * Open a channel.
  * @param {string} unsigned_tx - An unsigned TX for opening a channel
