@@ -11,3 +11,7 @@ export const NEW_DEPOSIT = 'NEW_DEPOSIT';
 // Payment actions
 
 export const CREATE_PAYMENT = 'CREATE_PAYMENT';
+
+// Polling actions
+
+export const MESSAGE_POLLING = "MESSAGE_POLLING";
