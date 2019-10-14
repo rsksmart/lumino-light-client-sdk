@@ -1,4 +1,4 @@
-import {ethers} from 'ethers';
+import { ethers } from "ethers";
 
 /**
  * Encodes data to an appropiate hex format
@@ -8,14 +8,14 @@ import {ethers} from 'ethers';
  */
 const hexEncode = (data, length, isUnsafe) => {
   let hex;
-  if (typeof data === 'number' || isUnsafe) {
+  if (typeof data === "number" || isUnsafe) {
     data = ethers.utils.bigNumberify(data);
     hex = ethers.utils.hexZeroPad(ethers.utils.hexlify(data), length);
     return hex;
   } else {
     const str = ethers.utils.hexlify(data);
     if (ethers.utils.hexDataLength(str) !== length)
-      throw new Error('Uint8Array or hex string must be of exact length');
+      throw new Error("Uint8Array or hex string must be of exact length");
     hex = str;
     return hex;
   }
@@ -31,83 +31,60 @@ const createBalanceHash = (txAmount, lockedAmount, locksRoot) => {
   const toHash = ethers.utils.concat([
     hexEncode(txAmount, 32),
     hexEncode(lockedAmount, 32),
-    hexEncode(locksRoot, 32),
+    hexEncode(locksRoot, 32)
   ]);
   return ethers.utils.keccak256(toHash);
 };
 
-// Example of usage
+// TODO: Create an enum for the CMDID
+// TODO: Create JSDOC for this method
+// TODO: Create enum for message type
+// TODO: Separate the methods and document their uses according to messages
 
-//   const m = {
-//     type: 'LockedTransfer',
-//     chain_id: 33,
-//     message_identifier: '12248562144413481135',
-//     payment_identifier: '11640634370223461850',
-//     payment_hash_invoice: '0x',
-//     nonce: 1,
-//     token_network_address: '0x877ec5961d18d3413fabbd67696b758fe95408d6',
-//     token: '0xff10e500973a0b0071e2263421e4af60425834a6',
-//     channel_identifier: 1,
-//     transferred_amount: 0,
-//     locked_amount: 100000000000000,
-//     recipient: '0x29021129f5d038897f01bd4bc050525ca01a4758',
-//     locksroot:
-//       '0x3985b475b7e3af72cdbcd2e41b22951c168b0e2ff41bcc9548ee98d14ec86784',
-//     lock: {
-//       type: 'Lock',
-//       amount: 100000000000000,
-//       expiration: 195730,
-//       secrethash:
-//         '0x3e6d58ba381898cf1a0ff6fbe65a3805419063ea9eb6ff6bc6f0dde45032d0dc',
-//     },
-//     target: '0x29021129f5d038897f01bd4bc050525ca01a4758',
-//     initiator: '0x09fcbe7ceb49c944703b4820e29b0541edfe7e82',
-//     fee: 0,
-//     signature:
-//       '0x68b12d6de97e2be66a5d013a7118264ab696a45ebe7f9ef590c88286ba7804154e0a1418d78712d4aa227c33af23ebae2ff8114a7e3f3d9efb7e342235eba5941b',
-//   };
-//   let packed;
-//   let balanceHash;
-//   let messageHash;
+export const getDataToSign = message => {
+  const messageHashArray = ethers.utils.concat([
+    hexEncode(7, 1), // CMDID, see python for details
+    hexEncode(0, 3), // Padding of number
+    hexEncode(message.nonce, 8),
+    hexEncode(message.chain_id, 32),
+    hexEncode(message.message_identifier, 8, true),
+    hexEncode(message.payment_identifier, 8, true),
+    hexEncode(0, 32), // payment_hash if it is 0x0
+    hexEncode(message.lock.expiration, 32),
+    hexEncode(message.token_network_address, 20),
+    hexEncode(message.token, 20),
+    hexEncode(message.channel_identifier, 32),
+    hexEncode(message.recipient, 20),
+    hexEncode(message.target, 20),
+    hexEncode(message.initiator, 20),
+    hexEncode(message.locksroot, 32),
+    hexEncode(message.lock.secrethash, 32),
+    hexEncode(message.transferred_amount, 32),
+    hexEncode(message.locked_amount, 32),
+    hexEncode(message.lock.amount, 32),
+    hexEncode(message.fee, 32)
+  ]);
 
-//     messageHashArray = ethers.utils.concat([
-//       hexEncode(7, 1),
-//       hexEncode(0, 3),
-//       hexEncode(m.nonce, 8),
-//       hexEncode(m.chain_id, 32),
-//       hexEncode(m.message_identifier, 8, true),
-//       hexEncode(m.payment_identifier, 8, true),
-//       hexEncode(0, 32),
-//       hexEncode(m.lock.expiration, 32),
-//       hexEncode(m.token_network_address, 20),
-//       hexEncode(m.token, 20),
-//       hexEncode(m.channel_identifier, 32),
-//       hexEncode(m.recipient, 20),
-//       hexEncode(m.target, 20),
-//       hexEncode(m.initiator, 20),
-//       hexEncode(m.locksroot, 32),
-//       hexEncode(m.lock.secrethash, 32),
-//       hexEncode(m.transferred_amount, 32),
-//       hexEncode(m.locked_amount, 32),
-//       hexEncode(m.lock.amount, 32),
-//       hexEncode(m.fee, 32),
-//     ]);
+  const messageHash = ethers.utils.keccak256(messageHashArray);
 
-//     messageHash = ethers.utils.keccak256(messageHashArray);
+  const balanceHash = createBalanceHash(
+    message.transferred_amount,
+    message.locked_amount,
+    message.locksroot
+  );
 
-//     balanceHash = createBalanceHash(
-//       m.transferred_amount,
-//       m.locked_amount,
-//       m.locksroot,
-//     );
+  const dataArray = ethers.utils.concat([
+    hexEncode(message.token_network_address, 20),
+    hexEncode(message.chain_id, 32),
+    hexEncode(1, 32), //Msg type (balance proof)
+    hexEncode(message.channel_identifier, 32),
+    hexEncode(balanceHash, 32), // balance hash
+    hexEncode(message.nonce, 32),
+    hexEncode(messageHash, 32) // additional hash
+  ]);
 
-//     const dataToPack = ethers.utils.concat([
-//       hexEncode(m.token_network_address, 20),
-//       hexEncode(m.chain_id, 32),
-//       hexEncode(1, 32), //Msg type (balance proof)
-//       hexEncode(m.channel_identifier, 32),
-//       hexEncode(balanceHash, 32), // balance hash
-//       hexEncode(m.nonce, 32),
-//       hexEncode(messageHash, 32), // additional hash
-//     ]);
-//     packed = ethers.utils.hexlify(dataToPack);
+  // dataArray is a byte array, this can be signed with an ethers wallet
+  // signing it with an ethers wallet is equal as the method with python
+  // Other methods like toString and using web3 and appending the prefix are untested
+  return dataArray;
+};
