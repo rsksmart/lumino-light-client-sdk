@@ -15,3 +15,4 @@ export const CREATE_PAYMENT = "CREATE_PAYMENT";
 // Polling actions
 
 export const MESSAGE_POLLING = "MESSAGE_POLLING";
+export const MESSAGE_SENT = "MESSAGE_SENT";
