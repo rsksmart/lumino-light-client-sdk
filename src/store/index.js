@@ -8,7 +8,7 @@ let store = null;
 const defaultStore = { channelReducer: [] };
 const defaultStorage = {
   getLuminoData: () => defaultStore,
-  saveLuminoData: () => {}
+  saveLuminoData: () => {},
 };
 let storage = defaultStorage;
 
@@ -22,7 +22,7 @@ const initStore = async (storageImpl, luminoHandler) => {
   const lh = {
     sign: luminoHandler.sign,
     offChainSign: luminoHandler.offChainSign,
-    storage
+    storage,
   };
   store = createStore(
     rootReducer,

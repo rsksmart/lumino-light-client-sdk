@@ -11,11 +11,14 @@ export const messagePolling = (offset, apiKey) => async (
   getState
 ) => {
   try {
-    // TODO: return the request body in the data
-    //   dispatch({
-    //     type: MESSAGE_POLLING,
-    //     data: ...res
-    //   });
+    // NOTE: The big idea of this function is to pull messages from the HUB and dispatch those responses to redux
+    // We will handle them and then send the correct responses
+
+    // TODO: return the response data through the redux dispatch
+    dispatch({
+      type: MESSAGE_POLLING,
+      data: "The response data",
+    });
   } catch (error) {
     throw error;
   }

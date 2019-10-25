@@ -23,7 +23,7 @@ const Lumino = () => {
         actions,
         changesHook,
         getLuminoInternalState,
-        luminoInternalState
+        luminoInternalState,
       };
     }
     return { ...luminoFns };

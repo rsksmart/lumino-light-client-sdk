@@ -19,7 +19,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       amount,
       creator_address: address,
       partner_address: partner,
-      token_address
+      token_address,
     };
     const url = "payments_light";
     const res = await client.post(
@@ -27,8 +27,8 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       { ...requestBody },
       {
         headers: {
-          "x-api-key": "some"
-        }
+          "x-api-key": "some",
+        },
       }
     );
     const { message } = { ...res.data };
@@ -37,8 +37,8 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       ...message,
       lock: {
         ...message.lock,
-        secrethash: hashes.secrethash
-      }
+        secrethash: hashes.secrethash,
+      },
     };
     let signature;
     try {
@@ -48,15 +48,15 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     }
     const finalMessage = {
       ...newMessage,
-      signature
+      signature,
     };
     dispatch({
       type: CREATE_PAYMENT,
       payment: {
         ...res.data,
         message: finalMessage,
-        sdk_status: CHANNEL_OPENED
-      }
+        sdk_status: CHANNEL_OPENED,
+      },
     });
     const allData = getState();
     return await lh.storage.saveLuminoData(allData);

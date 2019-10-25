@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "start": "node index.js",
-    "build": "gulp babel"
+    "build": "gulp babel",
+    "prettier": "prettier --print-width 80 --end-of-line lf --trailing-comma es5 --write 'src/**/*.js'"
   },
   "keywords": [
     "lumino",
@@ -36,6 +37,7 @@
     "jest": "^24.9.0",
     "json-loader": "^0.5.7",
     "path": "^0.12.7",
+    "prettier": "^1.18.2",
     "redux-devtools-extension": "^2.13.8",
     "webpack": "^4.39.3"
   }

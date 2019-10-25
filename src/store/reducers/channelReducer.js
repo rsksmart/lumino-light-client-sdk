@@ -2,7 +2,8 @@ import {
   OPEN_CHANNEL,
   NEW_DEPOSIT,
   SET_CHANNEL_CLOSED,
-  CREATE_PAYMENT
+  CREATE_PAYMENT,
+  MESSAGE_POLLING,
 } from "../actions/types";
 
 const initialState = [];
@@ -26,11 +27,14 @@ const channel = (state = initialState, action) => {
         e.channel_identifier === actionChannelId2
           ? {
               ...e,
-              payments: e.payments.concat(action.payment)
+              payments: e.payments.concat(action.payment),
             }
           : e
       );
       return newData2;
+    case MESSAGE_POLLING:
+      console.log(action);
+      return state;
     default:
       return state;
   }
