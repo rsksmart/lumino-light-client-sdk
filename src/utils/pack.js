@@ -14,7 +14,7 @@ import {
 const hexEncode = (data, length, isUnsafe) => {
   let hex;
   if (typeof data === "number" || isUnsafe) {
-    data = ethers.utils.bigNumberify(data);
+    data = ethers.utils.bigNumberify(`${data}`);
     hex = ethers.utils.hexZeroPad(ethers.utils.hexlify(data), length);
     return hex;
   } else {
