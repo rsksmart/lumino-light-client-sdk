@@ -11,6 +11,7 @@ export const NEW_DEPOSIT = "NEW_DEPOSIT";
 // Payment actions
 
 export const CREATE_PAYMENT = "CREATE_PAYMENT";
+export const ADD_PAYMENT_MESSAGE = "ADD_PAYMENT_MESSAGE";
 
 // Polling actions
 

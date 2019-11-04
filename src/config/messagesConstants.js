@@ -7,6 +7,11 @@ export const MessageType = {
   SECRET: "Secret",
 };
 
+export const MessageIdentifierKey = {
+  [MessageType.DELIVERED]: "delivered_message_identifier",
+  [MessageType.PROCESSED]: "message_identifier",
+};
+
 export const MessageNumPad = {
   [MessageType.DELIVERED]: 12,
   [MessageType.PROCESSED]: 0,

@@ -24,7 +24,11 @@ export const openChannel = params => async (dispatch, getState, lh) => {
       const res = await client.put("light_channels", { ...requestBody });
       dispatch({
         type: OPEN_CHANNEL,
-        channel: { ...res.data, sdk_status: CHANNEL_OPENED, payments: [] },
+        channelId: res.data.channel_identifier,
+        channel: {
+          ...res.data,
+          sdk_status: CHANNEL_OPENED,
+        },
       });
       const allData = getState();
       await lh.storage.saveLuminoData(allData);

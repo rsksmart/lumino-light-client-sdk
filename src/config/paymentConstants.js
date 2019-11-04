@@ -1,0 +1,3 @@
+export const PENDING_PAYMENT = "PENDING";
+export const FAILED_PAYMENT = "FAILED";
+export const COMPLETED_PAYMENT = "COMPLETED";
