@@ -4,7 +4,7 @@ import { composeWithDevTools } from "redux-devtools-extension";
 import { createEpicMiddleware } from 'redux-observable';
 
 import rootReducer from "./reducers";
-import paymentsMonitoredEpic from './epics';
+import { paymentsMonitoredEpic } from './epics';
 
 let store = null;
 const defaultStore = { channelReducer: [] };

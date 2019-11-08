@@ -4,7 +4,7 @@
   "description": "Lumino Light Client SDK for JS",
   "main": "./src/index.js",
   "scripts": {
-    "test": "jest",
+    "test": "mocha --timeout 100000 --recursive --exit test",
     "start": "node index.js",
     "build": "gulp babel",
     "prettier": "prettier --print-width 80 --end-of-line lf --trailing-comma es5 --write 'src/**/*.js'"
@@ -38,9 +38,11 @@
     "istanbul": "^0.4.5",
     "jest": "^24.9.0",
     "json-loader": "^0.5.7",
+    "mocha": "^6.2.2",
     "path": "^0.12.7",
     "prettier": "^1.18.2",
     "redux-devtools-extension": "^2.13.8",
+    "sinon": "^7.5.0",
     "webpack": "^4.39.3"
   }
 }
