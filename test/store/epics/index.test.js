@@ -1,22 +1,22 @@
 import { of, throwError } from 'rxjs';
 import sinon from 'sinon';
+import * as services from '../../../src/store/epics/services';
 import * as epic from '../../../src/store/epics';
-import fakePaymentData from '../../../src/store/epics/tmpFakeData';
 
+const fakePaymentData = ['fakePaymentData1', 'fakePaymentData2', 'fakePaymentData3'];
 const sandbox = sinon.createSandbox();
 
 let getTransactionInfoStub;
 
 describe('polling epic test', () => {
-    beforeEach(() => {
-        sandbox.stub(epic, 'getTransactionInfo').returns(of([...fakePaymentData]));
-    });
 
     afterEach(() => {
         sandbox.restore();
     });
 
-    describe('long polling epic should process MESSAGE_POLLING_START action', (done) => {
+    it('long polling epic should process MESSAGE_POLLING_START action * 3 within 6s', (done) => {
+        getTransactionInfoStub = sandbox.stub(services, 'getTransactionInfo').returns(of([...fakePaymentData]));
+
         const startType = 'MESSAGE_POLLING_START';
         const endType = 'MESSAGE_POLLING_STOP';
         const paymentList = [1, 2, 3];
@@ -25,7 +25,10 @@ describe('polling epic test', () => {
         const epic$ = epic.paymentsMonitoredEpic(startAction$);
 
         epic$.subscribe(() => {
-            done();
+            setTimeout(() => {
+                sinon.assert.calledThrice(getTransactionInfoStub);
+                done();
+            }, 6000);
         })
     });
 });

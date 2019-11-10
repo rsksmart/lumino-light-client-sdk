@@ -4,7 +4,7 @@
   "description": "Lumino Light Client SDK for JS",
   "main": "./src/index.js",
   "scripts": {
-    "test": "mocha --timeout 100000 --recursive --exit test",
+    "test": "./node_modules/.bin/mocha --timeout 100000 --require @babel/register --recursive --exit test",
     "start": "node index.js",
     "build": "gulp babel",
     "prettier": "prettier --print-width 80 --end-of-line lf --trailing-comma es5 --write 'src/**/*.js'"
@@ -25,10 +25,11 @@
     "rxjs": "^6.5.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.5.5",
+    "@babel/core": "^7.7.2",
     "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
     "@babel/polyfill": "^7.4.4",
     "@babel/preset-env": "^7.5.5",
+    "@babel/register": "^7.7.0",
     "babel-polyfill": "^6.26.0",
     "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0",
