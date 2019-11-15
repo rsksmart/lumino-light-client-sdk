@@ -1,15 +1,11 @@
-import keccak from "keccak";
-import crypto from "crypto";
+import { ethers } from "ethers";
 
 /**
  * Returns a hash and a secret_hash encrypted with keccak256
  */
 const generateHashes = () => {
-  const hash = `0x${crypto.randomBytes(32).toString("hex")}`;
-  const secrethash = `0x${keccak("keccak256")
-    .update(hash)
-    .digest()
-    .toString("hex")}`;
+  const hash = ethers.utils.hexlify(ethers.utils.randomBytes(32));
+  const secrethash = ethers.utils.keccak256(hash);
   return { hash, secrethash };
 };
 

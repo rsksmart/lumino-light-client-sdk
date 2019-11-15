@@ -1,11 +1,29 @@
-import { CREATE_PAYMENT, ADD_PAYMENT_MESSAGE } from "./types";
+import {
+  CREATE_PAYMENT,
+  ADD_PENDING_PAYMENT_MESSAGE,
+  DELETE_ALL_PENDING_PAYMENTS,
+} from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import generateHashes from "../../utils/generateHashes";
-import { getDataToSignForLockedTransfer } from "../../utils/pack";
+import {
+  getDataToSignForLockedTransfer,
+  getDataToSignForDelivered,
+  getDataToSignForRevealSecret,
+  getDataToSignForBalanceProof,
+} from "../../utils/pack";
 import { validateLockedTransfer } from "../../utils/validators";
 import { messageManager } from "../../utils/messageManager";
 import { getChannelsState } from "../functions";
+import { ethers } from "ethers";
+import JSONbig from "json-bigint";
+import BigNumber from "bignumber.js";
+import { MessageType } from "../../config/messagesConstants";
+import { saveLuminoData } from "./storage";
+
+// TODO: Try to store api_key through onboarding
+
+const api_key = "2956272a5884b0ec7f4a7bb2c94f6baf4dc3e5b6";
 
 /**
  * Create a payment.
@@ -15,13 +33,10 @@ import { getChannelsState } from "../functions";
  * @param {string} token_address -  The address of the lumino token
  */
 export const createPayment = params => async (dispatch, getState, lh) => {
-  // TODO: Try to store api_key through onboarding
-  const api_key = "646c317ecf7961de641fef63a7d2c929f5d46b70";
-
   try {
     const { address, partner, token_address, amount } = params;
     const hashes = generateHashes();
-    const { secrethash, secret } = hashes;
+    const { secrethash, hash: secret } = hashes;
     const requestBody = {
       api_key,
       creator_address: address,
@@ -31,17 +46,12 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       secrethash,
     };
     const urlCreate = "payments_light/create";
-    const res = await client.post(
-      urlCreate,
-      {
-        ...requestBody,
+    const res = await client.post(urlCreate, requestBody, {
+      headers: {
+        "x-api-key": api_key,
       },
-      {
-        headers: {
-          "x-api-key": api_key,
-        },
-      }
-    );
+      transformResponse: res => JSONbig.parse(res),
+    });
     const { message, message_id, message_order } = { ...res.data };
     const messageWithHash = {
       ...message,
@@ -51,13 +61,14 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       },
     };
     let signature;
-    const dataToSign = getDataToSignForLockedTransfer(messageWithHash);
+    const dataToSign = ethers.utils.arrayify(
+      getDataToSignForLockedTransfer(messageWithHash)
+    );
     try {
       signature = await resolver(dataToSign, lh, true);
     } catch (resolverError) {
       throw resolverError;
     }
-    // TODO: Remove the hardcoded test channel id
     const channels = getChannelsState();
     validateLockedTransfer(message, requestBody, channels);
     const dataToPut = {
@@ -71,23 +82,28 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       },
     };
     const urlPut = "payments_light";
-    const responsePut = await client.put(
-      urlPut,
-      {
-        ...dataToPut,
+    await client.put(urlPut, dataToPut, {
+      headers: {
+        "x-api-key": api_key,
       },
-      {
-        headers: {
-          "x-api-key": api_key,
-        },
-      }
-    );
-    if (!responsePut.data === "Should respond accordly to the message received")
-      throw new Error("Something happened when putting LT");
+      transformResponse: res => JSONbig.parse(res),
+    });
     dispatch({
       type: CREATE_PAYMENT,
-      payment: { ...dataToPut, message_order: 1 },
-      paymentId: `${dataToPut.identifier}`,
+      payment: {
+        messages: { 1: { ...dataToPut, message_order: 1 } },
+        message_order: 1,
+        secret,
+        partner: message.target,
+        paymentId: `${dataToPut.message_id}`,
+        initiator: message.initiator,
+        amount: message.lock.amount,
+        secret_hash: secrethash,
+        channelId: dataToPut.message.channel_identifier,
+        tokenNetworkAddress: dataToPut.message.token_network_address,
+        chainId: dataToPut.message.chain_id,
+      },
+      paymentId: `${dataToPut.message_id}`,
       channelId: dataToPut.message.channel_identifier,
     });
     const allData = getState();
@@ -97,38 +113,176 @@ export const createPayment = params => async (dispatch, getState, lh) => {
   }
 };
 
-export const mockGetMessages = () => async (dispatch, getState) => {
-  try {
-    // Here we get a message, as of now we mock it
-    const data = {
-      message_id: 24,
-      message_order: 2,
-      identifier: 587,
-      receiver: "0xA5157c2b6c16480b6a5808CfFf183D6c34A047C6",
-      sender: "0xc19BBF5E4F1709230EBe2552dc15C692FE8DEf83",
-      message: {
-        type: "Delivered",
-        delivered_message_identifier: 123143,
-        signature:
-          "0xda4e24f32446047c611b755f0be6cac2ccf20f4ec1ae73a7cc5bf0b4a93566eb58b36699b8d0bdb17070de43cecb62abfd3e59c5b5d93da5e6be26dc40382ada1c",
-        _type: "raiden.messages.Delivered",
-        _version: 0,
-      },
-    };
-    messageManager([data]);
-  } catch (error) {
-    throw error;
-  }
+export const clearAllPendingPayments = () => async (dispatch, getState, lh) => {
+  dispatch(deleteAllPendingPayments());
+  const allData = getState();
+  return await lh.storage.saveLuminoData(allData);
 };
 
-export const addPaymentMessage = (
+export const mockPulling = () => async (dispatch, getState, lh) => {
+  const api_key = "2956272a5884b0ec7f4a7bb2c94f6baf4dc3e5b6";
+  const url = "payments_light/get_messages";
+  const res = await client.get(url, {
+    headers: {
+      "x-api-key": api_key,
+      "Content-type": "application/json",
+    },
+    params: { from_message: 1 },
+    transformResponse: res => JSONbig.parse(res),
+  });
+
+  messageManager(res.data);
+};
+
+export const deleteAllPendingPayments = () => dispatch =>
+  dispatch({
+    type: DELETE_ALL_PENDING_PAYMENTS,
+  });
+
+export const addPendingPaymentMessage = (
   paymentId,
   messageOrder,
   message
 ) => dispatch =>
   dispatch({
-    type: ADD_PAYMENT_MESSAGE,
+    type: ADD_PENDING_PAYMENT_MESSAGE,
     paymentId,
     messageOrder,
     message,
   });
+
+const getRandomBN = () => {
+  const randomBN = BigNumber.random(18).toString();
+  return randomBN.split(".")[1];
+};
+
+export const putDelivered = (message, payment, order = 4) => async (
+  dispatch,
+  getState,
+  lh
+) => {
+  const { getAddress } = ethers.utils;
+  const body = {
+    message_id: payment.paymentId,
+    message_order: order,
+    sender: getAddress(payment.initiator),
+    receiver: getAddress(payment.partner),
+    message: {
+      type: MessageType.DELIVERED,
+      delivered_message_identifier: message.message_identifier,
+    },
+  };
+  const dataToSign = getDataToSignForDelivered(body.message);
+  let signature = "";
+  try {
+    signature = await resolver(dataToSign, lh, true);
+  } catch (resolverError) {
+    throw resolverError;
+  }
+  body.message.signature = signature;
+  try {
+    dispatch(
+      addPendingPaymentMessage(payment.paymentId, body.message_order, {
+        message: body.message,
+        message_order: body.message_order,
+      })
+    );
+    const urlPut = "payments_light";
+    await client.put(urlPut, body, {
+      headers: {
+        "x-api-key": api_key,
+      },
+      transformResponse: res => JSONbig.parse(res),
+    });
+
+    dispatch(saveLuminoData());
+  } catch (reqEx) {
+    console.error("reqExDelivered", reqEx);
+  }
+};
+
+export const putRevealSecret = payment => async (dispatch, getState, lh) => {
+  const { getAddress } = ethers.utils;
+  const randomId = getRandomBN();
+  const body = {
+    message_id: payment.paymentId,
+    message_order: 7,
+    sender: getAddress(payment.initiator),
+    receiver: getAddress(payment.partner),
+    message: {
+      type: MessageType.REVEAL_SECRET,
+      message_identifier: randomId,
+      secret: payment.secret,
+    },
+  };
+  const dataToSign = getDataToSignForRevealSecret(body.message);
+  let signature = "";
+  try {
+    signature = await resolver(dataToSign, lh, true);
+  } catch (resolverError) {
+    throw resolverError;
+  }
+  body.message.signature = signature;
+  try {
+    dispatch(
+      addPendingPaymentMessage(payment.paymentId, body.message_order, {
+        message: body.message,
+        message_order: body.message_order,
+      })
+    );
+    const urlPut = "payments_light";
+    await client.put(urlPut, body, {
+      headers: {
+        "x-api-key": api_key,
+      },
+      transformResponse: res => JSONbig.parse(res),
+    });
+    dispatch(saveLuminoData());
+  } catch (reqEx) {
+    console.error("reqEx Put SecretReveal", reqEx);
+  }
+};
+
+export const putBalanceProof = (message, payment) => async (
+  dispatch,
+  getState,
+  lh
+) => {
+  const { getAddress } = ethers.utils;
+  const { signature: oldSignature, ...data } = message;
+  const dataToSign = getDataToSignForBalanceProof(data);
+  let signature = "";
+  try {
+    signature = await resolver(dataToSign, lh, true);
+  } catch (resolverError) {
+    throw resolverError;
+  }
+  const body = {
+    message_id: payment.paymentId,
+    message_order: 11,
+    sender: getAddress(payment.initiator),
+    receiver: getAddress(payment.partner),
+    message: {
+      ...data,
+      signature,
+    },
+  };
+  try {
+    dispatch(
+      addPendingPaymentMessage(payment.paymentId, body.message_order, {
+        message: body.message,
+        message_order: body.message_order,
+      })
+    );
+    const urlPut = "payments_light";
+    await client.put(urlPut, body, {
+      headers: {
+        "x-api-key": api_key,
+      },
+      transformResponse: res => JSONbig.parse(res),
+    });
+    dispatch(saveLuminoData());
+  } catch (reqEx) {
+    console.error("reqEx Put SecretReveal", reqEx);
+  }
+};

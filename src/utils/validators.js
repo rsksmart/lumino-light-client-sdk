@@ -1,20 +1,16 @@
 import { ethers } from "ethers";
 import { CHANNEL_OPENED } from "../config/channelStates";
 import { getPaymentIds } from "../store/functions";
-
-export const validateOpenChannelParams = obj => {
-  if (Object.keys(obj).length < 3)
-    throw new Error("Invalid quantity of params");
-  return true;
-};
+import { getPackedData } from "./pack";
 
 /**
  *
- * @param {arrayish} original The data as in an arrayish form of ethers
- * @param {string} signature The signature of the data
+ * @param {arrayish} message The message with the signature to be checked
  */
-export const signatureRecover = (original, signature) => {
-  // return ethers.utils.recoverAddress(original, signature);
+export const signatureRecover = message => {
+  const { verifyMessage } = ethers.utils;
+  // TODO: Some cases are failing due to not having appropiate pack functions
+  return verifyMessage(getPackedData(message), message.signature);
 };
 
 const getBN = number => {
@@ -39,7 +35,6 @@ const throwChannelNotFoundOrNotOpened = partner => {
  */
 export const validateLockedTransfer = (message, requestBody, channels = {}) => {
   const { getAddress } = ethers.utils;
-  // HACK: The HUB is returning the addresses in a not checksum format, so we do it first
   const hasSamePartner =
     getAddress(message.target) === requestBody.partner_address;
   if (!hasSamePartner) throwGenericLockedTransfer("Partner");
