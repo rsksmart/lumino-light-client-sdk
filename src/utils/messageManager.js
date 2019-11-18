@@ -116,7 +116,6 @@ const manageSecretRequest = (msg, payment, messageSignedKey) => {
   if (!hasSameSecretHash) return console.warn("Secret hash does not match");
   const hasSameAmount =
     `${msg[messageSignedKey].amount}` === `${payment.amount}`;
-  debugger;
   if (!hasSameAmount) return console.warn("Amount does not match");
   const store = Store.getStore();
   // This function add the message to the store in its proper order
