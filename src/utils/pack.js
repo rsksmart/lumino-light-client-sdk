@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import {
   MessageNumPad,
   MessageType,
-  MessageTypeID,
+  MessageTypeID
 } from "../config/messagesConstants";
 
 /**
@@ -14,7 +14,7 @@ import {
 const hexEncode = (data, length, isUnsafe) => {
   let hex;
   if (typeof data === "number" || isUnsafe) {
-    data = ethers.utils.bigNumberify(data);
+    data = ethers.utils.bigNumberify(`${data}`);
     hex = ethers.utils.hexZeroPad(ethers.utils.hexlify(data), length);
     return hex;
   } else {
@@ -34,9 +34,9 @@ const hexEncode = (data, length, isUnsafe) => {
  */
 const createBalanceHash = (txAmount, lockedAmount, locksRoot) => {
   const toHash = ethers.utils.concat([
-    hexEncode(txAmount, 32),
-    hexEncode(lockedAmount, 32),
-    hexEncode(locksRoot, 32),
+    hexEncode(txAmount, 32, true),
+    hexEncode(lockedAmount, 32, true),
+    hexEncode(locksRoot, 32)
   ]);
   return ethers.utils.keccak256(toHash);
 };
@@ -47,7 +47,7 @@ const createBalanceHash = (txAmount, lockedAmount, locksRoot) => {
 export const getDataToSignForLockedTransfer = message => {
   const messageHashArray = ethers.utils.concat([
     hexEncode(MessageNumPad[MessageType.LOCKED_TRANSFER], 1), // CMDID, as in the python implementation
-    hexEncode(0, 3), // Padding of number
+    hexEncode(0, 3), // Padding
     hexEncode(message.nonce, 8),
     hexEncode(message.chain_id, 32),
     hexEncode(message.message_identifier, 8, true),
@@ -65,7 +65,7 @@ export const getDataToSignForLockedTransfer = message => {
     hexEncode(message.transferred_amount, 32),
     hexEncode(message.locked_amount, 32),
     hexEncode(message.lock.amount, 32),
-    hexEncode(message.fee, 32),
+    hexEncode(message.fee, 32)
   ]);
 
   const messageHash = ethers.utils.keccak256(messageHashArray);
@@ -83,10 +83,97 @@ export const getDataToSignForLockedTransfer = message => {
     hexEncode(message.channel_identifier, 32),
     hexEncode(balanceHash, 32), // balance hash
     hexEncode(message.nonce, 32),
-    hexEncode(messageHash, 32), // additional hash
+    hexEncode(messageHash, 32) // additional hash
   ]);
 
   // dataArray is a byte array, this can be signed with an ethers wallet
   // signing it with an ethers wallet is equal as the method with python
   return dataArray;
+};
+
+export const getDataToSignForDelivered = message => {
+  return ethers.utils.concat([
+    hexEncode(MessageNumPad[MessageType.DELIVERED], 1),
+    hexEncode(0, 3),
+    hexEncode(message.delivered_message_identifier, 8, true)
+  ]);
+};
+
+export const getDataToSignForProcessed = message => {
+  return ethers.utils.concat([
+    hexEncode(MessageNumPad[MessageType.PROCESSED], 1),
+    hexEncode(0, 3),
+    hexEncode(message.message_identifier, 8, true)
+  ]);
+};
+
+export const getDataToSignForBalanceProof = message => {
+  const messageHashUnhashed = ethers.utils.concat([
+    hexEncode(MessageNumPad[MessageType.BALANCE_PROOF], 1),
+    hexEncode(0, 3),
+    hexEncode(message.chain_id, 32),
+    hexEncode(message.message_identifier, 8, true),
+    hexEncode(message.payment_identifier, 8, true),
+    hexEncode(message.token_network_address, 20),
+    hexEncode(message.secret, 32),
+    hexEncode(message.nonce, 8),
+    hexEncode(message.channel_identifier, 32),
+    hexEncode(message.transferred_amount, 32, true),
+    hexEncode(message.locked_amount, 32),
+    hexEncode(message.locksroot, 32)
+  ]);
+
+  const messageHash = ethers.utils.keccak256(messageHashUnhashed);
+
+  const balanceHash = createBalanceHash(
+    message.transferred_amount,
+    message.locked_amount,
+    message.locksroot
+  );
+
+  const dataToSign = ethers.utils.concat([
+    hexEncode(message.token_network_address, 20),
+    hexEncode(message.chain_id, 32),
+    hexEncode(1, 32), // Balance Proof
+    hexEncode(message.channel_identifier, 32),
+    hexEncode(balanceHash, 32), // balance hash
+    hexEncode(message.nonce, 32),
+    hexEncode(messageHash, 32) // additional hash
+  ]);
+  return dataToSign;
+};
+
+export const getDataToSignForRevealSecret = message => {
+  return ethers.utils.concat([
+    hexEncode(MessageNumPad[MessageType.REVEAL_SECRET], 1),
+    hexEncode(0, 3),
+    hexEncode(message.message_identifier, 8, true),
+    hexEncode(message.secret, 32)
+  ]);
+};
+
+// cmdid(SECRETREQUEST),
+//   pad(3),
+//   message_identifier,
+//   payment_identifier,
+//   secrethash,
+//   amount,
+//   expiration,
+//   signature,
+export const getPackedData = message => {
+  const { type } = message;
+  switch (type) {
+    case MessageType.DELIVERED:
+      return getDataToSignForDelivered(message);
+    case MessageType.PROCESSED:
+      return getDataToSignForProcessed(message);
+    case MessageType.LOCKED_TRANSFER:
+      return getDataToSignForLockedTransfer(message);
+    case MessageType.SECRET_REVEAL:
+      return getDataToSignForSecretReveal(message);
+    case MessageType.SECRET_REQUEST:
+      return getDataToSignForSecretRequest(message);
+    default:
+      throw new Error("Unknown message type passed");
+  }
 };
