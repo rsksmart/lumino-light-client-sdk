@@ -152,7 +152,6 @@ export const getDataToSignForRevealSecret = message => {
   ]);
 };
 
-// TODO: Implement the pack data of SecretRequest
 // cmdid(SECRETREQUEST),
 //   pad(3),
 //   message_identifier,

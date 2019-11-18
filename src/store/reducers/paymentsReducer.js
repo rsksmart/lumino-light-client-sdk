@@ -1,4 +1,8 @@
-import { CREATE_PAYMENT, ADD_PAYMENT_MESSAGE } from "../actions/types";
+import {
+  CREATE_PAYMENT,
+  ADD_PENDING_PAYMENT_MESSAGE,
+  DELETE_ALL_PENDING_PAYMENTS,
+} from "../actions/types";
 
 const initialState = {
   pending: {},
@@ -11,16 +15,23 @@ const paymentsReducer = (state = initialState, action) => {
     case CREATE_PAYMENT:
       const newPayment = {
         ...state,
-        pending: { ...state.pending, [action.paymentId]: action.payment },
+        pending: {
+          ...state.pending,
+          [action.paymentId]: {
+            secret: action.secret,
+            ...action.payment,
+          },
+        },
       };
       return newPayment;
-    case ADD_PAYMENT_MESSAGE:
+    case ADD_PENDING_PAYMENT_MESSAGE:
       const addedPaymentMessage = {
         ...state,
         pending: {
           ...state.pending,
           [action.paymentId]: {
             ...state.pending[action.paymentId],
+            message_order: action.messageOrder,
             messages: {
               ...state.pending[action.paymentId].messages,
               [action.messageOrder]: action.message,
@@ -29,6 +40,8 @@ const paymentsReducer = (state = initialState, action) => {
         },
       };
       return addedPaymentMessage;
+    case DELETE_ALL_PENDING_PAYMENTS:
+      return { ...state, pending: {} };
     default:
       return state;
   }

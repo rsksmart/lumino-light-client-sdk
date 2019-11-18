@@ -10,6 +10,10 @@ import {
 import { saveLuminoData } from "../store/actions/storage";
 import { signatureRecover } from "./validators";
 
+/**
+ *
+ * @param {*} messages The messages to process
+ */
 export const messageManager = messages => {
   try {
     const sortedMsgs = messages.sort(
@@ -27,8 +31,14 @@ export const messageManager = messages => {
 
       const { type } = msg[messageSignedKey];
 
-      // TODO: Use the next partner for getting the address and check signature
-      // const partner = signatureRecover(msg[messageSignedKey]);
+      // // TODO: Use the next partner for getting the address and check signature
+      // try {
+      //   const partner = signatureRecover(msg[messageSignedKey]);
+      //   if (partner !== payment.initiator || partner !== payment.partner)
+      //     return null;
+      // } catch (error) {
+      //   console.warn(error);
+      // }
       switch (type) {
         case MessageType.DELIVERED:
         case MessageType.PROCESSED:
@@ -48,9 +58,16 @@ export const messageManager = messages => {
   }
 };
 
+/**
+ *
+ * @param {*} msg The message to manage
+ * @param {*} payment The payment associated to the message
+ * @param {*} messageSignedKey The data key for accessing the message
+ */
 const manageDeliveredAndProcessed = (msg, payment, messageSignedKey) => {
   if (payment.messages[msg.message_order]) {
-    return console.warn("That message order has been already processed in LC");
+    // Message already processed
+    return null;
   }
   const { message_order } = msg;
   const previousMessage = payment.messages[message_order - 1];
@@ -83,9 +100,16 @@ const manageDeliveredAndProcessed = (msg, payment, messageSignedKey) => {
   return store.dispatch(saveLuminoData());
 };
 
+/**
+ *
+ * @param {*} msg The message to manage
+ * @param {*} payment The payment associated to the message
+ * @param {*} messageSignedKey The data key for accessing the message
+ */
 const manageSecretRequest = (msg, payment, messageSignedKey) => {
   if (payment.messages[msg.message_order]) {
-    return console.warn("That message order has been already processed in LC");
+    // Message already processed
+    return null;
   }
   const hasSameSecretHash =
     msg[messageSignedKey].secrethash === payment.secret_hash;
@@ -108,9 +132,16 @@ const manageSecretRequest = (msg, payment, messageSignedKey) => {
   return store.dispatch(putRevealSecret(payment));
 };
 
+/**
+ *
+ * @param {*} msg The message to manage
+ * @param {*} payment The payment associated to the message
+ * @param {*} messageSignedKey The data key for accessing the message
+ */
 const manageRevealSecret = (msg, payment, messageSignedKey) => {
   if (payment.messages[msg.message_order]) {
-    return console.warn("That message order has been already processed in LC");
+    // Message already processed
+    return null;
   }
   const hasSameSecret = msg[messageSignedKey].secret === payment.secret;
   if (!hasSameSecret) return console.warn("Secret does not match");
@@ -127,9 +158,16 @@ const manageRevealSecret = (msg, payment, messageSignedKey) => {
   }
 };
 
+/**
+ *
+ * @param {*} msg The message to manage
+ * @param {*} payment The payment associated to the message
+ * @param {*} messageSignedKey The data key for accessing the message
+ */
 const manageSecret = (msg, payment, messageSignedKey) => {
   if (payment.messages[msg.message_order]) {
-    return console.warn("That message order has been already processed in LC");
+    // Message already processed
+    return null;
   }
   const hasSameChainId = msg[messageSignedKey].chain_id === payment.chainId;
 
@@ -149,10 +187,6 @@ const manageSecret = (msg, payment, messageSignedKey) => {
 
   if (!hasSameNetworkTokenAddress)
     return console.warn("Network Token Address does not match");
-  // TODO: Amoutn should be something else right?
-  // const hasSameAmount =
-  //   `${msg[messageSignedKey].transferred_amount}` === `${payment.amount}`;
-  // if (!hasSameAmount) return console.warn("Amount does not match");
 
   const store = Store.getStore();
 

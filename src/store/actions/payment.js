@@ -23,7 +23,7 @@ import { saveLuminoData } from "./storage";
 
 // TODO: Try to store api_key through onboarding
 
-const api_key = "2956272a5884b0ec7f4a7bb2c94f6baf4dc3e5b6";
+const api_key = "29ad65a6ba88a0c9d732dad37b1dd3c45b9f9130";
 
 /**
  * Create a payment.
@@ -74,8 +74,8 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const dataToPut = {
       message_id,
       message_order,
-      receiver: "0xA5157c2b6c16480b6a5808CfFf183D6c34A047C6", // HACK: Checksummed messageWithHash.recipient,
-      sender: "0xc19BBF5E4F1709230EBe2552dc15C692FE8DEf83", // HACK: Checksummed messageWithHash.initiator,
+      receiver: ethers.utils.getAddress(messageWithHash.target),
+      sender: ethers.utils.getAddress(messageWithHash.initiator),
       message: {
         ...messageWithHash,
         signature,
@@ -120,7 +120,7 @@ export const clearAllPendingPayments = () => async (dispatch, getState, lh) => {
 };
 
 export const mockPulling = () => async (dispatch, getState, lh) => {
-  const api_key = "2956272a5884b0ec7f4a7bb2c94f6baf4dc3e5b6";
+  const api_key = "29ad65a6ba88a0c9d732dad37b1dd3c45b9f9130";
   const url = "payments_light/get_messages";
   const res = await client.get(url, {
     headers: {
