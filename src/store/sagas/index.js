@@ -1,20 +1,16 @@
-import { call, put, takeEvery } from "redux-saga/effects";
+import { takeEvery, take } from "redux-saga/effects";
+import { messageManager } from "../../utils/messageManager";
+import { MESSAGE_POLLING } from "../actions/types";
 
-// worker Saga: will be fired on USER_FETCH_REQUESTED actions
-function* fetchUser(action) {
+export function* workMessagePolling() {
   try {
-    const user = yield call(Api.fetchUser, action.payload.userId);
-    yield put({ type: "USER_FETCH_SUCCEEDED", user: user });
-  } catch (e) {
-    yield put({ type: "USER_FETCH_FAILED", message: e.message });
+    const { data } = yield take(MESSAGE_POLLING);
+    messageManager(data);
+  } catch (error) {
+    console.log(error);
   }
 }
 
-/*
-  Starts fetchUser on each dispatched `USER_FETCH_REQUESTED` action.
-  Allows concurrent fetches of user.
-*/
-function* mySaga() {
-  yield takeEvery("USER_FETCH_REQUESTED", fetchUser);
+export default function* rootSaga() {
+  yield takeEvery(MESSAGE_POLLING, workMessagePolling);
 }
-export default mySaga;
