@@ -1,5 +1,6 @@
 import Store from "./store/index";
 import Actions from "./store/actions";
+import client from "./apiRest";
 
 const Lumino = () => {
   let actions;
@@ -24,6 +25,7 @@ const Lumino = () => {
       const luminoInternalState = store.getState();
       const getLuminoInternalState = () => store.getState();
       luminoConfig = { ...luminoConfig, ...configParams };
+      client.defaults.baseURL = luminoConfig.hubEndpoint;
       actions = { ...actions };
       luminoFns = {
         actions,
@@ -51,6 +53,6 @@ const Lumino = () => {
   return { init, get, getConfig };
 };
 
-const luminoInstance = Lumino();
+const instance = Lumino();
 
-export default luminoInstance;
+export default instance;
