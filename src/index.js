@@ -8,6 +8,7 @@ const Lumino = () => {
   let luminoConfig = {
     rskEndpoint: "",
     chainId: 0,
+    hubEndpoint: "http://localhost:5001/api/v1",
   };
 
   /**
@@ -22,7 +23,7 @@ const Lumino = () => {
       const changesHook = fn => store.subscribe(fn);
       const luminoInternalState = store.getState();
       const getLuminoInternalState = () => store.getState();
-      luminoConfig = configParams;
+      luminoConfig = { ...luminoConfig, ...configParams };
       actions = { ...actions };
       luminoFns = {
         actions,
