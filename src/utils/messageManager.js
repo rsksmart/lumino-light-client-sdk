@@ -8,7 +8,7 @@ import {
   putBalanceProof,
 } from "../store/actions/payment";
 import { saveLuminoData } from "../store/actions/storage";
-import { signatureRecover } from "./validators";
+import { signatureRecover, isAddressFromPayment } from "./validators";
 
 /**
  *
@@ -30,15 +30,18 @@ export const messageManager = messages => {
       if (!payment) return null;
 
       const { type } = msg[messageSignedKey];
-
-      // // TODO: Use the next partner for getting the address and check signature
-      // try {
-      //   const partner = signatureRecover(msg[messageSignedKey]);
-      //   if (partner !== payment.initiator || partner !== payment.partner)
-      //     return null;
-      // } catch (error) {
-      //   console.warn(error);
-      // }
+      if (is_signed) {
+        try {
+          const signatureAddress = signatureRecover(msg[messageSignedKey]);
+          const { initiator, partner } = payment;
+          if (!isAddressFromPayment(signatureAddress, initiator, partner)) {
+            debugger;
+            return null;
+          }
+        } catch (error) {
+          console.warn(error);
+        }
+      }
       switch (type) {
         case MessageType.DELIVERED:
         case MessageType.PROCESSED:

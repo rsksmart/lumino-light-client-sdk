@@ -9,7 +9,6 @@ import { getPackedData } from "./pack";
  */
 export const signatureRecover = message => {
   const { verifyMessage } = ethers.utils;
-  // TODO: Some cases are failing due to not having appropiate pack functions
   return verifyMessage(getPackedData(message), message.signature);
 };
 
@@ -48,12 +47,17 @@ export const validateLockedTransfer = (message, requestBody, channels = {}) => {
     channels[message.channel_identifier] === CHANNEL_OPENED;
   if (!hasChannelAndIsOpened)
     throwChannelNotFoundOrNotOpened(message.partner_address);
-
-  // const hasSameSignature // TODO: Pending implementation
 };
 
 export const getPaymentChannelById = id => {
   const payments = getPaymentIds();
   if (!payments[id]) return false;
   return payments[id];
+};
+
+export const isAddressFromPayment = (addFromSign, initiator, partner) => {
+  const { getAddress } = ethers.utils;
+  return (
+    addFromSign !== getAddress(initiator) || addFromSign !== getAddress(partner)
+  );
 };

@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import {
   MessageNumPad,
   MessageType,
-  MessageTypeID
+  MessageTypeID,
 } from "../config/messagesConstants";
 
 /**
@@ -36,7 +36,7 @@ const createBalanceHash = (txAmount, lockedAmount, locksRoot) => {
   const toHash = ethers.utils.concat([
     hexEncode(txAmount, 32, true),
     hexEncode(lockedAmount, 32, true),
-    hexEncode(locksRoot, 32)
+    hexEncode(locksRoot, 32),
   ]);
   return ethers.utils.keccak256(toHash);
 };
@@ -65,7 +65,7 @@ export const getDataToSignForLockedTransfer = message => {
     hexEncode(message.transferred_amount, 32),
     hexEncode(message.locked_amount, 32),
     hexEncode(message.lock.amount, 32),
-    hexEncode(message.fee, 32)
+    hexEncode(message.fee, 32),
   ]);
 
   const messageHash = ethers.utils.keccak256(messageHashArray);
@@ -83,7 +83,7 @@ export const getDataToSignForLockedTransfer = message => {
     hexEncode(message.channel_identifier, 32),
     hexEncode(balanceHash, 32), // balance hash
     hexEncode(message.nonce, 32),
-    hexEncode(messageHash, 32) // additional hash
+    hexEncode(messageHash, 32), // additional hash
   ]);
 
   // dataArray is a byte array, this can be signed with an ethers wallet
@@ -95,7 +95,7 @@ export const getDataToSignForDelivered = message => {
   return ethers.utils.concat([
     hexEncode(MessageNumPad[MessageType.DELIVERED], 1),
     hexEncode(0, 3),
-    hexEncode(message.delivered_message_identifier, 8, true)
+    hexEncode(message.delivered_message_identifier, 8, true),
   ]);
 };
 
@@ -103,10 +103,11 @@ export const getDataToSignForProcessed = message => {
   return ethers.utils.concat([
     hexEncode(MessageNumPad[MessageType.PROCESSED], 1),
     hexEncode(0, 3),
-    hexEncode(message.message_identifier, 8, true)
+    hexEncode(message.message_identifier, 8, true),
   ]);
 };
 
+// INFO: This is also used for secret, the BP is a response a to a "Secret" message
 export const getDataToSignForBalanceProof = message => {
   const messageHashUnhashed = ethers.utils.concat([
     hexEncode(MessageNumPad[MessageType.BALANCE_PROOF], 1),
@@ -120,7 +121,7 @@ export const getDataToSignForBalanceProof = message => {
     hexEncode(message.channel_identifier, 32),
     hexEncode(message.transferred_amount, 32, true),
     hexEncode(message.locked_amount, 32),
-    hexEncode(message.locksroot, 32)
+    hexEncode(message.locksroot, 32),
   ]);
 
   const messageHash = ethers.utils.keccak256(messageHashUnhashed);
@@ -138,7 +139,7 @@ export const getDataToSignForBalanceProof = message => {
     hexEncode(message.channel_identifier, 32),
     hexEncode(balanceHash, 32), // balance hash
     hexEncode(message.nonce, 32),
-    hexEncode(messageHash, 32) // additional hash
+    hexEncode(messageHash, 32), // additional hash
   ]);
   return dataToSign;
 };
@@ -148,18 +149,21 @@ export const getDataToSignForRevealSecret = message => {
     hexEncode(MessageNumPad[MessageType.REVEAL_SECRET], 1),
     hexEncode(0, 3),
     hexEncode(message.message_identifier, 8, true),
-    hexEncode(message.secret, 32)
+    hexEncode(message.secret, 32),
   ]);
 };
 
-// cmdid(SECRETREQUEST),
-//   pad(3),
-//   message_identifier,
-//   payment_identifier,
-//   secrethash,
-//   amount,
-//   expiration,
-//   signature,
+export const getDataToSignForSecretRequest = message => {
+  return ethers.utils.concat([
+    hexEncode(MessageNumPad[MessageType.SECRET_REQUEST], 1),
+    hexEncode(0, 3),
+    hexEncode(message.message_identifier, 32, true),
+    hexEncode(message.payment_identifier, 32, true),
+    hexEncode(message.amount, 32, true),
+    hexEncode(message.expiration, 32, true),
+  ]);
+};
+
 export const getPackedData = message => {
   const { type } = message;
   switch (type) {
@@ -173,7 +177,12 @@ export const getPackedData = message => {
       return getDataToSignForSecretReveal(message);
     case MessageType.SECRET_REQUEST:
       return getDataToSignForSecretRequest(message);
+    case MessageType.REVEAL_SECRET:
+      return getDataToSignForRevealSecret(message);
+    case MessageType.SECRET:
+      return getDataToSignForBalanceProof(message);
     default:
-      throw new Error("Unknown message type passed");
+      console.warn("Unknown message type");
+      return null;
   }
 };
