@@ -1,27 +1,25 @@
-import {of} from "rxjs";
-import fakePaymentData from "./tmpFakeData";
-import {delay} from "rxjs/operators";
+import { from } from "rxjs";
+import client from "../../apiRest";
+import JSONbig from "json-bigint";
 
-const ENDPOINT = '/api/payments_light';
+const api_key = "29ad65a6ba88a0c9d732dad37b1dd3c45b9f9130";
+const url = "payments_light/get_messages";
 
-const getTransactionInfo = () => {
-    // restful url is not ready yet.
+// TODO: Remove the hardcoded api_key
 
-    // return ajax({
-    //     url: ENDPOINT,
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'application/json',
-    //         'rxjs-custom-header': 'Rxjs'
-    //     },
-    //     body: {
-    //         payments
-    //     }
-    // })
+const getTransactionInfo = () =>
+  from(
+    client
+      .get(url, {
+        headers: {
+          "rxjs-custom-header": "Rxjs",
+          "x-api-key": api_key,
+          "Content-type": "application/json",
+        },
+        params: { from_message: 1 },
+        transformResponse: res_1 => JSONbig.parse(res_1),
+      })
+      .then(res => res.data)
+  );
 
-    return of([...fakePaymentData]).pipe(delay(350))
-};
-
-export {
-    getTransactionInfo
-}
+export { getTransactionInfo };

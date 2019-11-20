@@ -1,10 +1,13 @@
 import { createStore, applyMiddleware, bindActionCreators } from "redux";
 import thunkMiddleware from "redux-thunk";
 import { composeWithDevTools } from "redux-devtools-extension";
-import { createEpicMiddleware } from 'redux-observable';
+import { createEpicMiddleware } from "redux-observable";
+import createSagaMiddleware from "redux-saga";
 
 import rootReducer from "./reducers";
-import { paymentsMonitoredEpic } from './epics';
+import { paymentsMonitoredEpic } from "./epics";
+import rootSaga from "./sagas";
+import { MESSAGE_POLLING_START } from "./actions/types";
 
 let store = null;
 const defaultStore = { channelReducer: [] };
@@ -28,11 +31,21 @@ const initStore = async (storageImpl, luminoHandler) => {
     offChainSign: luminoHandler.offChainSign,
     storage,
   };
+  const sagaMiddleware = createSagaMiddleware();
   store = createStore(
     rootReducer,
     data,
-    composeWithDevTools(applyMiddleware(thunkMiddleware.withExtraArgument(lh), observableMiddleware))
+    composeWithDevTools(
+      applyMiddleware(
+        thunkMiddleware.withExtraArgument(lh),
+        observableMiddleware,
+        sagaMiddleware
+      )
+    )
   );
+  observableMiddleware.run(paymentsMonitoredEpic);
+  sagaMiddleware.run(rootSaga);
+  store.dispatch({ type: MESSAGE_POLLING_START });
   return store;
 };
 
@@ -42,7 +55,5 @@ const bindActions = (actions, dispatch) =>
 const getStore = () => store;
 
 const Store = { initStore, getStore, bindActions };
-
-observableMiddleware.run(paymentsMonitoredEpic);
 
 export default Store;
