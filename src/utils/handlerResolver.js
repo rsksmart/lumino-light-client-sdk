@@ -10,8 +10,8 @@ const resolver = async (data, luminoHandler, isOffChain = false) =>
   await new Promise(async (resolve, reject) => {
     let lhSign = luminoHandler.sign;
     if (isOffChain) lhSign = luminoHandler.offChainSign;
-    const signed_tx = await lhSign(data);
-    if (signed_tx) return resolve(data);
+    const signed_data = await lhSign(data);
+    if (signed_data) return resolve(signed_data);
     return reject(new Error("Lumino handler had an error signing"));
   });
 
