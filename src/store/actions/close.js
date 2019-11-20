@@ -2,6 +2,7 @@ import { SET_CHANNEL_CLOSED } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { CHANNEL_CLOSED } from "../../config/channelStates";
+import { createCloseTx } from "../../scripts/close";
 
 /**
  * Create a deposit.
@@ -12,16 +13,17 @@ import { CHANNEL_CLOSED } from "../../config/channelStates";
  */
 export const closeChannel = params => async (dispatch, getState, lh) => {
   try {
-    const signed_close_tx = await resolver(params.unsigned_tx, lh);
+    const unsignedCloseTx = await createCloseTx(params);
+    const signed_close_tx = await resolver(unsignedCloseTx, lh);
     try {
-      const { address, partner, token_address } = params;
+      const { address, partner, tokenAddress } = params;
       const requestBody = {
         signed_approval_tx: "",
         signed_close_tx,
         signed_deposit_tx: "",
         state: "closed",
       };
-      const url = `light_channels/${token_address}/${address}/${partner}`;
+      const url = `light_channels/${tokenAddress}/${address}/${partner}`;
       const res = await client.patch(url, { ...requestBody });
       dispatch({
         type: SET_CHANNEL_CLOSED,

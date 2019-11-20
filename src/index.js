@@ -5,19 +5,24 @@ const Lumino = () => {
   let actions;
   let store;
   let luminoFns;
+  let luminoConfig = {
+    rskEndpoint: "",
+    chainId: 0,
+  };
 
   /**
    * Init Lumino
    * @param {object} luminoHandler - An object that contains a sign property, which is a function to sign TX's onChain and a offChainSign for offChain TX's
    * @param {object} storage -  Object with 2 params, getLuminoData and saveLuminoData, so the lumino state can be persisted through a storage
    */
-  const init = async (luminoHandler, storage) => {
+  const init = async (luminoHandler, storage, configParams) => {
     if (!store) {
       store = await Store.initStore(storage, luminoHandler);
       actions = Store.bindActions(Actions, store.dispatch);
       const changesHook = fn => store.subscribe(fn);
       const luminoInternalState = store.getState();
       const getLuminoInternalState = () => store.getState();
+      luminoConfig = configParams;
       actions = { ...actions };
       luminoFns = {
         actions,
@@ -30,6 +35,11 @@ const Lumino = () => {
   };
 
   /**
+   * Returns the config of the lumino instance
+   */
+  const getConfig = () => luminoConfig;
+
+  /**
    * Returns the actual lumino instance
    */
   const get = () => {
@@ -37,7 +47,7 @@ const Lumino = () => {
     throw new Error("Lumino has not been initialized");
   };
 
-  return { init, get };
+  return { init, get, getConfig };
 };
 
 const luminoInstance = Lumino();
