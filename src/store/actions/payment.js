@@ -4,6 +4,7 @@ import {
   DELETE_ALL_PENDING_PAYMENTS,
   MESSAGE_POLLING_START,
   MESSAGE_POLLING_STOP,
+  SET_PAYMENT_SECRET,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -13,6 +14,8 @@ import {
   getDataToSignForDelivered,
   getDataToSignForRevealSecret,
   getDataToSignForBalanceProof,
+  getDataToSignForProcessed,
+  getDataToSignForSecretRequest,
 } from "../../utils/pack";
 import { validateLockedTransfer } from "../../utils/validators";
 import { messageManager } from "../../utils/messageManager";
@@ -22,6 +25,7 @@ import JSONbig from "json-bigint";
 import BigNumber from "bignumber.js";
 import { MessageType } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
+import { dispatch } from "rxjs/internal/observable/pairs";
 
 // TODO: Try to store api_key through onboarding
 
@@ -148,20 +152,23 @@ export const addPendingPaymentMessage = (
 
 const getRandomBN = () => {
   const randomBN = BigNumber.random(18).toString();
-  return randomBN.split(".")[1];
+  return new BigNumber(randomBN.split(".")[1]).toString();
 };
-
-export const putDelivered = (message, payment, order = 4) => async (
-  dispatch,
-  getState,
-  lh
-) => {
+// TODO: Try to make sure that the recipient and sender are always correct in reception
+export const putDelivered = (
+  message,
+  payment,
+  order = 4,
+  isReception = false
+) => async (dispatch, getState, lh) => {
+  const sender = isReception ? payment.partner : payment.initiator;
+  const receiver = isReception ? payment.initiator : payment.partner;
   const { getAddress } = ethers.utils;
   const body = {
     message_id: payment.paymentId,
     message_order: order,
-    sender: getAddress(payment.initiator),
-    receiver: getAddress(payment.partner),
+    sender: getAddress(sender),
+    receiver: getAddress(receiver),
     message: {
       type: MessageType.DELIVERED,
       delivered_message_identifier: message.message_identifier,
@@ -196,17 +203,120 @@ export const putDelivered = (message, payment, order = 4) => async (
   }
 };
 
-export const putRevealSecret = payment => async (dispatch, getState, lh) => {
+export const putProcessed = (msg, payment, order = 3) => async (
+  dispatch,
+  getState,
+  lh
+) => {
   const { getAddress } = ethers.utils;
-  const randomId = getRandomBN();
   const body = {
     message_id: payment.paymentId,
-    message_order: 7,
-    sender: getAddress(payment.initiator),
-    receiver: getAddress(payment.partner),
+    message_order: order,
+    sender: getAddress(payment.partner),
+    receiver: getAddress(payment.initiator),
+    message: {
+      type: MessageType.PROCESSED,
+      message_identifier: msg.message_identifier,
+    },
+  };
+  const dataToSign = getDataToSignForProcessed(body.message);
+  let signature = "";
+  try {
+    signature = await resolver(dataToSign, lh, true);
+  } catch (resolverError) {
+    throw resolverError;
+  }
+  body.message.signature = signature;
+  try {
+    dispatch(
+      addPendingPaymentMessage(payment.paymentId, body.message_order, {
+        message: body.message,
+        message_order: body.message_order,
+      })
+    );
+    const urlPut = "payments_light";
+    await client.put(urlPut, body, {
+      headers: {
+        "x-api-key": api_key,
+      },
+      transformResponse: res => JSONbig.parse(res),
+    });
+    dispatch(saveLuminoData());
+  } catch (reqEx) {
+    console.error("reqEx Put SecretReveal", reqEx);
+  }
+};
+
+export const putSecretRequest = (msg, payment) => async (
+  dispatch,
+  getState,
+  lh
+) => {
+  const { getAddress } = ethers.utils;
+  const body = {
+    message_id: payment.paymentId,
+    message_order: 5,
+    sender: getAddress(payment.partner),
+    receiver: getAddress(payment.initiator),
+    message: {
+      type: MessageType.SECRET_REQUEST,
+      message_identifier: msg.unsigned_message.message_identifier,
+      payment_identifier: payment.paymentId,
+      amount: payment.amount,
+      expiration: msg.unsigned_message.expiration,
+      secrethash: payment.secret_hash,
+    },
+  };
+  const dataToSign = getDataToSignForSecretRequest(body.message);
+  let signature = "";
+  try {
+    signature = await resolver(dataToSign, lh, true);
+  } catch (resolverError) {
+    throw resolverError;
+  }
+  body.message.signature = signature;
+  try {
+    dispatch(
+      addPendingPaymentMessage(payment.paymentId, body.message_order, {
+        message: body.message,
+        message_order: body.message_order,
+      })
+    );
+    const urlPut = "payments_light";
+    await client.put(urlPut, body, {
+      headers: {
+        "x-api-key": api_key,
+      },
+      transformResponse: res => JSONbig.parse(res),
+    });
+    dispatch(saveLuminoData());
+  } catch (reqEx) {
+    console.error("reqEx Put SecretReveal", reqEx);
+  }
+};
+
+export const putRevealSecret = (
+  payment,
+  message_identifier = getRandomBN(),
+  order = 7,
+  isReception = false
+) => async (dispatch, getState, lh) => {
+  const { getAddress } = ethers.utils;
+  const sender = isReception
+    ? getAddress(payment.partner)
+    : getAddress(payment.initiator);
+  const receiver = isReception
+    ? getAddress(payment.initiator)
+    : getAddress(payment.partner);
+
+  const body = {
+    message_id: payment.paymentId,
+    message_order: order,
+    sender,
+    receiver,
     message: {
       type: MessageType.REVEAL_SECRET,
-      message_identifier: randomId,
+      message_identifier,
       secret: payment.secret,
     },
   };
@@ -281,3 +391,9 @@ export const putBalanceProof = (message, payment) => async (
     console.error("reqEx Put SecretReveal", reqEx);
   }
 };
+
+export const setPaymentSecret = (paymentId, secret) => ({
+  type: SET_PAYMENT_SECRET,
+  secret,
+  paymentId,
+});

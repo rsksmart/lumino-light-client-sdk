@@ -9,6 +9,7 @@ import { getPackedData } from "./pack";
  */
 export const signatureRecover = message => {
   const { verifyMessage } = ethers.utils;
+  if (message.signature === "0x") return "0x";
   return verifyMessage(getPackedData(message), message.signature);
 };
 
@@ -24,7 +25,7 @@ const throwGenericLockedTransfer = param => {
 
 const throwChannelNotFoundOrNotOpened = partner => {
   throw new Error(
-    `The Received Locked Transfer speciefied a channel with the partner: ${partner}, which is closed or does not exist`
+    `The Received Locked Transfer specified a channel with the partner: ${partner}, which is closed or does not exist`
   );
 };
 
@@ -49,6 +50,17 @@ export const validateLockedTransfer = (message, requestBody, channels = {}) => {
     throwChannelNotFoundOrNotOpened(message.partner_address);
 };
 
+export const validateReceptionLT = (msg, channel = {}) => {
+  const { getAddress } = ethers.utils;
+  if (!channel.partner) throwGenericLockedTransfer("Partner");
+  const hasSamePartner =
+    getAddress(msg.target) === getAddress(channel.partner_address);
+  if (!hasSamePartner) throwChannelNotFoundOrNotOpened(channel.partner);
+  const hasSameTokenAddress =
+    getAddress(msg.token) === getAddress(requestBody.token_address);
+  if (!hasSameTokenAddress) throwGenericLockedTransfer("Token Address");
+};
+
 export const getPaymentChannelById = id => {
   const payments = getPaymentIds();
   if (!payments[id]) return false;
@@ -58,6 +70,11 @@ export const getPaymentChannelById = id => {
 export const isAddressFromPayment = (addFromSign, initiator, partner) => {
   const { getAddress } = ethers.utils;
   return (
-    addFromSign !== getAddress(initiator) || addFromSign !== getAddress(partner)
+    addFromSign === getAddress(initiator) || addFromSign === getAddress(partner)
   );
+};
+
+export const senderIsSigner = (addFromSign, sender) => {
+  const { getAddress } = ethers.utils;
+  return addFromSign === getAddress(sender);
 };

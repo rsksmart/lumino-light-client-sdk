@@ -38,3 +38,9 @@ export const getChannelsState = () => {
   const { channelStates } = store.getState();
   return channelStates;
 };
+
+export const paymentExistsInAnyState = paymentId => {
+  const store = Store.getStore();
+  const payments = store.getState().paymentIds;
+  return payments[paymentId];
+};

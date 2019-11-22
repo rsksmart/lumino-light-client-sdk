@@ -157,8 +157,9 @@ export const getDataToSignForSecretRequest = message => {
   return ethers.utils.concat([
     hexEncode(MessageNumPad[MessageType.SECRET_REQUEST], 1),
     hexEncode(0, 3),
-    hexEncode(message.message_identifier, 32, true),
-    hexEncode(message.payment_identifier, 32, true),
+    hexEncode(message.message_identifier, 8, true),
+    hexEncode(message.payment_identifier, 8, true),
+    hexEncode(message.secrethash, 32),
     hexEncode(message.amount, 32, true),
     hexEncode(message.expiration, 32, true),
   ]);

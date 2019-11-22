@@ -10,6 +10,7 @@ const Lumino = () => {
     rskEndpoint: "",
     chainId: 0,
     hubEndpoint: "http://localhost:5001/api/v1",
+    address: "",
   };
 
   /**
