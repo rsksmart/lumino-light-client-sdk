@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { CHANNEL_OPENED } from "../config/channelStates";
-import { getPaymentIds } from "../store/functions";
 import { getPackedData } from "./pack";
+import Lumino from "../index";
 
 /**
  *
@@ -52,19 +52,13 @@ export const validateLockedTransfer = (message, requestBody, channels = {}) => {
 
 export const validateReceptionLT = (msg, channel = {}) => {
   const { getAddress } = ethers.utils;
-  if (!channel.partner) throwGenericLockedTransfer("Partner");
-  const hasSamePartner =
-    getAddress(msg.target) === getAddress(channel.partner_address);
-  if (!hasSamePartner) throwChannelNotFoundOrNotOpened(channel.partner);
+  if (!channel.partner_address) throwGenericLockedTransfer("Partner");
+  const lcIsTarget =
+    getAddress(msg.target) === getAddress(Lumino.getConfig().address);
+  if (!lcIsTarget) throwChannelNotFoundOrNotOpened(msg.target);
   const hasSameTokenAddress =
-    getAddress(msg.token) === getAddress(requestBody.token_address);
+    getAddress(msg.token) === getAddress(channel.token_address);
   if (!hasSameTokenAddress) throwGenericLockedTransfer("Token Address");
-};
-
-export const getPaymentChannelById = id => {
-  const payments = getPaymentIds();
-  if (!payments[id]) return false;
-  return payments[id];
 };
 
 export const isAddressFromPayment = (addFromSign, initiator, partner) => {

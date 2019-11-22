@@ -44,3 +44,9 @@ export const paymentExistsInAnyState = paymentId => {
   const payments = store.getState().paymentIds;
   return payments[paymentId];
 };
+
+export const getChannelById = id => {
+  const store = Store.getStore();
+  const { channelReducer: channels } = store.getState();
+  return channels[id];
+};

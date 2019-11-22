@@ -256,14 +256,14 @@ export const putSecretRequest = (msg, payment) => async (
   const body = {
     message_id: payment.paymentId,
     message_order: 5,
-    sender: getAddress(payment.partner),
-    receiver: getAddress(payment.initiator),
+    sender: getAddress(payment.initiator),
+    receiver: getAddress(payment.partner),
     message: {
       type: MessageType.SECRET_REQUEST,
-      message_identifier: msg.unsigned_message.message_identifier,
+      message_identifier: msg.message_identifier,
       payment_identifier: payment.paymentId,
       amount: payment.amount,
-      expiration: msg.unsigned_message.expiration,
+      expiration: msg.expiration,
       secrethash: payment.secret_hash,
     },
   };

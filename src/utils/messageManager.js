@@ -2,6 +2,7 @@ import { MessageType, MessageKeyForOrder } from "../config/messagesConstants";
 import {
   getPendingPaymentById,
   paymentExistsInAnyState,
+  getChannelById,
 } from "../store/functions";
 import Store from "../store";
 import {
@@ -82,13 +83,15 @@ const manageLockedTransfer = (message, payment, messageSignedKey) => {
   // Validate signature
   const signatureAddress = signatureRecover(msg);
   const { initiator } = msg;
-  if (!senderIsSigner(signatureAddress, initiator)) {
+  if (!senderIsSigner(signatureAddress, initiator)) return null;
+  const { getAddress } = ethers.utils;
+  // Check for our LT
+  if (getAddress(Lumino.getConfig().address) === getAddress(msg.initiator))
     return null;
-  }
   if (paymentExistsInAnyState(msg.message_identifier)) return null;
   // If all ok validate the rest of params
-  // TODO: Uncomment this to test the validations.
-  // validateReceptionLT(msg, {})
+  const channel = getChannelById(msg.channel_identifier);
+  validateReceptionLT(msg, channel);
   const store = Store.getStore();
   // This function add the message to the store in its proper order
   const actionObj = {
@@ -194,11 +197,12 @@ const manageSecretRequest = (msg, payment, messageSignedKey) => {
     })
   );
   // If we are receiving it, we just put the reveal secret
-  if (payment.isReceived) return store.dispatch(putRevealSecret(payment));
-  if (!payment.messages[6]) {
+  if (!payment.messages[6] && !payment.isReceived) {
     store.dispatch(putDelivered(msg[messageSignedKey], payment, 6));
   }
-  return store.dispatch(putSecretRequest(msg, payment));
+  if (!payment.isReceived) store.dispatch(putRevealSecret(payment));
+  if (payment.isReceived)
+    return store.dispatch(putSecretRequest(msg[messageSignedKey], payment));
 };
 
 /**
@@ -213,7 +217,6 @@ const manageRevealSecret = (msg, payment, messageSignedKey) => {
     return null;
   }
   // If this is true, then we are on reception
-  // TODO: Clarify this
   const store = Store.getStore();
   if (payment.secret && msg.is_signed) {
     const hasSameSecret = msg[messageSignedKey].secret === payment.secret;
