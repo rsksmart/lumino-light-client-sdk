@@ -18,18 +18,12 @@ import {
   getDataToSignForSecretRequest,
 } from "../../utils/pack";
 import { validateLockedTransfer } from "../../utils/validators";
-import { messageManager } from "../../utils/messageManager";
 import { getChannelsState } from "../functions";
 import { ethers } from "ethers";
 import JSONbig from "json-bigint";
 import BigNumber from "bignumber.js";
 import { MessageType } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
-import { dispatch } from "rxjs/internal/observable/pairs";
-
-// TODO: Try to store api_key through onboarding
-
-const api_key = "29ad65a6ba88a0c9d732dad37b1dd3c45b9f9130";
 
 /**
  * Create a payment.
@@ -44,7 +38,6 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const hashes = generateHashes();
     const { secrethash, hash: secret } = hashes;
     const requestBody = {
-      api_key,
       creator_address: address,
       partner_address: partner,
       amount,
@@ -53,9 +46,6 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     };
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody, {
-      headers: {
-        "x-api-key": api_key,
-      },
       transformResponse: res => JSONbig.parse(res),
     });
     const { message, message_id, message_order } = { ...res.data };
@@ -89,9 +79,6 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     };
     const urlPut = "payments_light";
     await client.put(urlPut, dataToPut, {
-      headers: {
-        "x-api-key": api_key,
-      },
       transformResponse: res => JSONbig.parse(res),
     });
     dispatch({
@@ -191,9 +178,6 @@ export const putDelivered = (
     );
     const urlPut = "payments_light";
     await client.put(urlPut, body, {
-      headers: {
-        "x-api-key": api_key,
-      },
       transformResponse: res => JSONbig.parse(res),
     });
 
@@ -236,9 +220,6 @@ export const putProcessed = (msg, payment, order = 3) => async (
     );
     const urlPut = "payments_light";
     await client.put(urlPut, body, {
-      headers: {
-        "x-api-key": api_key,
-      },
       transformResponse: res => JSONbig.parse(res),
     });
     dispatch(saveLuminoData());
@@ -284,9 +265,6 @@ export const putSecretRequest = (msg, payment) => async (
     );
     const urlPut = "payments_light";
     await client.put(urlPut, body, {
-      headers: {
-        "x-api-key": api_key,
-      },
       transformResponse: res => JSONbig.parse(res),
     });
     dispatch(saveLuminoData());
@@ -337,9 +315,6 @@ export const putRevealSecret = (
     );
     const urlPut = "payments_light";
     await client.put(urlPut, body, {
-      headers: {
-        "x-api-key": api_key,
-      },
       transformResponse: res => JSONbig.parse(res),
     });
     dispatch(saveLuminoData());
@@ -381,9 +356,6 @@ export const putBalanceProof = (message, payment) => async (
     );
     const urlPut = "payments_light";
     await client.put(urlPut, body, {
-      headers: {
-        "x-api-key": api_key,
-      },
       transformResponse: res => JSONbig.parse(res),
     });
     dispatch(saveLuminoData());
