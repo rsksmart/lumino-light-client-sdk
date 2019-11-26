@@ -1,5 +1,12 @@
-import { CREATE_PAYMENT, DELETE_ALL_PENDING_PAYMENTS } from "../actions/types";
-import { PENDING_PAYMENT } from "../../config/paymentConstants";
+import {
+  CREATE_PAYMENT,
+  DELETE_ALL_PENDING_PAYMENTS,
+  SET_PAYMENT_COMPLETE,
+} from "../actions/types";
+import {
+  PENDING_PAYMENT,
+  COMPLETED_PAYMENT,
+} from "../../config/paymentConstants";
 
 const initialState = {};
 
@@ -10,6 +17,9 @@ const paymentIdsReducer = (state = initialState, action) => {
       return newPayment;
     case DELETE_ALL_PENDING_PAYMENTS:
       return {};
+    case SET_PAYMENT_COMPLETE:
+      const completed = { ...state, [action.paymentId]: COMPLETED_PAYMENT };
+      return completed;
     default:
       return state;
   }

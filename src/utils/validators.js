@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { CHANNEL_OPENED } from "../config/channelStates";
-import { getPaymentIds } from "../store/functions";
 import { getPackedData } from "./pack";
+import Lumino from "../index";
 
 /**
  *
@@ -9,7 +9,7 @@ import { getPackedData } from "./pack";
  */
 export const signatureRecover = message => {
   const { verifyMessage } = ethers.utils;
-  // TODO: Some cases are failing due to not having appropiate pack functions
+  if (message.signature === "0x") return "0x";
   return verifyMessage(getPackedData(message), message.signature);
 };
 
@@ -25,7 +25,7 @@ const throwGenericLockedTransfer = param => {
 
 const throwChannelNotFoundOrNotOpened = partner => {
   throw new Error(
-    `The Received Locked Transfer speciefied a channel with the partner: ${partner}, which is closed or does not exist`
+    `The Received Locked Transfer specified a channel with the partner: ${partner}, which is closed or does not exist`
   );
 };
 
@@ -48,12 +48,27 @@ export const validateLockedTransfer = (message, requestBody, channels = {}) => {
     channels[message.channel_identifier] === CHANNEL_OPENED;
   if (!hasChannelAndIsOpened)
     throwChannelNotFoundOrNotOpened(message.partner_address);
-
-  // const hasSameSignature // TODO: Pending implementation
 };
 
-export const getPaymentChannelById = id => {
-  const payments = getPaymentIds();
-  if (!payments[id]) return false;
-  return payments[id];
+export const validateReceptionLT = (msg, channel = {}) => {
+  const { getAddress } = ethers.utils;
+  if (!channel.partner_address) throwGenericLockedTransfer("Partner");
+  const lcIsTarget =
+    getAddress(msg.target) === getAddress(Lumino.getConfig().address);
+  if (!lcIsTarget) throwChannelNotFoundOrNotOpened(msg.target);
+  const hasSameTokenAddress =
+    getAddress(msg.token) === getAddress(channel.token_address);
+  if (!hasSameTokenAddress) throwGenericLockedTransfer("Token Address");
+};
+
+export const isAddressFromPayment = (addFromSign, initiator, partner) => {
+  const { getAddress } = ethers.utils;
+  return (
+    addFromSign === getAddress(initiator) || addFromSign === getAddress(partner)
+  );
+};
+
+export const senderIsSigner = (addFromSign, sender) => {
+  const { getAddress } = ethers.utils;
+  return addFromSign === getAddress(sender);
 };

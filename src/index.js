@@ -10,6 +10,8 @@ const Lumino = () => {
     rskEndpoint: "",
     chainId: 0,
     hubEndpoint: "http://localhost:5001/api/v1",
+    address: "",
+    apiKey: "",
   };
 
   /**
@@ -26,6 +28,10 @@ const Lumino = () => {
       const getLuminoInternalState = () => store.getState();
       luminoConfig = { ...luminoConfig, ...configParams };
       client.defaults.baseURL = luminoConfig.hubEndpoint;
+      client.defaults.headers = {
+        "x-api-key": luminoConfig.apiKey,
+        "Content-type": "application/json",
+      };
       actions = { ...actions };
       luminoFns = {
         actions,
