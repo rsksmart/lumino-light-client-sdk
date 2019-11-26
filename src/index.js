@@ -1,23 +1,31 @@
 import Store from "./store/index";
 import Actions from "./store/actions";
+import client from "./apiRest";
 
 const Lumino = () => {
   let actions;
   let store;
   let luminoFns;
+  let luminoConfig = {
+    rskEndpoint: "",
+    chainId: 0,
+    hubEndpoint: "http://localhost:5001/api/v1",
+  };
 
   /**
    * Init Lumino
    * @param {object} luminoHandler - An object that contains a sign property, which is a function to sign TX's onChain and a offChainSign for offChain TX's
    * @param {object} storage -  Object with 2 params, getLuminoData and saveLuminoData, so the lumino state can be persisted through a storage
    */
-  const init = async (luminoHandler, storage) => {
+  const init = async (luminoHandler, storage, configParams) => {
     if (!store) {
       store = await Store.initStore(storage, luminoHandler);
       actions = Store.bindActions(Actions, store.dispatch);
       const changesHook = fn => store.subscribe(fn);
       const luminoInternalState = store.getState();
       const getLuminoInternalState = () => store.getState();
+      luminoConfig = { ...luminoConfig, ...configParams };
+      client.defaults.baseURL = luminoConfig.hubEndpoint;
       actions = { ...actions };
       luminoFns = {
         actions,
@@ -30,6 +38,11 @@ const Lumino = () => {
   };
 
   /**
+   * Returns the config of the lumino instance
+   */
+  const getConfig = () => luminoConfig;
+
+  /**
    * Returns the actual lumino instance
    */
   const get = () => {
@@ -37,9 +50,9 @@ const Lumino = () => {
     throw new Error("Lumino has not been initialized");
   };
 
-  return { init, get };
+  return { init, get, getConfig };
 };
 
-const luminoInstance = Lumino();
+const instance = Lumino();
 
-export default luminoInstance;
+export default instance;

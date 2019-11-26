@@ -2,6 +2,7 @@ import { NEW_DEPOSIT } from "./types";
 import { CHANNEL_OPENED } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
+import { createApprovalTx, createDepositTx } from "../../scripts/deposit";
 
 /**
  * Create a deposit.
@@ -13,17 +14,19 @@ import resolver from "../../utils/handlerResolver";
  */
 export const createDeposit = params => async (dispatch, getState, lh) => {
   try {
-    const signed_approval_tx = await resolver(params.unsigned_approval_tx, lh);
-    const signed_deposit_tx = await resolver(params.unsigned_deposit_tx, lh);
+    const unsignedApprovalTx = await createApprovalTx(params);
+    const unsignedDepositTx = await createDepositTx(params);
+    const signed_approval_tx = await resolver(unsignedApprovalTx, lh);
+    const signed_deposit_tx = await resolver(unsignedDepositTx, lh);
     try {
-      const { total_deposit, address, partner, token_address } = params;
+      const { amount, address, partner, tokenAddress } = params;
       const requestBody = {
-        total_deposit,
+        total_deposit: amount,
         signed_approval_tx,
         signed_deposit_tx,
         signed_close_tx: "",
       };
-      const url = `light_channels/${token_address}/${address}/${partner}`;
+      const url = `light_channels/${tokenAddress}/${address}/${partner}`;
       const res = await client.patch(url, { ...requestBody });
       dispatch({
         type: NEW_DEPOSIT,

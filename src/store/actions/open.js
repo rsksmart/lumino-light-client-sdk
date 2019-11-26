@@ -2,6 +2,7 @@ import { OPEN_CHANNEL } from "./types";
 import { CHANNEL_OPENED } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
+import { createOpenTx } from "../../scripts/open";
 
 /**
  * Open a channel.
@@ -12,13 +13,14 @@ import resolver from "../../utils/handlerResolver";
  */
 export const openChannel = params => async (dispatch, getState, lh) => {
   try {
-    const signed_tx = await resolver(params.unsigned_tx, lh);
+    const unsigned_tx = await createOpenTx(params);
+    const signed_tx = await resolver(unsigned_tx, lh);
     try {
-      const { partner_address, creator_address, token_address } = params;
+      const { partner, address, tokenAddress } = params;
       const requestBody = {
-        partner_address,
-        creator_address,
-        token_address,
+        partner_address: partner,
+        creator_address: address,
+        token_address: tokenAddress,
         signed_tx,
       };
       const res = await client.put("light_channels", { ...requestBody });
