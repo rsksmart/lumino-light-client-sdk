@@ -23,3 +23,7 @@ export const MESSAGE_POLLING_STOP = "MESSAGE_POLLING_STOP";
 export const MESSAGE_POLLING_ERROR = "MESSAGE_POLLING_ERROR";
 export const MESSAGE_POLLING = "MESSAGE_POLLING";
 export const MESSAGE_SENT = "MESSAGE_SENT";
+
+// Oboarding Actions
+
+export const STORE_API_KEY = "STORE_API_KEY";

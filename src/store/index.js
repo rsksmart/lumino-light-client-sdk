@@ -19,13 +19,17 @@ let storage = defaultStorage;
 
 const observableMiddleware = createEpicMiddleware();
 
+const setApiKeyFromStore = store => {
+  // We set the api key if teh redux store has one, if not, we fallback to the one from the developer
+  const api_key = store.getState().client.apiKey;
+  if (api_key) client.defaults.headers = { "x-api-key": api_key };
+};
+
 const initStore = async (storageImpl, luminoHandler) => {
   if (storageImpl) storage = storageImpl;
   const dataFromStorage = await storage.getLuminoData();
   let data = {};
-  if (dataFromStorage) {
-    data = dataFromStorage;
-  }
+  if (dataFromStorage) data = dataFromStorage;
   const lh = {
     sign: luminoHandler.sign,
     offChainSign: luminoHandler.offChainSign,
@@ -43,6 +47,7 @@ const initStore = async (storageImpl, luminoHandler) => {
       )
     )
   );
+  setApiKeyFromStore(store);
   observableMiddleware.run(paymentsMonitoredEpic);
   sagaMiddleware.run(rootSaga);
   store.dispatch({ type: MESSAGE_POLLING_START });
