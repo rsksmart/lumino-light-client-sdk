@@ -32,6 +32,8 @@ export const onboardingClient = address => async (dispatch, getState, lh) => {
     const { api_key } = resOnboard.data;
     client.defaults.headers = { "x-api-key": api_key };
     dispatch({ type: STORE_API_KEY, apiKey: api_key });
+    const allData = getState();
+    lh.storage.saveLuminoData(allData);
   } catch (error) {
     throw error;
   }
@@ -39,5 +41,15 @@ export const onboardingClient = address => async (dispatch, getState, lh) => {
 
 export const getApiKey = () => (dispatch, getState) => getState().client.apiKey;
 
-export const setApiKey = apiKey => dispatch =>
-  dispatch({ type: STORE_API_KEY, apiKey });
+export const setApiKey = apiKey => (dispatch, getState, lh) => {
+  dispatch({
+    type: STORE_API_KEY,
+    apiKey,
+  });
+  client.defaults.headers = {
+    "x-api-key": apiKey,
+  };
+
+  const allData = getState();
+  lh.storage.saveLuminoData(allData);
+};
