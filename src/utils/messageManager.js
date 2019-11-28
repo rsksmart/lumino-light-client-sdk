@@ -3,6 +3,7 @@ import {
   getPendingPaymentById,
   paymentExistsInAnyState,
   getChannelById,
+  getPaymentIds,
 } from "../store/functions";
 import Store from "../store";
 import {
@@ -46,7 +47,11 @@ export const messageManager = messages => {
 
       // We can't handle payments that don't exist, but we can handle reception of a new one
       if (!payment && type !== MessageType.LOCKED_TRANSFER) return null;
-
+      // We have to check if a locked transfer may be from a payment that has been processed already
+      if (type === MessageType.LOCKED_TRANSFER) {
+        const hasPaymentInPendingOrComplete = getPaymentIds()[paymentId];
+        if (hasPaymentInPendingOrComplete) return null;
+      }
       if (is_signed && type !== MessageType.LOCKED_TRANSFER) {
         const signatureAddress = signatureRecover(msg[messageSignedKey]);
         const { initiator, partner } = payment;
