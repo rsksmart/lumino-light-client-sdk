@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { CHANNEL_OPENED } from "../config/channelStates";
 import { getPackedData } from "./pack";
-import Lumino from "../index";
+import Lumino from "../Lumino/index";
 
 /**
  *
