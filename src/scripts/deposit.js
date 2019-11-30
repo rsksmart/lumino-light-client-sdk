@@ -1,6 +1,6 @@
 import { tokenAbi, tokenNetworkAbi } from "./constants";
 import Web3 from "web3";
-import Lumino from "../index";
+import Lumino from "../Lumino/index";
 
 export const createApprovalTx = async params => {
   try {
