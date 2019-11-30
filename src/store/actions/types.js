@@ -27,3 +27,4 @@ export const MESSAGE_SENT = "MESSAGE_SENT";
 // Oboarding Actions
 
 export const STORE_API_KEY = "STORE_API_KEY";
+export const STORE_ADDRESS = "STORE_ADDRESS";

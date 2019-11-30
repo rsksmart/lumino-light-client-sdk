@@ -1,0 +1,3 @@
+export const DEFAULT_SETTLE_TIMEOUT = 500;
+export const DEFAULT_GAS_LIMIT = "0x30D40";
+export const DEFAULT_GAS_PRICE = "0x5F5E100";

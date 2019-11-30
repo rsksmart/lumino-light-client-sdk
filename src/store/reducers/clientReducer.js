@@ -1,4 +1,4 @@
-import { STORE_API_KEY } from "../actions/types";
+import { STORE_API_KEY, STORE_ADDRESS } from "../actions/types";
 
 const initialState = {
   apiKey: "",
@@ -10,6 +10,9 @@ const clientReducer = (state = initialState, action) => {
     case STORE_API_KEY:
       const newApiKey = { ...state, apiKey: action.apiKey };
       return newApiKey;
+    case STORE_ADDRESS:
+      const address = { ...state, address: action.address };
+      return address;
     default:
       return state;
   }
