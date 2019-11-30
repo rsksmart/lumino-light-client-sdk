@@ -98,6 +98,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       },
       paymentId: `${dataToPut.message_id}`,
       channelId: dataToPut.message.channel_identifier,
+      token: token_address,
     });
     const allData = getState();
     return await lh.storage.saveLuminoData(allData);

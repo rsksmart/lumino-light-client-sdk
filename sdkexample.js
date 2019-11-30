@@ -13,8 +13,13 @@ const configParams = {
   rskEndpoint: "http://localhost:444",
   hubEndpoint: "http://localhost:500/api/v1",
   address: "0xc19BBF5E4F1709230EBe2552dc15C692FE8DEf83",
-  apiKey: "abxd123",
 };
+
+const getLuminoData = () => localStorage.getItem("lumino");
+const saveLuminoData = data =>
+  localStorage.setItem("lumino", JSON.stringify(data));
+
+const storageHandler = { getLuminoData, saveLuminoData };
 
 // The signature handler has to have 2 methods, sign and offChain sign.
 // The sign method has to accept a tx and sign it with a private key

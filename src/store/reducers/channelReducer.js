@@ -1,7 +1,7 @@
 import {
   OPEN_CHANNEL,
   NEW_DEPOSIT,
-  SET_CHANNEL_CLOSED
+  SET_CHANNEL_CLOSED,
 } from "../actions/types";
 
 const initialState = {};
