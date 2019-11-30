@@ -24,7 +24,7 @@ import {
 } from "./validators";
 import { CREATE_PAYMENT } from "../store/actions/types";
 import { ethers } from "ethers";
-import Lumino from "../index";
+import Lumino from "../Lumino/index";
 
 /**
  *

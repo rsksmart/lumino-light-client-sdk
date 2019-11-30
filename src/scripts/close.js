@@ -1,6 +1,6 @@
 import { tokenNetworkAbi } from "./constants";
 import Web3 from "web3";
-import Lumino from "../index";
+import Lumino from "../Lumino/index";
 
 const balance_hash =
   "0x00000000000000000000000000000000000000000000000000000000000000";
