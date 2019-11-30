@@ -1,6 +1,7 @@
 import Store from "./store/index";
 import Actions from "./store/actions";
 import client from "./apiRest";
+import callbacks from "./utils/callbacks";
 
 const Lumino = () => {
   let actions;
@@ -52,7 +53,7 @@ const Lumino = () => {
     throw new Error("Lumino has not been initialized");
   };
 
-  return { init, get, getConfig };
+  return { callbacks, init, get, getConfig };
 };
 
 const instance = Lumino();

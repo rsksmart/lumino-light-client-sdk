@@ -8,8 +8,10 @@ import {
   MESSAGE_POLLING_START,
   CREATE_PAYMENT,
   CHANGE_CHANNEL_BALANCE,
+  RECEIVED_PAYMENT,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
+import Lumino from "../../index";
 
 const getPendingPayments = state => state.payments.pending;
 
@@ -68,21 +70,28 @@ export function* workMessagePolling({ data }) {
   }
 }
 
-export function* workCreatePayment() {
-  const actualPaymentPollingTime = yield select(getPaymentPollingTime);
-  if (actualPaymentPollingTime !== 2000) {
-    yield put(setPaymentPollingTimerTo(2000));
-    yield restartPolling();
-  }
+export function* workCreatePayment(payment) {
+  // const actualPaymentPollingTime = yield select(getPaymentPollingTime);
+  // if (payment.isReceived) debugger;
+  // if (actualPaymentPollingTime !== 2000) {
+  //   yield put(setPaymentPollingTimerTo(2000));
+  //   yield restartPolling();
+  // }
 }
 
 export function* workPaymentComplete({ paymentId }) {
   const completed = yield select(getCompletedPaymentById);
+  Lumino.callbacks.trigger.triggerOnCompletedPaymentCallback(paymentId);
   yield put(changeChannelBalance(completed[paymentId]));
+}
+
+export function* workReceivedPayment({ payment: d }) {
+  Lumino.callbacks.trigger.triggerOnReceivedPaymentCallback(d.payment);
 }
 
 export default function* rootSaga() {
   yield takeEvery(MESSAGE_POLLING, workMessagePolling);
   yield takeEvery(CREATE_PAYMENT, workCreatePayment);
   yield takeEvery(SET_PAYMENT_COMPLETE, workPaymentComplete);
+  yield takeEvery(RECEIVED_PAYMENT, workReceivedPayment);
 }
