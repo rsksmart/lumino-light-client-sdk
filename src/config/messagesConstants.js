@@ -6,13 +6,13 @@ export const MessageType = {
   REVEAL_SECRET: "RevealSecret",
   LOCKED_TRANSFER: "LockedTransfer",
   SECRET: "Secret",
-  BALANCE_PROOF: "BalanceProof"
+  BALANCE_PROOF: "BalanceProof",
 };
 
 export const MessageIdentifierKey = {
   [MessageType.LOCKED_TRANSFER]: "message_identifier",
   [MessageType.DELIVERED]: "delivered_message_identifier",
-  [MessageType.PROCESSED]: "message_identifier"
+  [MessageType.PROCESSED]: "message_identifier",
 };
 
 export const MessageKeyForOrder = {
@@ -30,18 +30,19 @@ export const MessageKeyForOrder = {
   11: "message_identifier",
   12: "delivered_message_identifier",
   13: "message_identifier",
-  14: "delivered_message_identifier"
+  14: "delivered_message_identifier",
 };
 
 export const MessageNumPad = {
   [MessageType.DELIVERED]: 12,
   [MessageType.BALANCE_PROOF]: 4,
+  UPDATE_BALANCE_PROOF: 2,
   [MessageType.PROCESSED]: 0,
   [MessageType.SECRET_REQUEST]: 3,
   [MessageType.REVEAL_SECRET]: 11,
-  [MessageType.LOCKED_TRANSFER]: 7
+  [MessageType.LOCKED_TRANSFER]: 7,
 };
 
 export const MessageTypeID = {
-  BALANCE_PROOF: 1
+  BALANCE_PROOF: 1,
 };

@@ -44,9 +44,9 @@ const channel = (state = initialState, action) => {
       return channelsDeposited;
     case CHANGE_CHANNEL_BALANCE:
       const { payment } = action;
-      const { channelId, isReceived } = payment;
+      const { channelId, isReceived, secretMessageId, messages } = payment;
       // We get the BP
-      const amount = payment.messages[11].message.transferred_amount;
+      const amount = messages[secretMessageId].message.transferred_amount;
       // We parse the amounts as BN
       const bigAmount = bigNumberify(String(amount));
       const channelBalance = bigNumberify(`${state[channelId].balance}`);
