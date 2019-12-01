@@ -1,4 +1,8 @@
-import { STORE_API_KEY, CHANGE_PAYMENT_POLLING_TIME } from "../actions/types";
+import {
+  STORE_API_KEY,
+  CHANGE_PAYMENT_POLLING_TIME,
+  SET_CLIENT_ADDRESS,
+} from "../actions/types";
 
 const initialState = {
   apiKey: "",
@@ -14,6 +18,9 @@ const clientReducer = (state = initialState, action) => {
     case CHANGE_PAYMENT_POLLING_TIME:
       const newTime = { ...state, paymentPollingTime: action.time };
       return newTime;
+    case SET_CLIENT_ADDRESS:
+      const newAddress = { ...state, address: action.address };
+      return newAddress;
     default:
       return state;
   }

@@ -2,6 +2,7 @@ import Store from "../store/index";
 import Actions from "../store/actions";
 import client from "../apiRest";
 import callbacks from "../utils/callbacks";
+import { SET_CLIENT_ADDRESS } from "../store/actions/types";
 
 const Lumino = () => {
   let actions;
@@ -24,6 +25,11 @@ const Lumino = () => {
     if (!store) {
       store = await Store.initStore(storage, luminoHandler);
       actions = Store.bindActions(Actions, store.dispatch);
+      // Set address
+      store.dispatch({
+        type: SET_CLIENT_ADDRESS,
+        address: configParams.address,
+      });
       const changesHook = fn => store.subscribe(fn);
       const luminoInternalState = store.getState();
       const getLuminoInternalState = () => store.getState();
