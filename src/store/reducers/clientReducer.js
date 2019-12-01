@@ -1,4 +1,8 @@
-import { STORE_API_KEY, CHANGE_PAYMENT_POLLING_TIME, STORE_ADDRESS } from "../actions/types";
+import {
+  STORE_API_KEY,
+  CHANGE_PAYMENT_POLLING_TIME,
+  SET_CLIENT_ADDRESS,
+} from "../actions/types";
 
 const initialState = {
   apiKey: "",
@@ -11,12 +15,12 @@ const clientReducer = (state = initialState, action) => {
     case STORE_API_KEY:
       const newApiKey = { ...state, apiKey: action.apiKey };
       return newApiKey;
-    case STORE_ADDRESS:
-      const address = { ...state, address: action.address };
-      return address;
     case CHANGE_PAYMENT_POLLING_TIME:
       const newTime = { ...state, paymentPollingTime: action.time };
       return newTime;
+    case SET_CLIENT_ADDRESS:
+      const newAddress = { ...state, address: action.address };
+      return newAddress;
     default:
       return state;
   }
