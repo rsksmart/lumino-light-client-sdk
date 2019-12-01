@@ -44,10 +44,10 @@ const channel = (state = initialState, action) => {
       const { payment } = action;
       const { channelId, isReceived } = payment;
       // We get the BP
-      const BP = payment.messages[11].message;
+      const amount = payment.messages[11].message.transferred_amount;
       // We parse the amounts as BN
-      const bigAmount = bigNumberify(BP.transferred_amount);
-      const channelBalance = bigNumberify(state[channelId].balance);
+      const bigAmount = bigNumberify(amount.toString());
+      const channelBalance = bigNumberify(`${state[channelId].balance}`);
       let channelSent = bigNumberify(state[channelId].sentTokens || 0);
       let channelReceived = bigNumberify(state[channelId].receivedTokens || 0);
 
