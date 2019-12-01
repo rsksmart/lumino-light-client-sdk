@@ -18,6 +18,8 @@ const channel = (state = initialState, action) => {
         [newChannelId]: {
           ...action.channel,
           offChainBalance: "0",
+          receivedTokens: "0",
+          sentTokens: "0",
         },
       };
       return newChannels;
@@ -46,15 +48,23 @@ const channel = (state = initialState, action) => {
       // We parse the amounts as BN
       const bigAmount = bigNumberify(BP.transferred_amount);
       const channelBalance = bigNumberify(state[channelId].balance);
+      let channelSent = bigNumberify(state[channelId].sentTokens || 0);
+      let channelReceived = bigNumberify(state[channelId].receivedTokens || 0);
+
       // We calculate the accumulated, + for reception, - for sending
-      let accumulated = channelBalance.add(bigAmount);
-      if (!isReceived) accumulated = channelBalance.sub(bigAmount);
+      if (isReceived) channelReceived = bigAmount;
+      if (!isReceived) channelSent = bigAmount;
       // Return the state with the balances
       return {
         ...state,
         [channelId]: {
           ...state[channelId],
-          offChainBalance: accumulated.toString(),
+          offChainBalance: channelBalance
+            .add(channelReceived)
+            .sub(channelSent)
+            .toString(),
+          receivedTokens: channelReceived.toString(),
+          sentTokens: channelSent.toString(),
         },
       };
     default:
