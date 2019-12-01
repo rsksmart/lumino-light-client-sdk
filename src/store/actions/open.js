@@ -13,19 +13,27 @@ import { createOpenTx } from "../../scripts/open";
  */
 export const openChannel = params => async (dispatch, getState, lh) => {
   try {
-    params.address = getState().client.address;
-    const unsigned_tx = await createOpenTx(params);
+    const { partner, tokenAddress } = params;
+
+    const clientAddress = getState().client.address;
+    const tokenRes = await client.get("tokens/" + tokenAddress)
+
+    const txParams = {
+      ...params,
+      address: clientAddress,
+      tokenNetworkAddress: tokenRes.data
+    }
+
+    const unsigned_tx = await createOpenTx(txParams);
     const signed_tx = await resolver(unsigned_tx, lh);
     try {
-      const { partner, address, tokenAddress } = params;
       const requestBody = {
         partner_address: partner,
-        creator_address: address,
+        creator_address: clientAddress,
         token_address: tokenAddress,
         signed_tx,
       };
-      const tokenRes = await client.get("tokens/" + tokenAddress)
-      params.tokenNetworkAddress = tokenRes.data
+      
       const res = await client.put("light_channels", { ...requestBody });
       dispatch({
         type: OPEN_CHANNEL,
