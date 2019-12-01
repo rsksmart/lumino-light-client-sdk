@@ -7,6 +7,7 @@ import {
   MESSAGE_POLLING_STOP,
   MESSAGE_POLLING_START,
   CREATE_PAYMENT,
+  CHANGE_CHANNEL_BALANCE,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 
@@ -18,9 +19,16 @@ const stopPaymentPolling = () => ({ type: MESSAGE_POLLING_STOP });
 
 const startPaymentPolling = () => ({ type: MESSAGE_POLLING_START });
 
+const getCompletedPaymentById = state => state.payments.completed;
+
 const setPaymentPollingTimerTo = time => ({
   type: CHANGE_PAYMENT_POLLING_TIME,
   time,
+});
+
+const changeChannelBalance = payment => ({
+  type: CHANGE_CHANNEL_BALANCE,
+  payment,
 });
 
 function* restartPolling() {
@@ -68,7 +76,13 @@ export function* workCreatePayment() {
   }
 }
 
+export function* workPaymentComplete({ paymentId }) {
+  const completed = yield select(getCompletedPaymentById);
+  yield put(changeChannelBalance(completed[paymentId]));
+}
+
 export default function* rootSaga() {
   yield takeEvery(MESSAGE_POLLING, workMessagePolling);
   yield takeEvery(CREATE_PAYMENT, workCreatePayment);
+  yield takeEvery(SET_PAYMENT_COMPLETE, workPaymentComplete);
 }

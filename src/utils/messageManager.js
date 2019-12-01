@@ -301,11 +301,10 @@ const manageSecret = (msg, payment, messageSignedKey) => {
 
   const store = Store.getStore();
   store.dispatch(
-    addPendingPaymentMessage(
-      msg.light_client_payment_id,
-      msg.message_order,
-      msg[messageSignedKey]
-    )
+    addPendingPaymentMessage(msg.light_client_payment_id, msg.message_order, {
+      message: msg[messageSignedKey],
+      message_order: msg.message_order,
+    })
   );
   // Put BP for sent payments
   if (!payment.isReceived)

@@ -5,7 +5,7 @@ import { createEpicMiddleware } from "redux-observable";
 import createSagaMiddleware from "redux-saga";
 
 import rootReducer from "./reducers";
-import { paymentsMonitoredEpic } from "./epics";
+import { paymentsMonitoredEpic, changePaymentPollingEpic } from "./epics";
 import rootSaga from "./sagas";
 import { MESSAGE_POLLING_START } from "./actions/types";
 import client from "../apiRest";
