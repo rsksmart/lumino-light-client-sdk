@@ -37,6 +37,8 @@ const channel = (state = initialState, action) => {
         [depositedChannelId]: {
           ...state[depositedChannelId],
           ...action.channel,
+          balance: String(action.channel.balance),
+          total_deposit: String(action.channel.total_deposit),
         },
       };
       return channelsDeposited;
