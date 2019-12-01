@@ -22,9 +22,9 @@ import {
   validateReceptionLT,
   senderIsSigner,
 } from "./validators";
-import { CREATE_PAYMENT } from "../store/actions/types";
+import { CREATE_PAYMENT, RECEIVED_PAYMENT } from "../store/actions/types";
 import { ethers } from "ethers";
-import Lumino from "../index";
+import Lumino from "../Lumino/index";
 
 /**
  *
@@ -127,6 +127,7 @@ const manageLockedTransfer = (message, payment, messageSignedKey) => {
     channelId: msg.channel_identifier,
   };
   store.dispatch(actionObj);
+  store.dispatch({ type: RECEIVED_PAYMENT, payment: actionObj });
   store.dispatch(
     putDelivered(msg, actionObj.payment, message.message_order + 1, true)
   );
@@ -301,11 +302,10 @@ const manageSecret = (msg, payment, messageSignedKey) => {
 
   const store = Store.getStore();
   store.dispatch(
-    addPendingPaymentMessage(
-      msg.light_client_payment_id,
-      msg.message_order,
-      msg[messageSignedKey]
-    )
+    addPendingPaymentMessage(msg.light_client_payment_id, msg.message_order, {
+      message: msg[messageSignedKey],
+      message_order: msg.message_order,
+    })
   );
   // Put BP for sent payments
   if (!payment.isReceived)

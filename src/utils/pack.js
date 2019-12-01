@@ -62,9 +62,9 @@ export const getDataToSignForLockedTransfer = message => {
     hexEncode(message.initiator, 20),
     hexEncode(message.locksroot, 32),
     hexEncode(message.lock.secrethash, 32),
-    hexEncode(message.transferred_amount, 32),
-    hexEncode(message.locked_amount, 32),
-    hexEncode(message.lock.amount, 32),
+    hexEncode(message.transferred_amount, 32, true),
+    hexEncode(message.locked_amount, 32, true),
+    hexEncode(message.lock.amount, 32, true),
     hexEncode(message.fee, 32),
   ]);
 
@@ -120,7 +120,7 @@ export const getDataToSignForBalanceProof = message => {
     hexEncode(message.nonce, 8),
     hexEncode(message.channel_identifier, 32),
     hexEncode(message.transferred_amount, 32, true),
-    hexEncode(message.locked_amount, 32),
+    hexEncode(message.locked_amount, 32, true),
     hexEncode(message.locksroot, 32),
   ]);
 

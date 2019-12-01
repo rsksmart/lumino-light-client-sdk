@@ -2,8 +2,9 @@ import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { STORE_API_KEY } from "../actions/types";
 
-export const onboardingClient = address => async (dispatch, getState, lh) => {
+export const onboardingClient = () => async (dispatch, getState, lh) => {
   try {
+    const address = getState().client.address;
     const urlOnboard = "light_clients/matrix/credentials";
     const onboardReq = await client.get(urlOnboard, { params: { address } });
     // We get the data

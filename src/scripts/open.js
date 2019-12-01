@@ -1,7 +1,7 @@
 import { tokenNetworkAbi } from "./constants";
 import { DEFAULT_SETTLE_TIMEOUT, DEFAULT_GAS_LIMIT, DEFAULT_GAS_PRICE } from '../config/channelParamsConstants'
 import Web3 from "web3";
-import Lumino from "../index";
+import Lumino from "../Lumino/index";
 
 export const createOpenTx = async params => {
   try {
