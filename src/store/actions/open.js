@@ -13,6 +13,7 @@ import { createOpenTx } from "../../scripts/open";
  */
 export const openChannel = params => async (dispatch, getState, lh) => {
   try {
+    params.address = getState().client.address;
     const unsigned_tx = await createOpenTx(params);
     const signed_tx = await resolver(unsigned_tx, lh);
     try {

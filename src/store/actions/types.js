@@ -30,4 +30,5 @@ export const CHANGE_PAYMENT_POLLING_TIME = "CHANGE_PAYMENT_POLLING_TIME";
 // Oboarding Actions
 
 export const STORE_API_KEY = "STORE_API_KEY";
+
 export const SET_CLIENT_ADDRESS = "SET_CLIENT_ADDRESS";
