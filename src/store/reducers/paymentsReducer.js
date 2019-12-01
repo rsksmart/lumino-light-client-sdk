@@ -4,6 +4,7 @@ import {
   DELETE_ALL_PENDING_PAYMENTS,
   SET_PAYMENT_SECRET,
   SET_PAYMENT_COMPLETE,
+  SET_SECRET_MESSAGE_ID,
 } from "../actions/types";
 
 const initialState = {
@@ -70,6 +71,18 @@ const paymentsReducer = (state = initialState, action) => {
       return { ...state, pending: {} };
     default:
       return state;
+    case SET_SECRET_MESSAGE_ID:
+      const secretId = {
+        ...state,
+        pending: {
+          ...state.pending,
+          [action.paymentId]: {
+            ...state.pending[action.paymentId],
+            secretMessageId: action.id,
+          },
+        },
+      };
+      return secretId;
   }
 };
 

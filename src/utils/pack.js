@@ -161,7 +161,7 @@ export const getDataToSignForSecretRequest = message => {
     hexEncode(message.payment_identifier, 8, true),
     hexEncode(message.secrethash, 32),
     hexEncode(message.amount, 32, true),
-    hexEncode(message.expiration, 32, true),
+    hexEncode(message.expiration, 32),
   ]);
 };
 
