@@ -390,22 +390,20 @@ export const putNonClosingBalanceProof = (message, payment) => async (
     lc_bp_signature: signature,
     partner_balance_proof: message,
   };
-  console.log(body);
-  debugger;
-  // try {
-  //   const urlPut = "watchtower";
-  //   await client.put(urlPut, body, {
-  //     transformResponse: res => JSONbig.parse(res),
-  //   });
-  // dispatch({
-  //   type: UPDATE_NON_CLOSING_BP,
-  //   channelId: payment.channelId,
-  //   nonClosingBp: body,
-  // });
-  //   dispatch(saveLuminoData());
-  // } catch (reqEx) {
-  //   console.error("reqEx Put SecretReveal", reqEx);
-  // }
+  try {
+    const urlPut = "watchtower";
+    await client.put(urlPut, body, {
+      transformResponse: res => JSONbig.parse(res),
+    });
+    dispatch({
+      type: UPDATE_NON_CLOSING_BP,
+      channelId: payment.channelId,
+      nonClosingBp: body,
+    });
+    dispatch(saveLuminoData());
+  } catch (reqEx) {
+    console.error("reqEx Put SecretReveal", reqEx);
+  }
 };
 
 export const setPaymentSecret = (paymentId, secret) => ({
