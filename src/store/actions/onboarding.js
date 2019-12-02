@@ -47,9 +47,7 @@ export const setApiKey = apiKey => (dispatch, getState, lh) => {
     type: STORE_API_KEY,
     apiKey,
   });
-  dispatch({ 
-    type: MESSAGE_POLLING_START
-  });
+  dispatch({ type: MESSAGE_POLLING_START });
   client.defaults.headers = {
     "x-api-key": apiKey,
   };
