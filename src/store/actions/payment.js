@@ -386,7 +386,7 @@ export const putNonClosingBalanceProof = (message, payment) => async (
     secret_hash: payment.secret_hash,
     nonce: message.nonce,
     channel_id: payment.channelId,
-    token_network_address: payment.tokenNetworkAddress,
+    token_network_address: getAddress(payment.tokenNetworkAddress),
     lc_bp_signature: signature,
     partner_balance_proof: message,
   };
