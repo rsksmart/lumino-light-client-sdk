@@ -31,14 +31,21 @@ const channel = (state = initialState, action) => {
       };
       return channelsModified;
     case NEW_DEPOSIT:
-      const depositedChannelId = action.channel.channel_identifier;
+      const dChannelId = action.channel.channel_identifier;
+      const chSentTokens = bigNumberify(state[dChannelId].sentTokens || 0);
+      const chReceivedTokens = bigNumberify(
+        state[dChannelId].receivedTokens || 0
+      );
+      const chBalance = bigNumberify(String(action.channel.total_deposit));
       const channelsDeposited = {
         ...state,
-        [depositedChannelId]: {
-          ...state[depositedChannelId],
+        [dChannelId]: {
+          ...state[dChannelId],
           ...action.channel,
-          balance: String(action.channel.balance),
-          total_deposit: String(action.channel.total_deposit),
+          offChainBalance: chBalance
+            .add(chReceivedTokens)
+            .sub(chSentTokens)
+            .toString(),
         },
       };
       return channelsDeposited;
@@ -49,7 +56,7 @@ const channel = (state = initialState, action) => {
       const amount = messages[secretMessageId].message.transferred_amount;
       // We parse the amounts as BN
       const bigAmount = bigNumberify(String(amount));
-      const channelBalance = bigNumberify(`${state[channelId].balance}`);
+      const channelBalance = bigNumberify(`${state[channelId].total_deposit}`);
       let channelSent = bigNumberify(state[channelId].sentTokens || 0);
       let channelReceived = bigNumberify(state[channelId].receivedTokens || 0);
 
