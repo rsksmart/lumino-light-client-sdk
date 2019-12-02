@@ -51,7 +51,8 @@ const initStore = async (storageImpl, luminoHandler) => {
   setApiKeyFromStore(store);
   observableMiddleware.run(paymentsMonitoredEpic);
   sagaMiddleware.run(rootSaga);
-  store.dispatch({ type: MESSAGE_POLLING_START });
+  if(store.getState().client.apiKey) 
+    store.dispatch({ type: MESSAGE_POLLING_START });
   return store;
 };
 
