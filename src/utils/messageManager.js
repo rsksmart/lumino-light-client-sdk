@@ -2,7 +2,7 @@ import { MessageType, MessageKeyForOrder } from "../config/messagesConstants";
 import {
   getPendingPaymentById,
   paymentExistsInAnyState,
-  getChannelById,
+  getChannelByIdAndToken,
   getPaymentIds,
 } from "../store/functions";
 import Store from "../store";
@@ -100,7 +100,10 @@ const manageLockedTransfer = (message, payment, messageSignedKey) => {
     return null;
   if (paymentExistsInAnyState(msg.message_identifier)) return null;
   // If all ok validate the rest of params
-  const channel = getChannelById(msg.channel_identifier);
+  const channel = getChannelByIdAndToken(
+    msg.channel_identifier,
+    getAddress(msg.token)
+  );
   validateReceptionLT(msg, channel);
   const store = Store.getStore();
   // This function add the message to the store in its proper order
@@ -127,9 +130,11 @@ const manageLockedTransfer = (message, payment, messageSignedKey) => {
       channelId: msg.channel_identifier,
       tokenNetworkAddress: msg.token_network_address,
       chainId: msg.chain_id,
+      token: getAddress(msg.token),
     },
     paymentId: `${msg.payment_identifier}`,
     channelId: msg.channel_identifier,
+    token: getAddress(msg.token),
   };
   store.dispatch(actionObj);
   store.dispatch({ type: RECEIVED_PAYMENT, payment: actionObj });

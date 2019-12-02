@@ -53,19 +53,19 @@ export function* workMessagePolling({ data }) {
       if (Object.keys(p.messages).length === 14) completed.push(p.paymentId);
     });
     yield all(completed.map(paymentId => setCompleted(paymentId)));
-    const pendingAfterCompletion = yield select(getPendingPayments);
-    const actualPaymentPollingTime = yield select(getPaymentPollingTime);
-    if (!Object.keys(pendingAfterCompletion).length) {
-      if (actualPaymentPollingTime !== 10000) {
-        yield put(setPaymentPollingTimerTo(10000));
-        yield restartPolling();
-      }
-    } else {
-      if (actualPaymentPollingTime !== 2000) {
-        yield put(setPaymentPollingTimerTo(2000));
-        yield restartPolling();
-      }
-    }
+    // const pendingAfterCompletion = yield select(getPendingPayments);
+    // const actualPaymentPollingTime = yield select(getPaymentPollingTime);
+    // if (!Object.keys(pendingAfterCompletion).length) {
+    //   if (actualPaymentPollingTime !== 10000) {
+    //     yield put(setPaymentPollingTimerTo(10000));
+    //     yield restartPolling();
+    //   }
+    // } else {
+    //   if (actualPaymentPollingTime !== 2000) {
+    //     yield put(setPaymentPollingTimerTo(2000));
+    //     yield restartPolling();
+    //   }
+    // }
     yield put(saveLuminoData());
   } catch (error) {
     console.error(error);

@@ -44,8 +44,10 @@ export const validateLockedTransfer = (message, requestBody, channels = {}) => {
   const hasSameTokenAddress =
     getAddress(message.token) === requestBody.token_address;
   if (!hasSameTokenAddress) throwGenericLockedTransfer("Token Address");
-  const hasChannelAndIsOpened =
-    channels[message.channel_identifier] === CHANNEL_OPENED;
+  const channelId = `${message.channel_identifier}-${getAddress(
+    message.token
+  )}`;
+  const hasChannelAndIsOpened = channels[channelId] === CHANNEL_OPENED;
   if (!hasChannelAndIsOpened)
     throwChannelNotFoundOrNotOpened(message.partner_address);
 };
