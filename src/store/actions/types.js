@@ -18,6 +18,7 @@ export const SET_PAYMENT_SECRET = "SET_PAYMENT_SECRET";
 export const SET_PAYMENT_COMPLETE = "SET_PAYMENT_COMPLETE";
 export const RECEIVED_PAYMENT = "RECEIVED_PAYMENT";
 export const SET_SECRET_MESSAGE_ID = "SET_SECRET_MESSAGE_ID";
+export const UPDATE_NON_CLOSING_BP = "UPDATE_NON_CLOSING_BP";
 
 // Polling actions
 
@@ -28,8 +29,7 @@ export const MESSAGE_POLLING = "MESSAGE_POLLING";
 export const MESSAGE_SENT = "MESSAGE_SENT";
 export const CHANGE_PAYMENT_POLLING_TIME = "CHANGE_PAYMENT_POLLING_TIME";
 
-// Oboarding Actions
+// Onboarding Actions
 
 export const STORE_API_KEY = "STORE_API_KEY";
-
 export const SET_CLIENT_ADDRESS = "SET_CLIENT_ADDRESS";

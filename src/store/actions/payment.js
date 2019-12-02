@@ -5,6 +5,7 @@ import {
   MESSAGE_POLLING_START,
   MESSAGE_POLLING_STOP,
   SET_PAYMENT_SECRET,
+  UPDATE_NON_CLOSING_BP,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -16,6 +17,7 @@ import {
   getDataToSignForBalanceProof,
   getDataToSignForProcessed,
   getDataToSignForSecretRequest,
+  getDataToSignForNonClosingBalanceProof,
 } from "../../utils/pack";
 import { validateLockedTransfer } from "../../utils/validators";
 import { getChannelsState } from "../functions";
@@ -363,6 +365,47 @@ export const putBalanceProof = (message, payment) => async (
   } catch (reqEx) {
     console.error("reqEx Put SecretReveal", reqEx);
   }
+};
+
+export const putNonClosingBalanceProof = (message, payment) => async (
+  dispatch,
+  getState,
+  lh
+) => {
+  const { getAddress } = ethers.utils;
+  const dataToSign = getDataToSignForNonClosingBalanceProof(message);
+  let signature = "";
+  try {
+    signature = await resolver(dataToSign, lh, true);
+  } catch (resolverError) {
+    throw resolverError;
+  }
+  const body = {
+    sender: getAddress(payment.partner),
+    light_client_payment_id: payment.paymentId,
+    secret_hash: payment.secret_hash,
+    nonce: message.nonce,
+    channel_id: payment.channelId,
+    token_network_address: payment.tokenNetworkAddress,
+    lc_bp_signature: signature,
+    partner_balance_proof: message,
+  };
+  console.log(body);
+  debugger;
+  // try {
+  //   const urlPut = "watchtower";
+  //   await client.put(urlPut, body, {
+  //     transformResponse: res => JSONbig.parse(res),
+  //   });
+  // dispatch({
+  //   type: UPDATE_NON_CLOSING_BP,
+  //   channelId: payment.channelId,
+  //   nonClosingBp: body,
+  // });
+  //   dispatch(saveLuminoData());
+  // } catch (reqEx) {
+  //   console.error("reqEx Put SecretReveal", reqEx);
+  // }
 };
 
 export const setPaymentSecret = (paymentId, secret) => ({

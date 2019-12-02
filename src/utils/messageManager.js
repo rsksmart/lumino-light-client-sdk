@@ -14,6 +14,7 @@ import {
   putProcessed,
   putSecretRequest,
   setPaymentSecret,
+  putNonClosingBalanceProof,
 } from "../store/actions/payment";
 import { saveLuminoData } from "../store/actions/storage";
 import {
@@ -320,6 +321,7 @@ const manageSecret = (msg, payment, messageSignedKey) => {
   // Put BP for sent payments
   if (!payment.isReceived)
     return store.dispatch(putBalanceProof(msg[messageSignedKey], payment));
+  store.dispatch(putNonClosingBalanceProof(msg[messageSignedKey], payment));
   store.dispatch(putDelivered(msg[messageSignedKey], payment, 12, true));
   return store.dispatch(putProcessed(msg[messageSignedKey], payment, 13));
 };

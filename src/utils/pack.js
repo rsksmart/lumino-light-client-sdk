@@ -108,9 +108,12 @@ export const getDataToSignForProcessed = message => {
 };
 
 // INFO: This is also used for secret, the BP is a response a to a "Secret" message
-export const getDataToSignForBalanceProof = message => {
+export const getDataToSignForBalanceProof = (
+  message,
+  type = MessageType.BALANCE_PROOF
+) => {
   const messageHashUnhashed = ethers.utils.concat([
-    hexEncode(MessageNumPad[MessageType.BALANCE_PROOF], 1),
+    hexEncode(MessageNumPad[MessageType.BALANCE_PROOF], 1), // Always 4
     hexEncode(0, 3),
     hexEncode(message.chain_id, 32),
     hexEncode(message.message_identifier, 8, true),
@@ -132,15 +135,23 @@ export const getDataToSignForBalanceProof = message => {
     message.locksroot
   );
 
+  const BPType = type === MessageType.BALANCE_PROOF ? 1 : 2;
+
   const dataToSign = ethers.utils.concat([
     hexEncode(message.token_network_address, 20),
     hexEncode(message.chain_id, 32),
-    hexEncode(1, 32), // Balance Proof
+    hexEncode(BPType, 32), // Balance Proof or Update Balance Proof
     hexEncode(message.channel_identifier, 32),
     hexEncode(balanceHash, 32), // balance hash
     hexEncode(message.nonce, 32),
     hexEncode(messageHash, 32), // additional hash
   ]);
+  return dataToSign;
+};
+
+export const getDataToSignForNonClosingBalanceProof = message => {
+  const bpData = getDataToSignForBalanceProof(message, "UPDATE_BALANCE_PROOF");
+  const dataToSign = ethers.utils.concat([bpData, message.signature]);
   return dataToSign;
 };
 
