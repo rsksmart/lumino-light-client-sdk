@@ -11,9 +11,11 @@ import {
   RECEIVED_PAYMENT,
   OPEN_CHANNEL,
   NEW_DEPOSIT,
+  SET_LATEST_INTERNAL_MSG_ID,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
+import { findMaxMsgInternalId } from "../../utils/functions";
 
 const getPendingPayments = state => state.payments.pending;
 
@@ -53,6 +55,8 @@ export function* workMessagePolling({ data }) {
       if (Object.keys(p.messages).length === 14) completed.push(p.paymentId);
     });
     yield all(completed.map(paymentId => setCompleted(paymentId)));
+    const maxIdentifier = findMaxMsgInternalId(data);
+    yield put({ type: SET_LATEST_INTERNAL_MSG_ID, id: maxIdentifier });
     // const pendingAfterCompletion = yield select(getPendingPayments);
     // const actualPaymentPollingTime = yield select(getPaymentPollingTime);
     // if (!Object.keys(pendingAfterCompletion).length) {

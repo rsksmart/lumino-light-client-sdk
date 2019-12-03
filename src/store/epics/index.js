@@ -16,16 +16,16 @@ import {
   MESSAGE_POLLING_ERROR,
 } from "../actions/types";
 
-const paymentsMonitoredEpic = (action$, { value }) => {
+const paymentsMonitoredEpic = action$ => {
   const stopPolling$ = action$.pipe(ofType(MESSAGE_POLLING_STOP));
   // TODO: Change conditionally the timer
   return action$.pipe(
     ofType(MESSAGE_POLLING_START),
-    switchMap(({ paymentList }) =>
+    switchMap(() =>
       timer(1000, 3000).pipe(
         takeUntil(stopPolling$),
         exhaustMap(() =>
-          getTransactionInfo(paymentList).pipe(
+          getTransactionInfo().pipe(
             map(data => ({
               type: MESSAGE_POLLING,
               data,

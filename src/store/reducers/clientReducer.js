@@ -2,6 +2,7 @@ import {
   STORE_API_KEY,
   CHANGE_PAYMENT_POLLING_TIME,
   SET_CLIENT_ADDRESS,
+  SET_LATEST_INTERNAL_MSG_ID,
 } from "../actions/types";
 
 const initialState = {
@@ -21,6 +22,9 @@ const clientReducer = (state = initialState, action) => {
     case SET_CLIENT_ADDRESS:
       const newAddress = { ...state, address: action.address };
       return newAddress;
+    case SET_LATEST_INTERNAL_MSG_ID:
+      const newMaxId = { ...state, internal_msg_id: action.id };
+      return newMaxId;
     default:
       return state;
   }
