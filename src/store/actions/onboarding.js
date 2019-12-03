@@ -1,6 +1,6 @@
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
-import { STORE_API_KEY } from "../actions/types";
+import { STORE_API_KEY, MESSAGE_POLLING_START } from "../actions/types";
 
 export const onboardingClient = () => async (dispatch, getState, lh) => {
   try {
@@ -49,6 +49,7 @@ export const setApiKey = apiKey => (dispatch, getState, lh) => {
     type: STORE_API_KEY,
     apiKey,
   });
+  dispatch({ type: MESSAGE_POLLING_START });
   client.defaults.headers = {
     "x-api-key": apiKey,
   };

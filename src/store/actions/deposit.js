@@ -15,19 +15,25 @@ import { createApprovalTx, createDepositTx } from "../../scripts/deposit";
  */
 export const createDeposit = params => async (dispatch, getState, lh) => {
   try {
-    const unsignedApprovalTx = await createApprovalTx(params);
-    const unsignedDepositTx = await createDepositTx(params);
+    const clientAddress = getState().client.address;
+
+    const txParams = {
+      ...params,
+      address: clientAddress
+    }
+    const unsignedApprovalTx = await createApprovalTx(txParams);
+    const unsignedDepositTx = await createDepositTx(txParams);
     const signed_approval_tx = await resolver(unsignedApprovalTx, lh);
     const signed_deposit_tx = await resolver(unsignedDepositTx, lh);
     try {
-      const { amount, address, partner, tokenAddress } = params;
+      const { amount, partner, tokenAddress } = params;
       const requestBody = {
         total_deposit: amount,
         signed_approval_tx,
         signed_deposit_tx,
         signed_close_tx: "",
       };
-      const url = `light_channels/${tokenAddress}/${address}/${partner}`;
+      const url = `light_channels/${tokenAddress}/${clientAddress}/${partner}`;
       const res = await client.patch(
         url,
         { ...requestBody },
