@@ -1,6 +1,6 @@
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
-import { STORE_API_KEY } from "../actions/types";
+import { STORE_API_KEY, MESSAGE_POLLING_START } from "../actions/types";
 
 export const onboardingClient = () => async (dispatch, getState, lh) => {
   try {
@@ -31,10 +31,12 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
     const resOnboard = await client.post(urlPostOnboard, body);
     // We extract the api key, set it as a header and store it on redux
     const { api_key } = resOnboard.data;
-    client.defaults.headers = { "x-api-key": api_key };
-    dispatch({ type: STORE_API_KEY, apiKey: api_key });
-    const allData = getState();
-    lh.storage.saveLuminoData(allData);
+    if (api_key) {
+      client.defaults.headers = { "x-api-key": api_key };
+      dispatch({ type: STORE_API_KEY, apiKey: api_key });
+      const allData = getState();
+      lh.storage.saveLuminoData(allData);
+    }
   } catch (error) {
     throw error;
   }
@@ -47,6 +49,7 @@ export const setApiKey = apiKey => (dispatch, getState, lh) => {
     type: STORE_API_KEY,
     apiKey,
   });
+  dispatch({ type: MESSAGE_POLLING_START });
   client.defaults.headers = {
     "x-api-key": apiKey,
   };

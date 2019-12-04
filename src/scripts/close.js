@@ -1,6 +1,10 @@
 import { tokenNetworkAbi } from "./constants";
 import Web3 from "web3";
 import Lumino from "../Lumino/index";
+import {
+  DEFAULT_GAS_PRICE,
+  DEFAULT_GAS_LIMIT,
+} from "../config/channelParamsConstants";
 
 const balance_hash =
   "0x00000000000000000000000000000000000000000000000000000000000000";
@@ -22,8 +26,8 @@ export const createCloseTx = async params => {
     const txCount = await web3.eth.getTransactionCount(params.address);
     const close = {
       nonce: web3.utils.toHex(txCount),
-      gasPrice: params.gasPrice,
-      gasLimit: params.gasLimit,
+      gasPrice: params.gasPrice || DEFAULT_GAS_PRICE,
+      gasLimit: params.gasLimit || DEFAULT_GAS_LIMIT,
       to: params.tokenNetworkAddress,
       value: "0x00",
       data: tokenNetwork.methods
