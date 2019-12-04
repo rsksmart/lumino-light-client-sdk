@@ -104,7 +104,8 @@ const manageLockedTransfer = (message, payment, messageSignedKey) => {
     msg.channel_identifier,
     getAddress(msg.token)
   );
-  validateReceptionLT(msg, channel);
+  const isValidLt = validateReceptionLT(msg, channel);
+  if (isValidLt !== true) return console.warn(isValidLt);
   const store = Store.getStore();
   // This function add the message to the store in its proper order
   const actionObj = {

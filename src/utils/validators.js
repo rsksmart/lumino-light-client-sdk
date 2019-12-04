@@ -17,17 +17,11 @@ const getBN = number => {
   return ethers.utils.bigNumberify(`${number}`)._hex;
 };
 
-const throwGenericLockedTransfer = param => {
-  throw new Error(
-    `The Received Locked Transfer ${param} does not match the requested payment`
-  );
-};
+const throwGenericLockedTransfer = param =>
+  `The Received Locked Transfer ${param} does not match the requested payment`;
 
-const throwChannelNotFoundOrNotOpened = partner => {
-  throw new Error(
-    `The Received Locked Transfer specified a channel with the partner: ${partner}, which is closed or does not exist`
-  );
-};
+const throwChannelNotFoundOrNotOpened = partner =>
+  `The Received Locked Transfer specified a channel with the partner: ${partner}, which is closed or does not exist`;
 
 /**
  * Validates that the parameters received in the LT from the hub are reasonable within what we provided to it.
@@ -54,13 +48,14 @@ export const validateLockedTransfer = (message, requestBody, channels = {}) => {
 
 export const validateReceptionLT = (msg, channel = {}) => {
   const { getAddress } = ethers.utils;
-  if (!channel.partner_address) throwGenericLockedTransfer("Partner");
+  if (!channel.partner_address) return throwGenericLockedTransfer("Partner");
   const lcIsTarget =
     getAddress(msg.target) === getAddress(Lumino.getConfig().address);
-  if (!lcIsTarget) throwChannelNotFoundOrNotOpened(msg.target);
+  if (!lcIsTarget) return throwChannelNotFoundOrNotOpened(msg.target);
   const hasSameTokenAddress =
     getAddress(msg.token) === getAddress(channel.token_address);
-  if (!hasSameTokenAddress) throwGenericLockedTransfer("Token Address");
+  if (!hasSameTokenAddress) return throwGenericLockedTransfer("Token Address");
+  return true;
 };
 
 export const isAddressFromPayment = (addFromSign, initiator, partner) => {
