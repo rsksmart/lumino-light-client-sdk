@@ -4,6 +4,7 @@ import * as depositActions from "./deposit";
 import * as closeActions from "./close";
 import * as paymentActions from "./payment";
 import * as onboardingActions from "./onboarding";
+import * as notifierActions from "./notifier";
 
 const Actions = {
   ...openActions,
@@ -12,6 +13,7 @@ const Actions = {
   ...closeActions,
   ...paymentActions,
   ...onboardingActions,
+  ...notifierActions,
 };
 
 export default Actions;

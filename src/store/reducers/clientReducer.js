@@ -3,6 +3,8 @@ import {
   CHANGE_PAYMENT_POLLING_TIME,
   SET_CLIENT_ADDRESS,
   SET_LATEST_INTERNAL_MSG_ID,
+  SET_NOTIFIER_API_KEY,
+  SET_LAST_NOTIFICATION_ID,
 } from "../actions/types";
 
 const initialState = {
@@ -25,6 +27,16 @@ const clientReducer = (state = initialState, action) => {
     case SET_LATEST_INTERNAL_MSG_ID:
       const newMaxId = { ...state, internal_msg_id: action.id };
       return newMaxId;
+    case SET_NOTIFIER_API_KEY:
+      const { notifierApiKey } = action;
+      const newNotifierApiKey = {
+        ...state,
+        notifierApiKey,
+      };
+      return newNotifierApiKey;
+    case SET_LAST_NOTIFICATION_ID:
+      const lastId = { ...state, lastNotificationId: action.id };
+      return lastId;
     default:
       return state;
   }
