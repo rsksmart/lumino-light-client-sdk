@@ -38,6 +38,7 @@ const Lumino = () => {
       const getLuminoInternalState = () => store.getState();
       luminoConfig = { ...luminoConfig, ...configParams };
       client.defaults.baseURL = luminoConfig.hubEndpoint;
+      notifier.defaults.baseURL = luminoConfig.notifierEndPoint;
       actions = { ...actions };
       luminoFns = {
         actions,
