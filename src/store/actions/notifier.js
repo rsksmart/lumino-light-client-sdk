@@ -11,6 +11,9 @@ import {
 import { saveLuminoData } from "./storage";
 import { findMaxBlockId } from "../../utils/functions";
 import { getChannelByIdAndToken } from "../functions";
+import { getTokenAddressByTokenNetwork } from "../functions/tokens";
+import { requestTokenAddressFromTokenNetwork } from "./tokens";
+import Store from "..";
 
 export const notifierRegistration = () => async (dispatch, getState, lh) => {
   try {
@@ -87,11 +90,11 @@ export const getNotifications = () => async (dispatch, getState, lh) => {
     });
     const { data } = res.data;
     if (data && data.length) {
-      const processed = data.map(e => manageNotificationData(e));
+      const actions = data.map(async e => manageNotificationData(e, dispatch));
       const lastId = findMaxBlockId(data);
       dispatch({ type: SET_LAST_NOTIFICATION_ID, id: lastId });
-      processed.forEach(a => {
-        if (a) dispatch(a);
+      actions.forEach(e => {
+        if (e) dispatch(e);
       });
     }
   } catch (error) {
@@ -122,40 +125,54 @@ export const unsubscribeFromTopic = idTopic => async (
   }
 };
 
-const manageNotificationData = notificationData => {
+export const manageNotificationData = async notificationData => {
   const notification = JSON.parse(notificationData.data);
   const { eventName } = notification;
   switch (eventName) {
     case events.CHANNEL_OPENED:
-      return createNewChannel(notification);
+      const newChannel = await createNewChannel(notification);
+      return newChannel;
     default:
       return null;
   }
 };
 
-const createNewChannel = notification => {
+const createNewChannel = async notification => {
   const { getAddress } = ethers.utils;
   const { values, contractAddress } = notification;
+  const token_network_identifier = getAddress(contractAddress);
+  let token_address = getTokenAddressByTokenNetwork(token_network_identifier);
+  const channel_identifier = values[0].value;
+  // If the token is not in the map, we will request it
+  let existingChannel = getChannelByIdAndToken(
+    channel_identifier,
+    token_address
+  );
+  if (existingChannel) return null;
+  if (!token_address) {
+    token_address = await Store.getStore().dispatch(
+      requestTokenAddressFromTokenNetwork(token_network_identifier)
+    );
+  }
   const newChannel = {
-    channel_identifier: values[0].value,
+    channel_identifier,
     partner_address: getAddress(values[1].value),
     settle_timeout: values[3].value,
-    token_address: getAddress("0xbdd48360077a542b57f2c67b8aa3AB86AfD30167"),
+    token_address,
     balance: "0",
     state: "opened",
     total_deposit: "0",
     reveal_timeout: "50",
-    token_network_identifier: getAddress(contractAddress),
+    token_network_identifier,
   };
   // Do not return a new channel for one that is already opened
-  if (
-    getChannelByIdAndToken(
-      newChannel.channel_identifier,
-      newChannel.token_address
-    )
-  )
-    return null;
-  return { type: OPEN_CHANNEL, channel: newChannel };
+
+  existingChannel = getChannelByIdAndToken(channel_identifier, token_address);
+  if (existingChannel || !token_address) return null;
+  return {
+    type: OPEN_CHANNEL,
+    channel: newChannel,
+  };
 };
 
 const events = {
