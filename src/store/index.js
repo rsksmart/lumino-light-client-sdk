@@ -58,9 +58,12 @@ const initStore = async (storageImpl, luminoHandler) => {
     store.dispatch({
       type: MESSAGE_POLLING_START,
     });
-  store.dispatch({
-    type: START_NOTIFICATIONS_POLLING,
-  });
+  const { notifierApiKey } = store.getState().client;
+  const topics = Object.keys(store.getState().notifier).join(",");
+  if (notifierApiKey && topics)
+    store.dispatch({
+      type: START_NOTIFICATIONS_POLLING,
+    });
 
   return store;
 };

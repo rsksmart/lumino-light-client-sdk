@@ -7,6 +7,7 @@ import {
   UNSUBSCRIBE_FROM_TOPIC,
   SET_LAST_NOTIFICATION_ID,
   OPEN_CHANNEL,
+  START_NOTIFICATIONS_POLLING,
 } from "./types";
 import { saveLuminoData } from "./storage";
 import { findMaxBlockId } from "../../utils/functions";
@@ -55,10 +56,12 @@ export const subscribeToOpenChannel = () => async (dispatch, getState, lh) => {
       },
     });
     const topics = processSubscribeToOpen(res);
-    if (topics.length)
+    if (topics.length) {
       topics.forEach(({ topicId }) =>
         dispatch({ type: SUBSCRIBED_TO_NEW_TOPIC, topicId })
       );
+      dispatch({ type: START_NOTIFICATIONS_POLLING });
+    }
   } catch (error) {
     console.error(error);
     const topics = processSubscribeToOpen(error.response);
@@ -77,8 +80,8 @@ const processSubscribeToOpen = res => {
 export const getNotifications = () => async (dispatch, getState, lh) => {
   try {
     const { notifierApiKey } = getState().client;
-    const url = "getNotifications";
     const topics = Object.keys(getState().notifier).join(",");
+    const url = "getNotifications";
     const res = await notifier.get(url, {
       headers: {
         apiKey: notifierApiKey,

@@ -3,6 +3,8 @@ import Actions from "../store/actions";
 import client from "../apiRest";
 import callbacks from "../utils/callbacks";
 import { SET_CLIENT_ADDRESS } from "../store/actions/types";
+import notifier from "../notifierRest";
+import { NOTIFIER_BASE_URL } from "../config/notifierConstants";
 
 const Lumino = () => {
   let actions;
@@ -14,6 +16,7 @@ const Lumino = () => {
     hubEndpoint: "http://localhost:5001/api/v1",
     address: "",
     apiKey: "",
+    notifierEndPoint: NOTIFIER_BASE_URL,
   };
 
   /**
@@ -34,8 +37,8 @@ const Lumino = () => {
       const luminoInternalState = store.getState();
       const getLuminoInternalState = () => store.getState();
       luminoConfig = { ...luminoConfig, ...configParams };
-      client.defaults.baseURL = luminoConfig.hubEndpoint;
-      actions = { ...actions };
+      client.defaults.baseURL = luminoConfig.notifierEndPoint;
+      notifier.defaults.baseURL = luminoConfig.actions = { ...actions };
       luminoFns = {
         actions,
         changesHook,
