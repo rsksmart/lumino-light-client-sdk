@@ -34,6 +34,7 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
     if (api_key) {
       client.defaults.headers = { "x-api-key": api_key };
       dispatch({ type: STORE_API_KEY, apiKey: api_key });
+      dispatch({ type: MESSAGE_POLLING_START });
       const allData = getState();
       lh.storage.saveLuminoData(allData);
     }

@@ -36,7 +36,8 @@ import { saveLuminoData } from "./storage";
  */
 export const createPayment = params => async (dispatch, getState, lh) => {
   try {
-    const { address, partner, token_address, amount } = params;
+    const { partner, token_address, amount } = params;
+    const { address } = getState().client;
     const hashes = generateHashes();
     const { secrethash, hash: secret } = hashes;
     const requestBody = {

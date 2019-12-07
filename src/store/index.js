@@ -5,9 +5,12 @@ import { createEpicMiddleware } from "redux-observable";
 import createSagaMiddleware from "redux-saga";
 
 import rootReducer from "./reducers";
-import { paymentsMonitoredEpic, changePaymentPollingEpic } from "./epics";
+import epics from "./epics";
 import rootSaga from "./sagas";
-import { MESSAGE_POLLING_START } from "./actions/types";
+import {
+  MESSAGE_POLLING_START,
+  START_NOTIFICATIONS_POLLING,
+} from "./actions/types";
 import client from "../apiRest";
 
 let store = null;
@@ -49,10 +52,19 @@ const initStore = async (storageImpl, luminoHandler) => {
     )
   );
   setApiKeyFromStore(store);
-  observableMiddleware.run(paymentsMonitoredEpic);
+  observableMiddleware.run(epics);
   sagaMiddleware.run(rootSaga);
-  if(store.getState().client.apiKey) 
-    store.dispatch({ type: MESSAGE_POLLING_START });
+  if (store.getState().client.apiKey)
+    store.dispatch({
+      type: MESSAGE_POLLING_START,
+    });
+  const { notifierApiKey } = store.getState().client;
+  const topics = Object.keys(store.getState().notifier).join(",");
+  if (notifierApiKey && topics)
+    store.dispatch({
+      type: START_NOTIFICATIONS_POLLING,
+    });
+
   return store;
 };
 

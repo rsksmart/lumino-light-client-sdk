@@ -12,10 +12,13 @@ import {
   OPEN_CHANNEL,
   NEW_DEPOSIT,
   SET_LATEST_INTERNAL_MSG_ID,
+  NOTIFICATIONS_POLLING,
+  SET_LAST_NOTIFICATION_ID,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
-import { findMaxMsgInternalId } from "../../utils/functions";
+import { findMaxMsgInternalId, findMaxBlockId } from "../../utils/functions";
+import { manageNotificationData } from "../actions/notifier";
 
 const getPendingPayments = state => state.payments.pending;
 
@@ -40,6 +43,10 @@ const changeChannelBalance = payment => ({
 function* restartPolling() {
   yield put(stopPaymentPolling());
   yield put(startPaymentPolling());
+}
+
+function* localDispatch(data) {
+  yield put(data);
 }
 
 function* setCompleted(paymentId) {
@@ -76,6 +83,18 @@ export function* workMessagePolling({ data }) {
   }
 }
 
+export function* workNotificationPolling({ data }) {
+  if (data && data.length) {
+    const actionsP = data.map(async e => manageNotificationData(e));
+    const actions = yield Promise.all(actionsP);
+    const lastId = findMaxBlockId(data);
+    yield put({ type: SET_LAST_NOTIFICATION_ID, id: lastId });
+    for (let i = 0; i < actions.length; i++) {
+      if (actions[i]) yield put(actions[i]);
+    }
+  }
+}
+
 export function* workCreatePayment() {
   // const actualPaymentPollingTime = yield select(getPaymentPollingTime);
   // if (actualPaymentPollingTime !== 2000) {
@@ -109,4 +128,5 @@ export default function* rootSaga() {
   yield takeEvery(RECEIVED_PAYMENT, workReceivedPayment);
   yield takeEvery(OPEN_CHANNEL, workOpenChannel);
   yield takeEvery(NEW_DEPOSIT, workDepositChannel);
+  yield takeEvery(NOTIFICATIONS_POLLING, workNotificationPolling);
 }

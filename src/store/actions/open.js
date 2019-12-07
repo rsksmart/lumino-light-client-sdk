@@ -3,6 +3,7 @@ import { CHANNEL_OPENED } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { createOpenTx } from "../../scripts/open";
+import { getTokenNetworkByTokenAddress } from "../functions/tokens";
 
 /**
  * Open a channel.
@@ -16,13 +17,17 @@ export const openChannel = params => async (dispatch, getState, lh) => {
     const { partner, tokenAddress } = params;
 
     const clientAddress = getState().client.address;
-    const tokenRes = await client.get("tokens/" + tokenAddress)
+    let tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);
+    if (!tokenNetwork) {
+      await getTokenNetworkByTokenAddress(tokenAddress);
+      tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);
+    }
 
     const txParams = {
       ...params,
       address: clientAddress,
-      tokenNetworkAddress: tokenRes.data
-    }
+      tokenNetworkAddress: tokenNetwork,
+    };
 
     const unsigned_tx = await createOpenTx(txParams);
     const signed_tx = await resolver(unsigned_tx, lh);
@@ -33,7 +38,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
         token_address: tokenAddress,
         signed_tx,
       };
-      
+
       const res = await client.put("light_channels", { ...requestBody });
       dispatch({
         type: OPEN_CHANNEL,
