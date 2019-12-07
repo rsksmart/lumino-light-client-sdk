@@ -106,11 +106,13 @@ export function* workCreatePayment() {
 export function* workPaymentComplete({ paymentId }) {
   const completed = yield select(getCompletedPaymentById);
   yield put(changeChannelBalance(completed[paymentId]));
-  Lumino.callbacks.trigger.triggerOnCompletedPaymentCallback(paymentId);
+  Lumino.callbacks.trigger.triggerOnCompletedPaymentCallback(
+    completed[paymentId]
+  );
 }
 
 export function* workReceivedPayment({ payment: d }) {
-  Lumino.callbacks.trigger.triggerOnReceivedPaymentCallback(d.payment);
+  Lumino.callbacks.trigger.triggerOnReceivedPaymentCallback(d);
 }
 
 export function* workOpenChannel({ channel }) {
