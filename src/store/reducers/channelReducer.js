@@ -3,6 +3,7 @@ import {
   NEW_DEPOSIT,
   SET_CHANNEL_CLOSED,
   CHANGE_CHANNEL_BALANCE,
+  UPDATE_NON_CLOSING_BP,
 } from "../actions/types";
 import { ethers } from "ethers";
 
@@ -74,6 +75,15 @@ const channel = (state = initialState, action) => {
             .toString(),
           receivedTokens: channelReceived.toString(),
           sentTokens: channelSent.toString(),
+        },
+      };
+    case UPDATE_NON_CLOSING_BP:
+      const chBp = action.channelId;
+      return {
+        ...state,
+        [chBp]: {
+          ...state[chBp],
+          nonClosingBp: action.nonClosingBp,
         },
       };
     default:
