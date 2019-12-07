@@ -17,6 +17,7 @@ export const requestTokenNetworkFromTokenAddress = tokenAddress => async dispatc
     const url = `tokens/${tokenAddress}`;
     const res = await client.get(url);
     dispatch({ type: ADD_NEW_TOKEN, tokenNetwork: res.data, tokenAddress });
+    return res.data;
   } catch (error) {
     console.error(error);
   }
