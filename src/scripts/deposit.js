@@ -1,6 +1,10 @@
 import { tokenAbi, tokenNetworkAbi } from "./constants";
 import Web3 from "web3";
 import Lumino from "../Lumino/index";
+import {
+  DEFAULT_GAS_PRICE,
+  DEFAULT_GAS_LIMIT,
+} from "../config/channelParamsConstants";
 
 export const createApprovalTx = async params => {
   try {
@@ -10,8 +14,8 @@ export const createApprovalTx = async params => {
     const token = new web3.eth.Contract(tokenAbi, params.tokenAddress);
     const approval = {
       nonce: web3.utils.toHex(txCount),
-      gasPrice: params.gasPrice,
-      gasLimit: params.gasLimitApproval,
+      gasPrice: params.gasPrice || DEFAULT_GAS_PRICE,
+      gasLimit: params.gasLimitApproval || DEFAULT_GAS_LIMIT,
       to: params.tokenAddress,
       value: "0x00",
       data: token.methods
@@ -37,8 +41,8 @@ export const createDepositTx = async params => {
     const txCount = await web3.eth.getTransactionCount(params.address);
     const deposit = {
       nonce: web3.utils.toHex(txCount + 1),
-      gasPrice: params.gasPrice,
-      gasLimit: params.gasLimitDeposit,
+      gasPrice: params.gasPrice || DEFAULT_GAS_PRICE,
+      gasLimit: params.gasLimitDeposit || DEFAULT_GAS_LIMIT,
       to: params.tokenNetworkAddress,
       value: "0x00",
       data: tokenNetwork.methods

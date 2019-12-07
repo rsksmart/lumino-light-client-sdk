@@ -13,10 +13,12 @@ const channel = (state = initialState, action) => {
   const { bigNumberify } = ethers.utils;
   switch (action.type) {
     case OPEN_CHANNEL:
-      const newChannelId = action.channel.channel_identifier;
+      const nChannelId = action.channel.channel_identifier;
+      const nTokenAdd = action.channel.token_address;
+      const nChannel = `${nChannelId}-${nTokenAdd}`;
       const newChannels = {
         ...state,
-        [newChannelId]: {
+        [nChannel]: {
           ...action.channel,
           offChainBalance: "0",
           receivedTokens: "0",
@@ -25,23 +27,34 @@ const channel = (state = initialState, action) => {
       };
       return newChannels;
     case SET_CHANNEL_CLOSED:
-      const closedChannelId = action.channel.channel_identifier;
+      const cChannelId = action.channel.channel_identifier;
+      const cTokenAdd = action.channel.token_address;
+      const cChannel = `${cChannelId}-${cTokenAdd}`;
+
       const channelsModified = {
         ...state,
-        [closedChannelId]: { ...state[closedChannelId], ...action.channel },
+        [cChannel]: {
+          ...state[cChannel],
+          ...action.channel,
+        },
       };
+
       return channelsModified;
     case NEW_DEPOSIT:
       const dChannelId = action.channel.channel_identifier;
-      const chSentTokens = bigNumberify(state[dChannelId].sentTokens || 0);
+      const dTokenAdd = action.channel.token_address;
+      const dChannel = `${dChannelId}-${dTokenAdd}`;
+
+      const chSentTokens = bigNumberify(state[dChannel].sentTokens || 0);
       const chReceivedTokens = bigNumberify(
-        state[dChannelId].receivedTokens || 0
+        state[dChannel].receivedTokens || 0
       );
       const chBalance = bigNumberify(String(action.channel.total_deposit));
+
       const channelsDeposited = {
         ...state,
-        [dChannelId]: {
-          ...state[dChannelId],
+        [dChannel]: {
+          ...state[dChannel],
           ...action.channel,
           offChainBalance: chBalance
             .add(chReceivedTokens)
@@ -52,14 +65,23 @@ const channel = (state = initialState, action) => {
       return channelsDeposited;
     case CHANGE_CHANNEL_BALANCE:
       const { payment } = action;
-      const { channelId, isReceived, secretMessageId, messages } = payment;
+      const {
+        channelId,
+        isReceived,
+        token: cbpTokenAdd,
+        secretMessageId,
+        messages,
+      } = payment;
+      const ccbChannel = `${channelId}-${cbpTokenAdd}`;
       // We get the BP
       const amount = messages[secretMessageId].message.transferred_amount;
       // We parse the amounts as BN
       const bigAmount = bigNumberify(String(amount));
-      const channelBalance = bigNumberify(`${state[channelId].total_deposit}`);
-      let channelSent = bigNumberify(state[channelId].sentTokens || 0);
-      let channelReceived = bigNumberify(state[channelId].receivedTokens || 0);
+      const channelBalance = bigNumberify(
+        String(state[ccbChannel].total_deposit)
+      );
+      let channelSent = bigNumberify(state[ccbChannel].sentTokens || 0);
+      let channelReceived = bigNumberify(state[ccbChannel].receivedTokens || 0);
 
       // We calculate the accumulated, + for reception, - for sending
       if (isReceived) channelReceived = bigAmount;
@@ -67,8 +89,8 @@ const channel = (state = initialState, action) => {
       // Return the state with the balances
       return {
         ...state,
-        [channelId]: {
-          ...state[channelId],
+        [ccbChannel]: {
+          ...state[ccbChannel],
           offChainBalance: channelBalance
             .add(channelReceived)
             .sub(channelSent)
@@ -78,11 +100,13 @@ const channel = (state = initialState, action) => {
         },
       };
     case UPDATE_NON_CLOSING_BP:
-      const chBp = action.channelId;
+      const ncbpChannelId = action.channelId;
+      const ncbpTokenAdd = action.token;
+      const ncbpChannel = `${ncbpChannelId}-${ncbpTokenAdd}`;
       return {
         ...state,
-        [chBp]: {
-          ...state[chBp],
+        [ncbpChannel]: {
+          ...state[ncbpChannel],
           nonClosingBp: action.nonClosingBp,
         },
       };

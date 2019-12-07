@@ -5,4 +5,4 @@ export {
   paymentExistsInAnyState,
   paymentHasMessageOrder,
 } from "./payments";
-export { getChannelById, getChannelsState } from "./channels";
+export { getChannelByIdAndToken, getChannelsState } from "./channels";

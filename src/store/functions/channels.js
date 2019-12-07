@@ -6,8 +6,8 @@ export const getChannelsState = () => {
   return channelStates;
 };
 
-export const getChannelById = id => {
+export const getChannelByIdAndToken = (id, token) => {
   const store = Store.getStore();
   const { channelReducer: channels } = store.getState();
-  return channels[id];
+  return channels[`${id}-${token}`];
 };

@@ -95,6 +95,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         amount: message.lock.amount,
         secret_hash: secrethash,
         channelId: dataToPut.message.channel_identifier,
+        token: token_address,
         tokenNetworkAddress: dataToPut.message.token_network_address,
         chainId: dataToPut.message.chain_id,
       },
@@ -144,7 +145,6 @@ const getRandomBN = () => {
   const randomBN = BigNumber.random(18).toString();
   return new BigNumber(randomBN.split(".")[1]).toString();
 };
-// TODO: Try to make sure that the recipient and sender are always correct in reception
 export const putDelivered = (
   message,
   payment,
@@ -398,6 +398,7 @@ export const putNonClosingBalanceProof = (message, payment) => async (
     dispatch({
       type: UPDATE_NON_CLOSING_BP,
       channelId: payment.channelId,
+      token: getAddress(payment.token),
       nonClosingBp: body,
     });
     dispatch(saveLuminoData());
