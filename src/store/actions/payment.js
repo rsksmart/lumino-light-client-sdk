@@ -6,6 +6,7 @@ import {
   MESSAGE_POLLING_STOP,
   SET_PAYMENT_SECRET,
   UPDATE_NON_CLOSING_BP,
+  PAYMENT_CREATION_ERROR,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -47,6 +48,11 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const actualBalance = bigNumberify(channel.offChainBalance);
     if (actualBalance.lt(amount)) {
       console.error("Insufficient funds for payment");
+      // TODO: Add a callback for this
+      dispatch({
+        type: PAYMENT_CREATION_ERROR,
+        reason: `Insufficient funds for payment`,
+      });
       return null;
     }
     const requestBody = {
