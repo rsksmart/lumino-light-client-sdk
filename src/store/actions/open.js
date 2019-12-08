@@ -4,6 +4,7 @@ import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { createOpenTx } from "../../scripts/open";
 import { getTokenNetworkByTokenAddress } from "../functions/tokens";
+import { requestTokenNetworkFromTokenAddress } from "./tokens";
 
 /**
  * Open a channel.
@@ -19,8 +20,9 @@ export const openChannel = params => async (dispatch, getState, lh) => {
     const clientAddress = getState().client.address;
     let tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);
     if (!tokenNetwork) {
-      await getTokenNetworkByTokenAddress(tokenAddress);
-      tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);
+      tokenNetwork = await dispatch(
+        requestTokenNetworkFromTokenAddress(tokenAddress)
+      );
     }
 
     const txParams = {
