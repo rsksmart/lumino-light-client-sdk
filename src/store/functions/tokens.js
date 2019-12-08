@@ -47,3 +47,10 @@ export const requestTokenNameAndSymbol = async tokenAddress => {
     console.log(error);
   }
 };
+
+export const searchTokenDataInChannels = tokenAddress => {
+  const channels = Store.getStore().getState().channelReducer;
+  const ch = Object.keys(channels).find(c => c.includes(tokenAddress));
+  const { tokenName, tokenSymbol } = channels[ch];
+  return { tokenName, tokenSymbol };
+};

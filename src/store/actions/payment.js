@@ -28,6 +28,7 @@ import BigNumber from "bignumber.js";
 import { MessageType } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
 import { getLatestChannelByPartnerAndToken } from "../functions/channels";
+import { searchTokenDataInChannels } from "../functions/tokens";
 
 /**
  * Create a payment.
@@ -99,6 +100,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     await client.put(urlPut, dataToPut, {
       transformResponse: res => JSONbig.parse(res),
     });
+    const { tokenName, tokenSymbol } = searchTokenDataInChannels(token_address);
     dispatch({
       type: CREATE_PAYMENT,
       payment: {
@@ -112,6 +114,8 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         secret_hash: secrethash,
         channelId: dataToPut.message.channel_identifier,
         token: token_address,
+        tokenName,
+        tokenSymbol,
         tokenNetworkAddress: dataToPut.message.token_network_address,
         chainId: dataToPut.message.chain_id,
       },
