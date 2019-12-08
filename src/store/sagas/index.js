@@ -14,6 +14,8 @@ import {
   SET_LATEST_INTERNAL_MSG_ID,
   NOTIFICATIONS_POLLING,
   SET_LAST_NOTIFICATION_ID,
+  REQUEST_CLIENT_ONBOARDING,
+  CLIENT_ONBOARDING_SUCCESS,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
@@ -105,12 +107,14 @@ export function* workCreatePayment() {
 
 export function* workPaymentComplete({ paymentId }) {
   const completed = yield select(getCompletedPaymentById);
-  Lumino.callbacks.trigger.triggerOnCompletedPaymentCallback(paymentId);
   yield put(changeChannelBalance(completed[paymentId]));
+  Lumino.callbacks.trigger.triggerOnCompletedPaymentCallback(
+    completed[paymentId]
+  );
 }
 
 export function* workReceivedPayment({ payment: d }) {
-  Lumino.callbacks.trigger.triggerOnReceivedPaymentCallback(d.payment);
+  Lumino.callbacks.trigger.triggerOnReceivedPaymentCallback(d);
 }
 
 export function* workOpenChannel({ channel }) {
@@ -121,6 +125,14 @@ export function* workDepositChannel({ channel }) {
   Lumino.callbacks.trigger.triggerOnDepositChannel(channel);
 }
 
+export function* workRequestClientOnboarding({ address }) {
+  Lumino.callbacks.trigger.triggerOnRequestClientOnboarding(address);
+}
+
+export function* workClientOnboardingSuccess({ address }) {
+  Lumino.callbacks.trigger.triggerOnClientOnboardingSuccess(address);
+}
+
 export default function* rootSaga() {
   yield takeEvery(MESSAGE_POLLING, workMessagePolling);
   yield takeEvery(CREATE_PAYMENT, workCreatePayment);
@@ -129,4 +141,6 @@ export default function* rootSaga() {
   yield takeEvery(OPEN_CHANNEL, workOpenChannel);
   yield takeEvery(NEW_DEPOSIT, workDepositChannel);
   yield takeEvery(NOTIFICATIONS_POLLING, workNotificationPolling);
+  yield takeEvery(REQUEST_CLIENT_ONBOARDING, workRequestClientOnboarding);
+  yield takeEvery(CLIENT_ONBOARDING_SUCCESS, workClientOnboardingSuccess);
 }
