@@ -3,7 +3,10 @@ import { CHANNEL_OPENED } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { createOpenTx } from "../../scripts/open";
-import { getTokenNetworkByTokenAddress } from "../functions/tokens";
+import {
+  getTokenNetworkByTokenAddress,
+  requestTokenNameAndSymbol,
+} from "../functions/tokens";
 import { requestTokenNetworkFromTokenAddress } from "./tokens";
 
 /**
@@ -42,11 +45,19 @@ export const openChannel = params => async (dispatch, getState, lh) => {
       };
 
       const res = await client.put("light_channels", { ...requestBody });
+
+      const {
+        name: token_name,
+        symbol: token_symbol,
+      } = await requestTokenNameAndSymbol(tokenAddress);
+
       dispatch({
         type: OPEN_CHANNEL,
         channelId: res.data.channel_identifier,
         channel: {
           ...res.data,
+          token_symbol,
+          token_name,
           sdk_status: CHANNEL_OPENED,
         },
       });

@@ -47,10 +47,6 @@ function* restartPolling() {
   yield put(startPaymentPolling());
 }
 
-function* localDispatch(data) {
-  yield put(data);
-}
-
 function* setCompleted(paymentId) {
   return yield put({ type: SET_PAYMENT_COMPLETE, paymentId });
 }

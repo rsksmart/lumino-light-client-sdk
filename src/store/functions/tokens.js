@@ -1,5 +1,8 @@
 import Store from "../index";
 import { swapObjValueForKey } from "../../utils/functions";
+import Lumino from "../../Lumino";
+import Web3 from "web3";
+import { tokenAbi } from "../../scripts/constants";
 
 /**
  * Returns the Token Networks and their corresponding Token Address
@@ -29,4 +32,18 @@ export const getTokenAddressByTokenNetwork = tokenNetwork => {
 export const getTokenNetworkByTokenAddress = tokenAddress => {
   const tokenAddresses = getKnownTokenAddresses();
   return tokenAddresses[tokenAddress] || null;
+};
+
+export const requestTokenNameAndSymbol = async tokenAddress => {
+  try {
+    const { rskEndpoint } = Lumino.getConfig();
+    const web3 = new Web3(rskEndpoint);
+    const token = new web3.eth.Contract(tokenAbi, tokenAddress);
+    const name = await token.methods.name().call();
+    const symbol = await token.methods.symbol().call();
+
+    return { name, symbol };
+  } catch (error) {
+    console.log(error);
+  }
 };
