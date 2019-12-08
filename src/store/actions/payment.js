@@ -26,6 +26,7 @@ import JSONbig from "json-bigint";
 import BigNumber from "bignumber.js";
 import { MessageType } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
+import { getLatestChannelByPartnerAndToken } from "../functions/channels";
 
 /**
  * Create a payment.
@@ -36,10 +37,18 @@ import { saveLuminoData } from "./storage";
  */
 export const createPayment = params => async (dispatch, getState, lh) => {
   try {
+    const { getAddress, bigNumberify } = ethers.utils;
     const { partner, token_address, amount } = params;
     const { address } = getState().client;
     const hashes = generateHashes();
     const { secrethash, hash: secret } = hashes;
+    const channel = getLatestChannelByPartnerAndToken(partner, token_address);
+    // Check for sufficient funds
+    const actualBalance = bigNumberify(channel.offChainBalance);
+    if (actualBalance.lt(amount)) {
+      console.error("Insufficient funds for payment");
+      return null;
+    }
     const requestBody = {
       creator_address: address,
       partner_address: partner,
@@ -73,8 +82,8 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const dataToPut = {
       message_id,
       message_order,
-      receiver: ethers.utils.getAddress(messageWithHash.target),
-      sender: ethers.utils.getAddress(messageWithHash.initiator),
+      receiver: getAddress(messageWithHash.target),
+      sender: getAddress(messageWithHash.initiator),
       message: {
         ...messageWithHash,
         signature,
