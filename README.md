@@ -396,3 +396,44 @@ Lumino.callbacks.set.setOnClientOnboardingSuccess(address => {
 The functions can be of any kind, in these examples we just used a toast to show the info, but the developer is free to use whatever they want
 
 ## Notifier
+
+The Light client is not aware of everything that happens outside of the action it performs.
+For example, when a partner opens a channel, it is not made aware of that event, the same as when a channel is closed by a partner.
+
+To tackle this problem, the Lumino ecosystem has a Notifier, which objective is to provide the information about events regarding what operations happen on the blockchain.
+
+Those events are filtered by topics, which are abstracted by the SDK so the developer doesn't have to write logic for managing them.
+
+## How to use it
+
+The notifier is abstracted in simple methods that just need to be summoned, they accept no params since they just use the data from the config of the SDK
+
+These methods live under the actions and are all async
+
+```javascript
+notifierRegistration() => void
+```
+
+Registers the LC in the notifier that was passed in the config of `Lumino.init` it must be executed **only once per SDK configuration**, since the data of the registration is stored.
+
+Example
+
+```javascript
+await lumino.actions.notifierRegistration();
+```
+
+---
+
+```javascript
+subscribeToOpenChannel() => void
+```
+
+This method subscribes the Light client to all the events of open channel where a partner creates a channel with them.
+
+The SDK will take care of creating the channel and will execute the OpenChannel callback on success.
+
+## Notifier on the background
+
+In order to receive events, this iteration of the SDK and notifier work in a polling model, every one second the notifier is asked for events, in case that a new one has been detected, the SDK will act accordingly to them.
+
+After processing an event, it will not be fetched again since the SDK will ask for events after the last one processed, so no overfetching is performed.
