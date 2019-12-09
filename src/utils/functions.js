@@ -19,6 +19,9 @@ export const findMaxMsgInternalId = arr =>
 export const findMaxBlockId = notifications =>
   findMaxByKey(notifications, "id");
 
+export const findMaxChannelId = channels =>
+  findMaxByKey(channels, "channel_identifier");
+
 /**
  * This method takes an object with any number of keys and swaps the key for the value
  * @param {Object} data

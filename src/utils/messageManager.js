@@ -30,6 +30,7 @@ import {
 } from "../store/actions/types";
 import { ethers } from "ethers";
 import Lumino from "../Lumino/index";
+import { searchTokenDataInChannels } from "../store/functions/tokens";
 
 /**
  *
@@ -108,6 +109,10 @@ const manageLockedTransfer = (message, payment, messageSignedKey) => {
   if (isValidLt !== true) return console.warn(isValidLt);
   const store = Store.getStore();
   // This function add the message to the store in its proper order
+
+  const { tokenName, tokenSymbol } = searchTokenDataInChannels(
+    getAddress(msg.token)
+  );
   const actionObj = {
     type: CREATE_PAYMENT,
     payment: {
@@ -122,6 +127,8 @@ const manageLockedTransfer = (message, payment, messageSignedKey) => {
       },
       isReceived: true,
       message_order: 1,
+      tokenName,
+      tokenSymbol,
       secret: "",
       partner: msg.target,
       paymentId: `${msg.payment_identifier}`,
