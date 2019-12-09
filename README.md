@@ -121,7 +121,11 @@ This is an object with the next params
 
 With all the aforementioned values, Lumino can be initialized with the params in this order with the next ASYNC method.
 
-**await Lumino.init(signingHandler, localStorageHandler,ConfigParams) => LuminoInstance**
+```javascript
+await Lumino.init(signingHandler, localStorageHandler,ConfigParams) => LuminoInstance
+```
+
+This method returns an instance of lumino, so we can just assign it to a const and use it later.
 
 ```javascript
 const lumino = await Lumino.init(luminoHandler, storageImplementation);
