@@ -410,6 +410,8 @@ The notifier is abstracted in simple methods that just need to be summoned, they
 
 These methods live under the actions and are all async
 
+**Registering with the notifier**
+
 ```javascript
 notifierRegistration() => void
 ```
@@ -423,6 +425,8 @@ await lumino.actions.notifierRegistration();
 ```
 
 ---
+
+**Listening to Open Channel events**
 
 ```javascript
 subscribeToOpenChannel() => void
