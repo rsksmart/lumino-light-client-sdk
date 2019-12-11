@@ -28,7 +28,7 @@ const paymentsMonitoredEpic = action$ => {
   return action$.pipe(
     ofType(MESSAGE_POLLING_START),
     switchMap(() =>
-      timer(1000, 3000).pipe(
+      timer(1000, 2000).pipe(
         takeUntil(stopPolling$),
         exhaustMap(() =>
           getTransactionInfo().pipe(
