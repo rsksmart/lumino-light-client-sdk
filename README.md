@@ -321,7 +321,7 @@ This create a payment in a channel with balance, wheter it was from a deposit or
 
 ```javascript
 const requestBody = {
-  partner_address: "0x123...",
+  partner: partner_address: "0x123...",
   amount: 1000000000000,
   token_address: "0x987...",
 };
