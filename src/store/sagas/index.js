@@ -82,11 +82,18 @@ export function* workMessagePolling({ data }) {
 }
 
 export function* workNotificationPolling({ data }) {
-  if (data && data.length) {
-    const actionsP = data.map(async e => manageNotificationData(e));
+  let notifications = [];
+  debugger;
+
+  if (data && data.fulfilled && data.fulfilled.length)
+    notifications = data.fulfilled
+      .map(f => ({ info: f.value.data.data, notifier: f.value.config.baseURL }))
+      .filter(e => e.info !== null);
+  if (notifications.length) {
+    debugger;
+    const actionsP = notifications.map(async e => manageNotificationData(e));
     const actions = yield Promise.all(actionsP);
-    const lastId = findMaxBlockId(data);
-    yield put({ type: SET_LAST_NOTIFICATION_ID, id: lastId });
+    // A for is used since the yield loses binding on a forEach
     for (let i = 0; i < actions.length; i++) {
       if (actions[i]) yield put(actions[i]);
     }

@@ -1,8 +1,9 @@
 import { ethers } from "ethers";
-import notifier from "../../notifierRest";
+import { notifierOperations } from "../../notifierRest";
 import resolver from "../../utils/handlerResolver";
 import {
   SET_NOTIFIER_API_KEY,
+  NEW_NOTIFIER,
   SUBSCRIBED_TO_NEW_TOPIC,
   UNSUBSCRIBE_FROM_TOPIC,
   SET_LAST_NOTIFICATION_ID,
@@ -16,12 +17,13 @@ import { getTokenAddressByTokenNetwork } from "../functions/tokens";
 import { requestTokenAddressFromTokenNetwork } from "./tokens";
 import Store from "..";
 
-export const notifierRegistration = () => async (dispatch, getState, lh) => {
+export const notifierRegistration = url => async (dispatch, getState, lh) => {
   try {
     const { address } = getState().client;
     const signedAddress = await resolver(address, lh, true);
-    const url = "users";
-    const res = await notifier.post(url, signedAddress, {
+    const endpoint = "users";
+    notifierOperations.defaults.baseURL = url;
+    const res = await notifierOperations.post(endpoint, signedAddress, {
       headers: {
         "content-type": "text/plain",
       },
@@ -29,75 +31,19 @@ export const notifierRegistration = () => async (dispatch, getState, lh) => {
         address,
       },
     });
-    const { apiKey } = res.data.data;
-    if (apiKey) {
-      dispatch({ type: SET_NOTIFIER_API_KEY, notifierApiKey: apiKey });
-      dispatch(saveLuminoData());
-    }
-    const urlSubscription = "subscribe";
-    await notifier.post(urlSubscription, null, {
-      headers: { apiKey },
-    });
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-export const subscribeToOpenChannel = () => async (dispatch, getState, lh) => {
-  try {
-    const { address, notifierApiKey } = getState().client;
-    const url = "subscribeToLuminoOpenChannels";
-    const res = await notifier.post(url, null, {
-      headers: {
-        apiKey: notifierApiKey,
-      },
-      params: {
-        participanttwo: address,
-      },
-    });
-    const topics = processSubscribeToOpen(res);
-    if (topics.length) {
-      topics.forEach(({ topicId }) =>
-        dispatch({ type: SUBSCRIBED_TO_NEW_TOPIC, topicId })
-      );
-      dispatch({ type: START_NOTIFICATIONS_POLLING });
-    }
-  } catch (error) {
-    console.error(error);
-    const topics = processSubscribeToOpen(error.response);
-    if (topics.length)
-      topics.forEach(({ topicId }) =>
-        dispatch({ type: SUBSCRIBED_TO_NEW_TOPIC, topicId })
-      );
-  }
-};
-
-const processSubscribeToOpen = res => {
-  const { data } = res.data;
-  return JSON.parse(String(data));
-};
-
-export const getNotifications = () => async (dispatch, getState, lh) => {
-  try {
-    const { notifierApiKey } = getState().client;
-    const topics = Object.keys(getState().notifier).join(",");
-    const url = "getNotifications";
-    const res = await notifier.get(url, {
-      headers: {
-        apiKey: notifierApiKey,
-      },
-      params: {
-        idTopic: topics,
-        lastRows: 5,
-      },
-    });
-    const { data } = res.data;
-    if (data && data.length) {
-      const actions = data.map(async e => manageNotificationData(e, dispatch));
-      const lastId = findMaxBlockId(data);
-      dispatch({ type: SET_LAST_NOTIFICATION_ID, id: lastId });
-      actions.forEach(e => {
-        if (e) dispatch(e);
+    if (res && res.data) {
+      const { apiKey } = res.data.data;
+      if (apiKey) {
+        dispatch({
+          type: NEW_NOTIFIER,
+          notifierApiKey: apiKey,
+          notifierUrl: url,
+        });
+        dispatch(saveLuminoData());
+      }
+      const urlSubscription = "subscribe";
+      await notifierOperations.post(urlSubscription, null, {
+        headers: { apiKey },
       });
     }
   } catch (error) {
@@ -105,7 +51,72 @@ export const getNotifications = () => async (dispatch, getState, lh) => {
   }
 };
 
-export const unsubscribeFromTopic = idTopic => async (
+export const subscribeToOpenChannel = url => async (dispatch, getState, lh) => {
+  try {
+    const { address } = getState().client;
+    const notifier = getState().notifier.notifiers[url];
+    if (!notifier) return console.error(`Notifier ${url} not registered!`);
+    const { apiKey } = notifier;
+    if (!apiKey)
+      return console.error(`API Key not present for notifier ${url}`);
+
+    const endpoint = "subscribeToLuminoOpenChannels";
+    notifierOperations.defaults.baseURL = url;
+    const res = await notifierOperations.post(endpoint, null, {
+      headers: {
+        apiKey,
+      },
+      params: {
+        participanttwo: address,
+      },
+    });
+    const topics = processSubscribe(res);
+    if (topics.length) {
+      topics.forEach(({ topicId }) =>
+        dispatch({
+          type: SUBSCRIBED_TO_NEW_TOPIC,
+          topicId,
+          notifierUrl: url,
+        })
+      );
+      dispatch({ type: START_NOTIFICATIONS_POLLING });
+    }
+  } catch (error) {
+    console.error(error);
+    const topics = processSubscribe(error.response);
+    if (topics.length)
+      topics.forEach(({ topicId }) =>
+        dispatch({ type: SUBSCRIBED_TO_NEW_TOPIC, topicId, notifierUrl: url })
+      );
+    dispatch({ type: START_NOTIFICATIONS_POLLING });
+  }
+};
+
+export const subscribeToCloseChannel = url => {};
+
+const processSubscribe = res => {
+  if (!res.data) return null;
+  const { data } = res.data;
+  return JSON.parse(String(data));
+};
+
+export const getNotifications = url => async (dispatch, getState, lh) => {
+  try {
+    // const { data } = res.data;
+    // if (data && data.length) {
+    //   const actions = data.map(async e => manageNotificationData(e, dispatch));
+    //   const lastId = findMaxBlockId(data);
+    //   dispatch({ type: SET_LAST_NOTIFICATION_ID, id: lastId });
+    //   actions.forEach(e => {
+    //     if (e) dispatch(e);
+    //   });
+    // }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const unsubscribeFromTopic = (url, idTopic) => async (
   dispatch,
   getState,
   lh
@@ -122,14 +133,13 @@ export const unsubscribeFromTopic = idTopic => async (
       },
     });
     dispatch({ type: UNSUBSCRIBE_FROM_TOPIC, idTopic });
-    console.log("Dispatch unsubscribe");
   } catch (error) {
     console.error(error);
   }
 };
 
 export const manageNotificationData = async notificationData => {
-  const notification = JSON.parse(notificationData.data);
+  const notification = JSON.parse(notificationData.info);
   const { eventName } = notification;
   switch (eventName) {
     case events.CHANNEL_OPENED:
