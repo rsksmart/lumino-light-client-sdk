@@ -26,6 +26,9 @@ const getPendingPayments = state => state.payments.pending;
 
 const getPaymentPollingTime = state => state.client.paymentPollingTime;
 
+const getNumberOfNotifiers = state =>
+  Object.keys(state.notifier.notifiers).length;
+
 const stopPaymentPolling = () => ({ type: MESSAGE_POLLING_STOP });
 
 const startPaymentPolling = () => ({ type: MESSAGE_POLLING_START });
@@ -83,19 +86,25 @@ export function* workMessagePolling({ data }) {
 
 export function* workNotificationPolling({ data }) {
   let notifications = [];
-  debugger;
-
   if (data && data.fulfilled && data.fulfilled.length)
     notifications = data.fulfilled
       .map(f => ({ info: f.value.data.data, notifier: f.value.config.baseURL }))
       .filter(e => e.info !== null);
   if (notifications.length) {
-    debugger;
-    const actionsP = notifications.map(async e => manageNotificationData(e));
-    const actions = yield Promise.all(actionsP);
+    const processed = notifications.map(e => manageNotificationData(e));
+    const processedFlat = Array.prototype.concat.apply([], processed);
+
+    // We get the number of notifiers now and add it to the action for the reducers.
+    const numberOfNotifiers = yield select(getNumberOfNotifiers);
+
     // A for is used since the yield loses binding on a forEach
-    for (let i = 0; i < actions.length; i++) {
-      if (actions[i]) yield put(actions[i]);
+    for (let i = 0; i < processedFlat.length; i++) {
+      if (processedFlat[i].action) {
+        // Resolve promise, then dispatch
+        processedFlat[i].action = yield processedFlat[i].action;
+        if (processedFlat[i].action)
+          yield put({ ...processedFlat[i].action, numberOfNotifiers });
+      }
     }
   }
 }

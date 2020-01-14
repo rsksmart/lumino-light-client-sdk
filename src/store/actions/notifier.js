@@ -2,20 +2,20 @@ import { ethers } from "ethers";
 import { notifierOperations } from "../../notifierRest";
 import resolver from "../../utils/handlerResolver";
 import {
-  SET_NOTIFIER_API_KEY,
   NEW_NOTIFIER,
   SUBSCRIBED_TO_NEW_TOPIC,
   UNSUBSCRIBE_FROM_TOPIC,
   SET_LAST_NOTIFICATION_ID,
   OPEN_CHANNEL,
   START_NOTIFICATIONS_POLLING,
+  OPEN_CHANNEL_VOTE,
 } from "./types";
 import { saveLuminoData } from "./storage";
-import { findMaxBlockId } from "../../utils/functions";
 import { getChannelByIdAndToken } from "../functions";
 import { getTokenAddressByTokenNetwork } from "../functions/tokens";
 import { requestTokenAddressFromTokenNetwork } from "./tokens";
 import Store from "..";
+import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 
 export const notifierRegistration = url => async (dispatch, getState, lh) => {
   try {
@@ -80,15 +80,18 @@ export const subscribeToOpenChannel = url => async (dispatch, getState, lh) => {
         })
       );
       dispatch({ type: START_NOTIFICATIONS_POLLING });
+      dispatch(saveLuminoData());
     }
   } catch (error) {
     console.error(error);
     const topics = processSubscribe(error.response);
-    if (topics.length)
+    if (topics.length) {
       topics.forEach(({ topicId }) =>
         dispatch({ type: SUBSCRIBED_TO_NEW_TOPIC, topicId, notifierUrl: url })
       );
-    dispatch({ type: START_NOTIFICATIONS_POLLING });
+      dispatch({ type: START_NOTIFICATIONS_POLLING });
+      dispatch(saveLuminoData());
+    }
   }
 };
 
@@ -98,22 +101,6 @@ const processSubscribe = res => {
   if (!res.data) return null;
   const { data } = res.data;
   return JSON.parse(String(data));
-};
-
-export const getNotifications = url => async (dispatch, getState, lh) => {
-  try {
-    // const { data } = res.data;
-    // if (data && data.length) {
-    //   const actions = data.map(async e => manageNotificationData(e, dispatch));
-    //   const lastId = findMaxBlockId(data);
-    //   dispatch({ type: SET_LAST_NOTIFICATION_ID, id: lastId });
-    //   actions.forEach(e => {
-    //     if (e) dispatch(e);
-    //   });
-    // }
-  } catch (error) {
-    console.error(error);
-  }
 };
 
 export const unsubscribeFromTopic = (url, idTopic) => async (
@@ -138,53 +125,100 @@ export const unsubscribeFromTopic = (url, idTopic) => async (
   }
 };
 
-export const manageNotificationData = async notificationData => {
-  const notification = JSON.parse(notificationData.info);
-  const { eventName } = notification;
-  switch (eventName) {
-    case events.CHANNEL_OPENED:
-      const newChannel = await createNewChannel(notification);
-      return newChannel;
-    default:
-      return null;
-  }
+export const manageNotificationData = notificationData => {
+  const { notifier, info } = notificationData;
+
+  const notifications = info.map(n => ({
+    notification: JSON.parse(n.data),
+    notificationId: n.id,
+  }));
+
+  return notifications.map(e => {
+    const { eventName } = e.notification;
+    switch (eventName) {
+      case events.CHANNEL_OPENED:
+        const action = manageNewChannel(e.notification, notifier);
+        return {
+          action,
+          notificationId: e.notificationId,
+          notifier,
+        };
+      default:
+        return null;
+    }
+  });
 };
 
-const createNewChannel = async notification => {
+const manageNewChannel = async (notification, notifier) => {
   const { getAddress } = ethers.utils;
   const { values, contractAddress } = notification;
+
   const token_network_identifier = getAddress(contractAddress);
   let token_address = getTokenAddressByTokenNetwork(token_network_identifier);
-  const channel_identifier = values[0].value;
-  // If the token is not in the map, we will request it
-  let existingChannel = getChannelByIdAndToken(
-    channel_identifier,
-    token_address
-  );
-  if (existingChannel) return null;
   if (!token_address) {
     token_address = await Store.getStore().dispatch(
       requestTokenAddressFromTokenNetwork(token_network_identifier)
     );
   }
-  const newChannel = {
+
+  const channel_identifier = values[0].value;
+  // If the token is not in the map, we will request it
+  const existingChannel = getChannelByIdAndToken(
     channel_identifier,
-    partner_address: getAddress(values[1].value),
-    settle_timeout: values[3].value,
-    token_address,
+    token_address
+  );
+  const partner_address = getAddress(values[1].value);
+  // We need the structure there to give it votes, if there isn't one, we create one
+  if (!existingChannel) {
+    const channel = createChannelFromNotification({
+      ...values,
+      channel_identifier,
+      token_network_identifier,
+      token_address,
+    });
+    channel.votes = {
+      open: {},
+      close: {},
+    };
+    channel.votes.open[notifier] = true;
+    return {
+      type: OPEN_CHANNEL_VOTE,
+      channel: channel,
+      notifier,
+      shouldOpen: true,
+    };
+  }
+  // Do not process event for already opened channel;
+  if (
+    existingChannel.sdk_status !==
+    SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION
+  )
+    return null;
+
+  if (existingChannel.partner_address !== partner_address) return null;
+  if (existingChannel.token_address !== token_address) return null;
+
+  return {
+    type: OPEN_CHANNEL_VOTE,
+    channel: existingChannel,
+    notifier,
+    shouldOpen: true,
+  };
+};
+
+const createChannelFromNotification = data => {
+  const { getAddress } = ethers.utils;
+
+  return {
+    channel_identifier: data.channel_identifier,
+    partner_address: getAddress(data[1].value),
+    settle_timeout: data[3].value,
+    token_address: data.token_address,
     balance: "0",
     state: "opened",
     total_deposit: "0",
     reveal_timeout: "50",
-    token_network_identifier,
-  };
-  // Do not return a new channel for one that is already opened
-
-  existingChannel = getChannelByIdAndToken(channel_identifier, token_address);
-  if (existingChannel || !token_address) return null;
-  return {
-    type: OPEN_CHANNEL,
-    channel: newChannel,
+    token_network_identifier: data.token_network_identifier,
   };
 };
 
