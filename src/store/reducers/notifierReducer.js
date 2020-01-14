@@ -3,6 +3,7 @@ import {
   UNSUBSCRIBE_FROM_TOPIC,
   NEW_NOTIFIER,
   SET_LAST_NOTIFICATION_ID,
+  REMOVE_NOTIFIER,
 } from "../actions/types";
 
 const initialState = {
@@ -59,6 +60,11 @@ const notifierReducer = (state = initialState, action) => {
         };
       });
       return stateClone;
+    case REMOVE_NOTIFIER:
+      const { url } = action;
+      let notifierWithRemotion = { ...state };
+      delete notifierWithRemotion.notifiers[url];
+      return notifierWithRemotion;
     default:
       return state;
   }

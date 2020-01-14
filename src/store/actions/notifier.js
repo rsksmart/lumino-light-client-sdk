@@ -93,6 +93,17 @@ export const subscribeToOpenChannel = url => async (dispatch, getState, lh) => {
   }
 };
 
+export const removeNotifier = url => async (dispatch, getState) => {
+  const { notifiers } = getState().notifier;
+  if (notifiers[url]) {
+    return dispatch({
+      type: REMOVE_NOTIFIER,
+      url,
+    });
+  }
+  console.error("Provided notifier was not found in the SDK");
+};
+
 export const subscribeToCloseChannel = url => {};
 
 const processSubscribe = res => {
@@ -103,8 +114,7 @@ const processSubscribe = res => {
 
 export const unsubscribeFromTopic = (url, idTopic) => async (
   dispatch,
-  getState,
-  lh
+  getState
 ) => {
   try {
     const { notifierApiKey } = getState().client;
