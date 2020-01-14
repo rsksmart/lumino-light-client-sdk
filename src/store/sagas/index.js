@@ -92,7 +92,17 @@ export function* workNotificationPolling({ data }) {
       .filter(e => e.info !== null);
   if (notifications.length) {
     const processed = notifications.map(e => manageNotificationData(e));
+    const processedIds = {};
     const processedFlat = Array.prototype.concat.apply([], processed);
+    // We get a map for the latest notification id processed
+    processedFlat.forEach(n => {
+      const { notifier, notificationId } = n;
+      if (processedIds[notifier]) {
+        if (processedIds[notifier] > notificationId)
+          return (processedIds[notifier] = notificationId);
+      }
+      return (processedIds[notifier] = notificationId);
+    });
 
     // We get the number of notifiers now and add it to the action for the reducers.
     const numberOfNotifiers = yield select(getNumberOfNotifiers);
@@ -106,6 +116,7 @@ export function* workNotificationPolling({ data }) {
           yield put({ ...processedFlat[i].action, numberOfNotifiers });
       }
     }
+    yield put({ type: SET_LAST_NOTIFICATION_ID, ids: processedIds });
   }
 }
 

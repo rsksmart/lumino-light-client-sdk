@@ -26,15 +26,24 @@ const getNotificationsInfo = () => {
     url: k,
     apiKey: v.apiKey,
     topics: Object.keys(v.topics).join(","),
+    fromId: v.fromNotificationId,
   }));
   const endpoint = "getNotifications";
+
   // We settle promises for each notifier, using all settled to prevent short circuits
   const results = allSettled(
     notifiers.map(n => {
-      const { apiKey, topics: idTopic, url } = n;
+      const { apiKey, topics: idTopic, url, fromId } = n;
       notifierGet.defaults.baseURL = url;
-      notifierGet.defaults.headers = { apiKey };
-      notifierGet.defaults.params = { idTopic, lastRows: 5 };
+      notifierGet.defaults.headers = {
+        apiKey,
+      };
+      notifierGet.defaults.params = {
+        idTopic,
+        lastRows: 5,
+        fromId,
+      };
+
       return notifierGet.get(endpoint);
     })
   );

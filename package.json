@@ -16,7 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "0.18.1",
     "bignumber.js": "^9.0.0",
     "ethers": "^4.0.37",
     "json-bigint": "^0.3.0",

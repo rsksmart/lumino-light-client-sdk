@@ -2,6 +2,7 @@ import {
   SUBSCRIBED_TO_NEW_TOPIC,
   UNSUBSCRIBE_FROM_TOPIC,
   NEW_NOTIFIER,
+  SET_LAST_NOTIFICATION_ID,
 } from "../actions/types";
 
 const initialState = {
@@ -37,16 +38,27 @@ const notifierReducer = (state = initialState, action) => {
           [action.notifierUrl]: {
             apiKey: action.notifierApiKey,
             topics: {},
+            fromNotificationId: 0,
           },
         },
       };
       return newNotifier;
-    case SUBSCRIBED_TO_NEW_TOPIC:
-      return patchNewTopic(state, action);
-    case UNSUBSCRIBE_FROM_TOPIC:
-      const deletedTopic = { ...state };
-      delete deletedTopic[action.topicId];
-      return deletedTopic;
+    case SET_LAST_NOTIFICATION_ID:
+      const { ids } = action;
+      let stateClone = { ...state };
+      Object.entries(ids).forEach(([notifier, id]) => {
+        stateClone = {
+          ...stateClone,
+          notifiers: {
+            ...stateClone.notifiers,
+            [notifier]: {
+              ...stateClone.notifiers[notifier],
+              fromNotificationId: id,
+            },
+          },
+        };
+      });
+      return stateClone;
     default:
       return state;
   }
