@@ -10,7 +10,10 @@ import {
 } from "./types";
 import { saveLuminoData } from "./storage";
 import { getChannelByIdAndToken } from "../functions";
-import { getTokenAddressByTokenNetwork } from "../functions/tokens";
+import {
+  getTokenAddressByTokenNetwork,
+  requestTokenNameAndSymbol,
+} from "../functions/tokens";
 import { requestTokenAddressFromTokenNetwork } from "./tokens";
 import Store from "..";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
@@ -178,10 +181,16 @@ const manageNewChannel = async (notification, notifier) => {
   const partner_address = getAddress(values[1].value);
   // We need the structure there to give it votes, if there isn't one, we create one
   if (!existingChannel) {
+    const {
+      name: token_name,
+      symbol: token_symbol,
+    } = await requestTokenNameAndSymbol(token_address);
     const channel = createChannelFromNotification({
       ...values,
       channel_identifier,
       token_network_identifier,
+      token_name,
+      token_symbol,
       token_address,
     });
     channel.votes = {
@@ -189,6 +198,7 @@ const manageNewChannel = async (notification, notifier) => {
       close: {},
     };
     channel.votes.open[notifier] = true;
+
     return {
       type: OPEN_CHANNEL_VOTE,
       channel: channel,
@@ -222,6 +232,8 @@ const createChannelFromNotification = data => {
     partner_address: getAddress(data[1].value),
     settle_timeout: data[3].value,
     token_address: data.token_address,
+    token_name: data.token_name,
+    token_symbol: data.token_symbol,
     balance: "0",
     state: "opened",
     total_deposit: "0",
