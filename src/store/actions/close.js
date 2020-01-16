@@ -1,4 +1,4 @@
-import { SET_CHANNEL_CLOSED } from "./types";
+import { SET_CHANNEL_CLOSED, DELETE_CHANNEL_FROM_SDK } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { CHANNEL_CLOSED } from "../../config/channelStates";
@@ -37,4 +37,12 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
   } catch (resolverError) {
     throw resolverError;
   }
+};
+
+export const deleteChannelFromSDK = (id, tokenAddress) => dispatch => {
+  return dispatch({
+    type: DELETE_CHANNEL_FROM_SDK,
+    id,
+    token_address: tokenAddress,
+  });
 };

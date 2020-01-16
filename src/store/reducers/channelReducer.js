@@ -5,6 +5,7 @@ import {
   CHANGE_CHANNEL_BALANCE,
   UPDATE_NON_CLOSING_BP,
   OPEN_CHANNEL_VOTE,
+  DELETE_CHANNEL_FROM_SDK,
 } from "../actions/types";
 import { ethers } from "ethers";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
@@ -169,6 +170,14 @@ const channel = (state = initialState, action) => {
           nonClosingBp: action.nonClosingBp,
         },
       };
+    case DELETE_CHANNEL_FROM_SDK:
+      const stateClone = { ...state };
+      const dChannelKey = getChannelKey({
+        channel_identifier: action.id,
+        token_address: action.token_address,
+      });
+      delete stateClone[dChannelKey];
+      return stateClone;
     default:
       return state;
   }

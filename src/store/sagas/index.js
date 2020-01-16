@@ -16,11 +16,13 @@ import {
   SET_LAST_NOTIFICATION_ID,
   REQUEST_CLIENT_ONBOARDING,
   CLIENT_ONBOARDING_SUCCESS,
+  OPEN_CHANNEL_VOTE,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
 import { findMaxMsgInternalId, findMaxBlockId } from "../../utils/functions";
 import { manageNotificationData } from "../actions/notifier";
+import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 
 const getPendingPayments = state => state.payments.pending;
 
@@ -28,6 +30,8 @@ const getPaymentPollingTime = state => state.client.paymentPollingTime;
 
 const getNumberOfNotifiers = state =>
   Object.keys(state.notifier.notifiers).length;
+
+const getChannels = state => state.channelReducer;
 
 const stopPaymentPolling = () => ({ type: MESSAGE_POLLING_STOP });
 
@@ -84,6 +88,36 @@ export function* workMessagePolling({ data }) {
   }
 }
 
+const getChannelKey = channelData => {
+  const id = channelData.channel_identifier;
+  const tokenAddr = channelData.token_address;
+  const key = `${id}-${tokenAddr}`;
+  return key;
+};
+
+function* checkForOpenChannelInProcessing(
+  channelsBefore,
+  channelsAfter,
+  action
+) {
+  debugger;
+  const k = getChannelKey(action.channel);
+  const channelBefore = channelsBefore[k];
+  // Channel did exist
+  if (channelBefore) {
+    const channelAfter = channelsAfter[k];
+    // Did the state change?
+    if (!channelAfter) return null;
+    if (channelBefore.sdk_status !== channelAfter.sdk_status) {
+      // Is now open?
+      if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_OPENED)
+        Lumino.callbacks.trigger.triggerOnOpenChannel(channelAfter);
+    }
+  } else {
+    // Channel did not exist
+  }
+}
+
 export function* workNotificationPolling({ data }) {
   let notifications = [];
   if (data && data.fulfilled && data.fulfilled.length)
@@ -92,9 +126,38 @@ export function* workNotificationPolling({ data }) {
       .filter(e => e.info !== null);
   if (notifications.length) {
     const processed = notifications.map(e => manageNotificationData(e));
-    const processedIds = {};
     const processedFlat = Array.prototype.concat.apply([], processed);
+
+    // We get the number of notifiers now and add it to the action for the reducers.
+    const numberOfNotifiers = yield select(getNumberOfNotifiers);
+
+    // A for is used since the yield loses binding on a forEach
+    for (let i = 0; i < processedFlat.length; i++) {
+      processedFlat[i] = yield processedFlat[i];
+      if (processedFlat[i])
+        processedFlat[i].action = yield processedFlat[i].action;
+
+      if (processedFlat[i].action) {
+        const channelsBeforeProcessing = yield select(getChannels);
+        // Resolve promise, then dispatch
+
+        if (processedFlat[i].action) {
+          yield put({ ...processedFlat[i].action, numberOfNotifiers });
+          if (processedFlat[i].action.type === OPEN_CHANNEL_VOTE) {
+            const channelsAfterProcessing = yield select(getChannels);
+            checkForOpenChannelInProcessing(
+              channelsBeforeProcessing,
+              channelsAfterProcessing,
+              processedFlat[i].action
+            );
+          }
+        }
+      }
+    }
+
     // We get a map for the latest notification id processed
+    const processedIds = {};
+
     processedFlat.forEach(n => {
       const { notifier, notificationId } = n;
       if (processedIds[notifier]) {
@@ -104,18 +167,6 @@ export function* workNotificationPolling({ data }) {
       return (processedIds[notifier] = notificationId);
     });
 
-    // We get the number of notifiers now and add it to the action for the reducers.
-    const numberOfNotifiers = yield select(getNumberOfNotifiers);
-
-    // A for is used since the yield loses binding on a forEach
-    for (let i = 0; i < processedFlat.length; i++) {
-      if (processedFlat[i].action) {
-        // Resolve promise, then dispatch
-        processedFlat[i].action = yield processedFlat[i].action;
-        if (processedFlat[i].action)
-          yield put({ ...processedFlat[i].action, numberOfNotifiers });
-      }
-    }
     yield put({ type: SET_LAST_NOTIFICATION_ID, ids: processedIds });
   }
 }
@@ -141,7 +192,8 @@ export function* workReceivedPayment({ payment: d }) {
 }
 
 export function* workOpenChannel({ channel }) {
-  Lumino.callbacks.trigger.triggerOnOpenChannel(channel);
+  // TODO: Deprecate, now the notifiers will trigger it
+  // Lumino.callbacks.trigger.triggerOnOpenChannel(channel);
 }
 
 export function* workDepositChannel({ channel }) {

@@ -1,5 +1,5 @@
 import { OPEN_CHANNEL } from "./types";
-import { CHANNEL_OPENED, SDK_CHANNEL_STATUS } from "../../config/channelStates";
+import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { createOpenTx } from "../../scripts/open";

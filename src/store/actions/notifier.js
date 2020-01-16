@@ -10,11 +10,11 @@ import {
 } from "./types";
 import { saveLuminoData } from "./storage";
 import { getChannelByIdAndToken } from "../functions";
+import { getTokenAddressByTokenNetwork } from "../functions/tokens";
 import {
-  getTokenAddressByTokenNetwork,
-  requestTokenNameAndSymbol,
-} from "../functions/tokens";
-import { requestTokenAddressFromTokenNetwork } from "./tokens";
+  requestTokenAddressFromTokenNetwork,
+  getTokenNameAndSymbol,
+} from "./tokens";
 import Store from "..";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 
@@ -52,6 +52,16 @@ export const notifierRegistration = url => async (dispatch, getState, lh) => {
   }
 };
 
+const prepareSubscribeActions = (data, url) => {
+  const topics = processSubscribe(data);
+  if (topics && topics.length)
+    return topics.map(({ topicId }) => ({
+      type: SUBSCRIBED_TO_NEW_TOPIC,
+      topicId,
+      notifierUrl: url,
+    }));
+};
+
 export const subscribeToOpenChannel = url => async (dispatch, getState, lh) => {
   try {
     const { address } = getState().client;
@@ -63,36 +73,70 @@ export const subscribeToOpenChannel = url => async (dispatch, getState, lh) => {
 
     const endpoint = "subscribeToLuminoOpenChannels";
     notifierOperations.defaults.baseURL = url;
-    const res = await notifierOperations.post(endpoint, null, {
-      headers: {
-        apiKey,
-      },
-      params: {
-        participanttwo: address,
-      },
-    });
-    const topics = processSubscribe(res);
-    if (topics.length) {
-      topics.forEach(({ topicId }) =>
-        dispatch({
-          type: SUBSCRIBED_TO_NEW_TOPIC,
-          topicId,
-          notifierUrl: url,
-        })
-      );
-      dispatch({ type: START_NOTIFICATIONS_POLLING });
+
+    let topicsToDispatch = [];
+
+    let resOpenPartner;
+    try {
+      resOpenPartner = await notifierOperations.post(endpoint, null, {
+        headers: {
+          apiKey,
+        },
+        params: {
+          participanttwo: address,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      if (error.response) {
+        const actions = prepareSubscribeActions(error.response, url);
+        topicsToDispatch = topicsToDispatch.concat(actions);
+
+        dispatch(saveLuminoData());
+      }
+    }
+    let resOpenSelf;
+    try {
+      resOpenSelf = await notifierOperations.post(endpoint, null, {
+        headers: {
+          apiKey,
+        },
+        params: {
+          participantone: address,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      if (error.response) {
+        const actions = prepareSubscribeActions(error.response, url);
+        topicsToDispatch = topicsToDispatch.concat(actions);
+
+        dispatch(saveLuminoData());
+      }
+    }
+
+    if (resOpenPartner) {
+      const actions = prepareSubscribeActions(resOpenPartner, url);
+      topicsToDispatch = topicsToDispatch.concat(actions);
+    }
+
+    if (resOpenSelf) {
+      const actions = prepareSubscribeActions(resOpenSelf, url);
+      topicsToDispatch = topicsToDispatch.concat(actions);
+    }
+
+    if (topicsToDispatch.length) {
+      bugger;
+      bugger;
+
+      topicsToDispatch.forEach(t => dispatch(t));
+      dispatch({
+        type: START_NOTIFICATIONS_POLLING,
+      });
       dispatch(saveLuminoData());
     }
   } catch (error) {
     console.error(error);
-    const topics = processSubscribe(error.response);
-    if (topics.length) {
-      topics.forEach(({ topicId }) =>
-        dispatch({ type: SUBSCRIBED_TO_NEW_TOPIC, topicId, notifierUrl: url })
-      );
-      dispatch({ type: START_NOTIFICATIONS_POLLING });
-      dispatch(saveLuminoData());
-    }
   }
 };
 
@@ -144,7 +188,7 @@ export const manageNotificationData = notificationData => {
     notificationId: n.id,
   }));
 
-  return notifications.map(e => {
+  return notifications.map(async e => {
     const { eventName } = e.notification;
     switch (eventName) {
       case events.CHANNEL_OPENED:
@@ -181,10 +225,10 @@ const manageNewChannel = async (notification, notifier) => {
   const partner_address = getAddress(values[1].value);
   // We need the structure there to give it votes, if there isn't one, we create one
   if (!existingChannel) {
-    const {
-      name: token_name,
-      symbol: token_symbol,
-    } = await requestTokenNameAndSymbol(token_address);
+    const { token_name, token_symbol } = await Store.getStore().dispatch(
+      getTokenNameAndSymbol(token_address)
+    );
+
     const channel = createChannelFromNotification({
       ...values,
       channel_identifier,

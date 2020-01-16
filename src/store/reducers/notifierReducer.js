@@ -60,6 +60,8 @@ const notifierReducer = (state = initialState, action) => {
         };
       });
       return stateClone;
+    case SUBSCRIBED_TO_NEW_TOPIC:
+      return patchNewTopic(state, action);
     case REMOVE_NOTIFIER:
       const { url } = action;
       let notifierWithRemotion = { ...state };

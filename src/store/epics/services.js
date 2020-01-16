@@ -25,7 +25,7 @@ const getNotificationsInfo = () => {
   const notifiers = Object.entries(notifierObj.notifiers).map(([k, v]) => ({
     url: k,
     apiKey: v.apiKey,
-    topics: Object.keys(v.topics).join(","),
+    topics: Object.keys(v.topics || {}).join(","),
     fromId: v.fromNotificationId,
   }));
   const endpoint = "getNotifications";
