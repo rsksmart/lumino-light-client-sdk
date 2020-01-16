@@ -20,7 +20,7 @@ import {
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
-import { findMaxMsgInternalId, findMaxBlockId } from "../../utils/functions";
+import { findMaxMsgInternalId } from "../../utils/functions";
 import { manageNotificationData } from "../actions/notifier";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 
@@ -100,7 +100,6 @@ function* checkForOpenChannelInProcessing(
   channelsAfter,
   action
 ) {
-  debugger;
   const k = getChannelKey(action.channel);
   const channelBefore = channelsBefore[k];
   // Channel did exist
@@ -134,18 +133,20 @@ export function* workNotificationPolling({ data }) {
     // A for is used since the yield loses binding on a forEach
     for (let i = 0; i < processedFlat.length; i++) {
       processedFlat[i] = yield processedFlat[i];
+
       if (processedFlat[i])
         processedFlat[i].action = yield processedFlat[i].action;
 
       if (processedFlat[i].action) {
-        const channelsBeforeProcessing = yield select(getChannels);
+        const channelsBefore = yield select(getChannels);
+        const channelsBeforeProcessing = { ...channelsBefore };
         // Resolve promise, then dispatch
 
         if (processedFlat[i].action) {
           yield put({ ...processedFlat[i].action, numberOfNotifiers });
           if (processedFlat[i].action.type === OPEN_CHANNEL_VOTE) {
             const channelsAfterProcessing = yield select(getChannels);
-            checkForOpenChannelInProcessing(
+            yield checkForOpenChannelInProcessing(
               channelsBeforeProcessing,
               channelsAfterProcessing,
               processedFlat[i].action

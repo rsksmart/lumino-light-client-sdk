@@ -3,6 +3,7 @@ import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { CHANNEL_CLOSED } from "../../config/channelStates";
 import { createCloseTx } from "../../scripts/close";
+import { saveLuminoData } from "./storage";
 
 /**
  * Create a deposit.
@@ -40,9 +41,10 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
 };
 
 export const deleteChannelFromSDK = (id, tokenAddress) => dispatch => {
-  return dispatch({
+  dispatch({
     type: DELETE_CHANNEL_FROM_SDK,
     id,
     token_address: tokenAddress,
   });
+  dispatch(saveLuminoData());
 };

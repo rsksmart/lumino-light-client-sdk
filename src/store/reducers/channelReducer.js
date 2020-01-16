@@ -64,6 +64,8 @@ const channel = (state = initialState, action) => {
   switch (action.type) {
     case OPEN_CHANNEL:
       const nChannelKey = getChannelKey(action.channel);
+      // We don't open if it is already there
+      if (state[nChannelKey]) return state;
       const newChannels = createChannel(state, action.channel, nChannelKey);
       return newChannels;
 
@@ -176,6 +178,7 @@ const channel = (state = initialState, action) => {
         channel_identifier: action.id,
         token_address: action.token_address,
       });
+
       delete stateClone[dChannelKey];
       return stateClone;
     default:
