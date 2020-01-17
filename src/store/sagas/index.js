@@ -192,11 +192,6 @@ export function* workReceivedPayment({ payment: d }) {
   Lumino.callbacks.trigger.triggerOnReceivedPaymentCallback(d);
 }
 
-export function* workOpenChannel({ channel }) {
-  // TODO: Deprecate, now the notifiers will trigger it
-  // Lumino.callbacks.trigger.triggerOnOpenChannel(channel);
-}
-
 export function* workDepositChannel({ channel }) {
   Lumino.callbacks.trigger.triggerOnDepositChannel(channel);
 }
@@ -214,7 +209,6 @@ export default function* rootSaga() {
   yield takeEvery(CREATE_PAYMENT, workCreatePayment);
   yield takeEvery(SET_PAYMENT_COMPLETE, workPaymentComplete);
   yield takeEvery(RECEIVED_PAYMENT, workReceivedPayment);
-  yield takeEvery(OPEN_CHANNEL, workOpenChannel);
   yield takeEvery(NEW_DEPOSIT, workDepositChannel);
   yield takeEvery(NOTIFICATIONS_POLLING, workNotificationPolling);
   yield takeEvery(REQUEST_CLIENT_ONBOARDING, workRequestClientOnboarding);
