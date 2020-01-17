@@ -222,9 +222,16 @@ const manageNewChannel = async (notification, notifier) => {
     channel_identifier,
     token_address
   );
-  const partner_address = getAddress(values[1].value);
-  // We need the structure there to give it votes, if there isn't one, we create one
+  const selfAddress = Store.getStore().getState().client.address;
+
+  let partner_address = getAddress(values[1].value);
+  // We check it to make sure to get the correct partner
+
+  if (partner_address === getAddress(selfAddress))
+    partner_address = getAddress(values[2].value);
+
   if (!existingChannel) {
+    // We need the structure there to give it votes, if there isn't one, we create one
     const { token_name, token_symbol } = await Store.getStore().dispatch(
       getTokenNameAndSymbol(token_address)
     );
@@ -236,6 +243,7 @@ const manageNewChannel = async (notification, notifier) => {
       token_name,
       token_symbol,
       token_address,
+      partner_address,
     });
     channel.votes = {
       open: {},
@@ -273,7 +281,7 @@ const createChannelFromNotification = data => {
 
   return {
     channel_identifier: data.channel_identifier,
-    partner_address: getAddress(data[1].value),
+    partner_address: data.partner_address,
     settle_timeout: data[3].value,
     token_address: data.token_address,
     token_name: data.token_name,
