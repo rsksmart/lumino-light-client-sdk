@@ -1,11 +1,10 @@
 import { from } from "rxjs";
 import client from "../../apiRest";
-import JSONbig from "json-bigint";
 import Store from "../index";
 import notifierGet from "../../notifierRest";
 import allSettled from "promise.allsettled";
 
-const url = "payments_light/get_messages";
+const url = "light_client_messages";
 
 const getTransactionInfo = () => {
   const from_message = Store.getStore().getState().client.internal_msg_id || 1;
@@ -13,7 +12,6 @@ const getTransactionInfo = () => {
     client
       .get(url, {
         params: { from_message },
-        transformResponse: res_1 => JSONbig.parse(res_1),
       })
       .then(res => res.data)
   );

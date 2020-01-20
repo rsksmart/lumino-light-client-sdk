@@ -1,4 +1,3 @@
-import JSONbig from "json-bigint";
 import { NEW_DEPOSIT } from "./types";
 import { CHANNEL_OPENED } from "../../config/channelStates";
 import client from "../../apiRest";
@@ -19,8 +18,8 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
 
     const txParams = {
       ...params,
-      address: clientAddress
-    }
+      address: clientAddress,
+    };
     const unsignedApprovalTx = await createApprovalTx(txParams);
     const unsignedDepositTx = await createDepositTx(txParams);
     const signed_approval_tx = await resolver(unsignedApprovalTx, lh);
@@ -34,13 +33,7 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
         signed_close_tx: "",
       };
       const url = `light_channels/${tokenAddress}/${clientAddress}/${partner}`;
-      const res = await client.patch(
-        url,
-        { ...requestBody },
-        {
-          transformResponse: res => JSONbig.parse(res),
-        }
-      );
+      const res = await client.patch(url, { ...requestBody });
       dispatch({
         type: NEW_DEPOSIT,
         channel: { ...res.data, sdk_status: CHANNEL_OPENED },

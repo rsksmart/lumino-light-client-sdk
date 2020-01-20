@@ -1,4 +1,8 @@
-import { MessageType, MessageKeyForOrder } from "../config/messagesConstants";
+import {
+  MessageType,
+  MessageKeyForOrder,
+  LIGHT_MESSAGE_TYPE,
+} from "../config/messagesConstants";
 import {
   getPendingPaymentById,
   paymentExistsInAnyState,
@@ -38,11 +42,17 @@ import { searchTokenDataInChannels } from "../store/functions/tokens";
  */
 export const messageManager = messages => {
   try {
-    const sortedMsgs = messages.sort(
+    // We filter out only payment messages for this flow
+    const paymentMessages = messages.filter(
+      m => (m.message_type = LIGHT_MESSAGE_TYPE.PAYMENT_OK_FLOW)
+    );
+    // We sort them by their order
+    const sortedPaymentMsg = paymentMessages.sort(
       (a, b) => a.message_order - b.message_order
     );
+    // Manage each one
     const { getAddress } = ethers.utils;
-    sortedMsgs.forEach(msg => {
+    sortedPaymentMsg.forEach(({ message_content: msg }) => {
       const { light_client_payment_id: identifier, is_signed } = msg;
       const messageSignedKey = is_signed
         ? "signed_message"
@@ -118,7 +128,7 @@ const manageLockedTransfer = (message, payment, messageSignedKey) => {
     payment: {
       messages: {
         1: {
-          message_id: msg.message_identifier,
+          payment_id: msg.message_identifier,
           message_order: 1,
           receiver: ethers.utils.getAddress(msg.target),
           sender: ethers.utils.getAddress(msg.initiator),

@@ -23,7 +23,6 @@ import {
 import { validateLockedTransfer } from "../../utils/validators";
 import { getChannelsState } from "../functions";
 import { ethers } from "ethers";
-import JSONbig from "json-bigint";
 import BigNumber from "bignumber.js";
 import { MessageType } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
@@ -64,10 +63,11 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       secrethash,
     };
     const urlCreate = "payments_light/create";
-    const res = await client.post(urlCreate, requestBody, {
-      transformResponse: res => JSONbig.parse(res),
-    });
-    const { message, message_id, message_order } = { ...res.data };
+    const res = await client.post(urlCreate, requestBody);
+    const {
+      message_content: { message, message_order, payment_id },
+    } = { ...res.data };
+    debugger;
     const messageWithHash = {
       ...message,
       lock: {
@@ -87,7 +87,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const channels = getChannelsState();
     validateLockedTransfer(message, requestBody, channels);
     const dataToPut = {
-      message_id,
+      payment_id: payment_id,
       message_order,
       receiver: getAddress(messageWithHash.target),
       sender: getAddress(messageWithHash.initiator),
@@ -96,10 +96,10 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         signature,
       },
     };
+    debugger;
     const urlPut = "payments_light";
-    await client.put(urlPut, dataToPut, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    // Send signed LT to HUB
+    await client.put(urlPut, dataToPut);
     const { tokenName, tokenSymbol } = searchTokenDataInChannels(token_address);
     dispatch({
       type: CREATE_PAYMENT,
@@ -108,7 +108,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         message_order: 1,
         secret,
         partner: message.target,
-        paymentId: `${dataToPut.message_id}`,
+        paymentId: payment_id,
         initiator: message.initiator,
         amount: message.lock.amount,
         secret_hash: secrethash,
@@ -119,7 +119,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         tokenNetworkAddress: dataToPut.message.token_network_address,
         chainId: dataToPut.message.chain_id,
       },
-      paymentId: `${dataToPut.message_id}`,
+      paymentId: payment_id,
       channelId: dataToPut.message.channel_identifier,
       token: token_address,
     });
@@ -136,11 +136,11 @@ export const clearAllPendingPayments = () => async (dispatch, getState, lh) => {
   return await lh.storage.saveLuminoData(allData);
 };
 
-export const mockPulling = () => async (dispatch, getState, lh) => {
+export const mockPulling = () => async dispatch => {
   dispatch({ type: MESSAGE_POLLING_START });
 };
 
-export const mockStopPulling = () => async (dispatch, getState, lh) => {
+export const mockStopPulling = () => async dispatch => {
   dispatch({ type: MESSAGE_POLLING_STOP });
 };
 
@@ -175,7 +175,7 @@ export const putDelivered = (
   const receiver = isReception ? payment.initiator : payment.partner;
   const { getAddress } = ethers.utils;
   const body = {
-    message_id: payment.paymentId,
+    payment_id: payment.paymentId,
     message_order: order,
     sender: getAddress(sender),
     receiver: getAddress(receiver),
@@ -200,9 +200,7 @@ export const putDelivered = (
       })
     );
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
 
     dispatch(saveLuminoData());
   } catch (reqEx) {
@@ -217,7 +215,7 @@ export const putProcessed = (msg, payment, order = 3) => async (
 ) => {
   const { getAddress } = ethers.utils;
   const body = {
-    message_id: payment.paymentId,
+    payment_id: payment.paymentId,
     message_order: order,
     sender: getAddress(payment.partner),
     receiver: getAddress(payment.initiator),
@@ -242,9 +240,7 @@ export const putProcessed = (msg, payment, order = 3) => async (
       })
     );
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
     console.error("reqEx Put SecretReveal", reqEx);
@@ -258,7 +254,7 @@ export const putSecretRequest = (msg, payment) => async (
 ) => {
   const { getAddress } = ethers.utils;
   const body = {
-    message_id: payment.paymentId,
+    payment_id: payment.paymentId,
     message_order: 5,
     sender: getAddress(payment.initiator),
     receiver: getAddress(payment.partner),
@@ -287,9 +283,7 @@ export const putSecretRequest = (msg, payment) => async (
       })
     );
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
     console.error("reqEx Put SecretReveal", reqEx);
@@ -311,7 +305,7 @@ export const putRevealSecret = (
     : getAddress(payment.partner);
 
   const body = {
-    message_id: payment.paymentId,
+    payment_id: payment.paymentId,
     message_order: order,
     sender,
     receiver,
@@ -337,9 +331,7 @@ export const putRevealSecret = (
       })
     );
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
     console.error("reqEx Put SecretReveal", reqEx);
@@ -361,7 +353,7 @@ export const putBalanceProof = (message, payment) => async (
     throw resolverError;
   }
   const body = {
-    message_id: payment.paymentId,
+    payment_id: payment.paymentId,
     message_order: 11,
     sender: getAddress(payment.initiator),
     receiver: getAddress(payment.partner),
@@ -378,9 +370,7 @@ export const putBalanceProof = (message, payment) => async (
       })
     );
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
     console.error("reqEx Put SecretReveal", reqEx);
@@ -412,9 +402,7 @@ export const putNonClosingBalanceProof = (message, payment) => async (
   };
   try {
     const urlPut = "watchtower";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch({
       type: UPDATE_NON_CLOSING_BP,
       channelId: payment.channelId,

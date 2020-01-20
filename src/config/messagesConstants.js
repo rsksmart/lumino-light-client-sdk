@@ -9,6 +9,13 @@ export const MessageType = {
   BALANCE_PROOF: "BalanceProof",
 };
 
+export const PAYMENT_SUCCESSFUL = "PaymentSuccessful";
+export const LC_PROTOCOL_MESSAGE_TYPE = "LightClientProtocolMessageType";
+
+export const LIGHT_MESSAGE_TYPE = {
+  PAYMENT_OK_FLOW: `${LC_PROTOCOL_MESSAGE_TYPE}.${PAYMENT_SUCCESSFUL}`,
+};
+
 export const MessageIdentifierKey = {
   [MessageType.LOCKED_TRANSFER]: "message_identifier",
   [MessageType.DELIVERED]: "delivered_message_identifier",
