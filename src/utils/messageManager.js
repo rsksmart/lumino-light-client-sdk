@@ -41,18 +41,37 @@ import { searchTokenDataInChannels } from "../store/functions/tokens";
  * @param {*} messages The messages to process
  */
 export const messageManager = messages => {
+  // We filter out only payment messages for this flow
+
+  const paymentMessages = [];
+  const nonPaymentMessages = [];
+  messages.forEach(m => {
+    if ((m.message_type = LIGHT_MESSAGE_TYPE.PAYMENT_OK_FLOW))
+      return paymentMessages.push(m);
+    return nonPaymentMessages.push(m);
+  });
+  const sortedNonPaymentMsg = nonPaymentMessages.sort(
+    (a, b) => a.internal_msg_identifier - b.internal_msg_identifier
+  );
+  manageNonPaymentMessages(sortedNonPaymentMsg);
+
+  // We sort them by their order
+  const sortedPaymentMsg = paymentMessages.sort(
+    (a, b) => a.message_order - b.message_order
+  );
+
+  managePaymentMessages(sortedPaymentMsg);
+};
+
+const manageNonPaymentMessages = messages => {
+  const { getAddress } = ethers.utils;
+  messages.forEach(({ message_content: msg }) => {});
+};
+
+const managePaymentMessages = messages => {
+  const { getAddress } = ethers.utils;
   try {
-    // We filter out only payment messages for this flow
-    const paymentMessages = messages.filter(
-      m => (m.message_type = LIGHT_MESSAGE_TYPE.PAYMENT_OK_FLOW)
-    );
-    // We sort them by their order
-    const sortedPaymentMsg = paymentMessages.sort(
-      (a, b) => a.message_order - b.message_order
-    );
-    // Manage each one
-    const { getAddress } = ethers.utils;
-    sortedPaymentMsg.forEach(({ message_content: msg }) => {
+    messages.forEach(({ message_content: msg }) => {
       const { light_client_payment_id: identifier, is_signed } = msg;
       const messageSignedKey = is_signed
         ? "signed_message"
