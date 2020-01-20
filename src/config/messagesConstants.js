@@ -41,13 +41,13 @@ export const MessageKeyForOrder = {
 };
 
 export const MessageNumPad = {
-  [MessageType.DELIVERED]: 12,
-  [MessageType.BALANCE_PROOF]: 4,
-  UPDATE_BALANCE_PROOF: 2,
   [MessageType.PROCESSED]: 0,
+  UPDATE_BALANCE_PROOF: 2,
   [MessageType.SECRET_REQUEST]: 3,
-  [MessageType.REVEAL_SECRET]: 11,
+  [MessageType.BALANCE_PROOF]: 4,
   [MessageType.LOCKED_TRANSFER]: 7,
+  [MessageType.REVEAL_SECRET]: 11,
+  [MessageType.DELIVERED]: 12,
 };
 
 export const MessageTypeID = {
