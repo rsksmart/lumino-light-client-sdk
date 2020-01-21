@@ -255,7 +255,9 @@ const manageSecretRequest = (msg, payment, messageSignedKey) => {
   }
   if (!payment.isReceived) store.dispatch(putRevealSecret(payment));
   if (payment.isReceived)
-    return store.dispatch(putSecretRequest(msg[messageSignedKey], payment));
+    return store.dispatch(
+      putSecretRequest(msg[messageSignedKey], payment, true)
+    );
 };
 
 /**

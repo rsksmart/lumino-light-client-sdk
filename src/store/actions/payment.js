@@ -237,21 +237,23 @@ export const putProcessed = (msg, payment, order = 3) => async (
     await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put Processed", reqEx);
   }
 };
 
-export const putSecretRequest = (msg, payment) => async (
+export const putSecretRequest = (msg, payment, isReception = false) => async (
   dispatch,
   getState,
   lh
 ) => {
   const { getAddress } = ethers.utils;
+  const sender = isReception ? payment.partner : payment.initiator;
+  const receiver = isReception ? payment.initiator : payment.partner;
   const body = {
     payment_id: payment.paymentId,
     message_order: 5,
-    sender: getAddress(payment.initiator),
-    receiver: getAddress(payment.partner),
+    sender: getAddress(sender),
+    receiver: getAddress(receiver),
     message: {
       type: MessageType.SECRET_REQUEST,
       message_identifier: msg.message_identifier,
@@ -278,7 +280,7 @@ export const putSecretRequest = (msg, payment) => async (
     await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put SecretRequest", reqEx);
   }
 };
 
@@ -324,7 +326,7 @@ export const putRevealSecret = (
     await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put RevealSecret", reqEx);
   }
 };
 
@@ -361,7 +363,7 @@ export const putBalanceProof = (message, payment) => async (
     await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put BalanceProof", reqEx);
   }
 };
 
@@ -395,7 +397,7 @@ export const putNonClosingBalanceProof = (message, payment) => async (
     });
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put NonClosingBP", reqEx);
   }
 };
 
