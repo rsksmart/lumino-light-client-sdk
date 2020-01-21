@@ -30,7 +30,7 @@ const fakePaymentData = [
          },
          "signed_message": null,
          "state_change_id": null,
-         "light_client_payment_id": 97
+         "payment_id": 97
     }, {
         "identifier": 587,
         "is_signed": false,
@@ -62,7 +62,7 @@ const fakePaymentData = [
         },
         "signed_message": null,
         "state_change_id": null,
-        "light_client_payment_id": 97
+        "payment_id": 97
     }, {
         "identifier": 587,
         "is_signed": false,
@@ -94,7 +94,7 @@ const fakePaymentData = [
         },
         "signed_message": null,
         "state_change_id": null,
-        "light_client_payment_id": 97
+        "payment_id": 97
     },
 ];
 

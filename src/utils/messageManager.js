@@ -72,12 +72,11 @@ const managePaymentMessages = messages => {
   const { getAddress } = ethers.utils;
   try {
     messages.forEach(({ message_content: msg }) => {
-      const { light_client_payment_id: identifier, is_signed } = msg;
-      const messageSignedKey = is_signed
-        ? "signed_message"
-        : "unsigned_message";
+      const { payment_id, is_signed } = msg;
+      // TODO: Remove this, now we manage everything as message
+      const messageSignedKey = "message";
       const { type } = msg[messageSignedKey];
-      const paymentId = identifier.toString();
+      const paymentId = payment_id.toString();
       const payment = getPendingPaymentById(paymentId);
 
       // We can't handle payments that don't exist, but we can handle reception of a new one
@@ -192,6 +191,7 @@ const manageDeliveredAndProcessed = (msg, payment, messageSignedKey) => {
     // Message already processed
     return null;
   }
+
   const { message_order } = msg;
   const previousMessage = payment.messages[message_order - 1];
   if (!previousMessage) {
@@ -212,12 +212,12 @@ const manageDeliveredAndProcessed = (msg, payment, messageSignedKey) => {
   const store = Store.getStore();
   // This function add the message to the store in its proper order
   store.dispatch(
-    addPendingPaymentMessage(msg.light_client_payment_id, msg.message_order, {
+    addPendingPaymentMessage(msg.payment_id, msg.message_order, {
       message: msg[messageSignedKey],
       message_order: msg.message_order,
     })
   );
-  if (msg.signed_message.type === MessageType.PROCESSED)
+  if (msg[messageSignedKey].type === MessageType.PROCESSED)
     return store.dispatch(
       putDelivered(msg[messageSignedKey], payment, msg.message_order + 1)
     );
@@ -244,7 +244,7 @@ const manageSecretRequest = (msg, payment, messageSignedKey) => {
   const store = Store.getStore();
   // This function add the message to the store in its proper order
   store.dispatch(
-    addPendingPaymentMessage(msg.light_client_payment_id, msg.message_order, {
+    addPendingPaymentMessage(msg.payment_id, msg.message_order, {
       message: msg[messageSignedKey],
       message_order: msg.message_order,
     })
@@ -276,7 +276,7 @@ const manageRevealSecret = (msg, payment, messageSignedKey) => {
     if (!hasSameSecret) return console.warn("Secret does not match");
 
     store.dispatch(
-      addPendingPaymentMessage(msg.light_client_payment_id, msg.message_order, {
+      addPendingPaymentMessage(msg.payment_id, msg.message_order, {
         message: msg[messageSignedKey],
         message_order: msg.message_order,
       })
@@ -290,7 +290,7 @@ const manageRevealSecret = (msg, payment, messageSignedKey) => {
       keccak256(msg[messageSignedKey].secret) === payment.secret_hash;
     if (!hasSameSecretHash) return console.warn("Secret does not match");
     store.dispatch(
-      addPendingPaymentMessage(msg.light_client_payment_id, msg.message_order, {
+      addPendingPaymentMessage(msg.payment_id, msg.message_order, {
         message: msg[messageSignedKey],
         message_order: msg.message_order,
       })
@@ -301,7 +301,7 @@ const manageRevealSecret = (msg, payment, messageSignedKey) => {
     return store.dispatch(saveLuminoData());
   } else {
     store.dispatch(
-      addPendingPaymentMessage(msg.light_client_payment_id, msg.message_order, {
+      addPendingPaymentMessage(msg.payment_id, msg.message_order, {
         message: msg[messageSignedKey],
         message_order: msg.message_order,
       })
@@ -349,7 +349,7 @@ const manageSecret = (msg, payment, messageSignedKey) => {
 
   const store = Store.getStore();
   store.dispatch(
-    addPendingPaymentMessage(msg.light_client_payment_id, msg.message_order, {
+    addPendingPaymentMessage(msg.payment_id, msg.message_order, {
       message: msg[messageSignedKey],
       message_order: msg.message_order,
     })
@@ -358,7 +358,7 @@ const manageSecret = (msg, payment, messageSignedKey) => {
   store.dispatch({
     type: SET_SECRET_MESSAGE_ID,
     id: msg.message_order,
-    paymentId: msg.light_client_payment_id,
+    paymentId: msg.payment_id,
   });
   // Put BP for sent payments
   if (!payment.isReceived)

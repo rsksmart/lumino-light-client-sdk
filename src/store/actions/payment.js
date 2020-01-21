@@ -51,7 +51,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       // TODO: Add a callback for this
       dispatch({
         type: PAYMENT_CREATION_ERROR,
-        reason: `Insufficient funds for payment`,
+        reason: "Insufficient funds for payment`",
       });
       return null;
     }
@@ -67,7 +67,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const {
       message_content: { message, message_order, payment_id },
     } = { ...res.data };
-    debugger;
+
     const messageWithHash = {
       ...message,
       lock: {
@@ -79,11 +79,9 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const dataToSign = ethers.utils.arrayify(
       getDataToSignForLockedTransfer(messageWithHash)
     );
-    try {
-      signature = await resolver(dataToSign, lh, true);
-    } catch (resolverError) {
-      throw resolverError;
-    }
+
+    signature = await resolver(dataToSign, lh, true);
+
     const channels = getChannelsState();
     validateLockedTransfer(message, requestBody, channels);
     const dataToPut = {
@@ -96,7 +94,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         signature,
       },
     };
-    debugger;
+
     const urlPut = "payments_light";
     // Send signed LT to HUB
     await client.put(urlPut, dataToPut);
@@ -126,7 +124,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const allData = getState();
     return await lh.storage.saveLuminoData(allData);
   } catch (apiError) {
-    throw apiError;
+    console.error(apiError);
   }
 };
 
@@ -186,11 +184,9 @@ export const putDelivered = (
   };
   const dataToSign = getDataToSignForDelivered(body.message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   body.message.signature = signature;
   try {
     dispatch(
@@ -226,11 +222,9 @@ export const putProcessed = (msg, payment, order = 3) => async (
   };
   const dataToSign = getDataToSignForProcessed(body.message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   body.message.signature = signature;
   try {
     dispatch(
@@ -269,11 +263,9 @@ export const putSecretRequest = (msg, payment) => async (
   };
   const dataToSign = getDataToSignForSecretRequest(body.message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   body.message.signature = signature;
   try {
     dispatch(
@@ -317,11 +309,9 @@ export const putRevealSecret = (
   };
   const dataToSign = getDataToSignForRevealSecret(body.message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   body.message.signature = signature;
   try {
     dispatch(
@@ -344,14 +334,12 @@ export const putBalanceProof = (message, payment) => async (
   lh
 ) => {
   const { getAddress } = ethers.utils;
-  const { signature: oldSignature, ...data } = message;
+  const data = message;
   const dataToSign = getDataToSignForBalanceProof(data);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   const body = {
     payment_id: payment.paymentId,
     message_order: 11,
@@ -385,14 +373,10 @@ export const putNonClosingBalanceProof = (message, payment) => async (
   const { getAddress } = ethers.utils;
   const dataToSign = getDataToSignForNonClosingBalanceProof(message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+  signature = await resolver(dataToSign, lh, true);
   const body = {
     sender: getAddress(payment.partner),
-    light_client_payment_id: payment.paymentId,
+    payment_id: payment.paymentId,
     secret_hash: payment.secret_hash,
     nonce: message.nonce,
     channel_id: payment.channelId,

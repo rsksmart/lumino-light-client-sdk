@@ -53,7 +53,7 @@ const notificationsMonitoredEpic = action$ => {
   return action$.pipe(
     ofType(START_NOTIFICATIONS_POLLING),
     switchMap(() =>
-      timer(1000, 1000).pipe(
+      timer(1000, 10000).pipe(
         takeUntil(stopPolling$),
         exhaustMap(() =>
           getNotificationsInfo().pipe(

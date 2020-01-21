@@ -15,7 +15,7 @@ const initialState = {
 
 const paymentsReducer = (state = initialState, action) => {
   switch (action.type) {
-    case CREATE_PAYMENT:
+    case CREATE_PAYMENT: {
       const newPayment = {
         ...state,
         pending: {
@@ -27,7 +27,8 @@ const paymentsReducer = (state = initialState, action) => {
         },
       };
       return newPayment;
-    case ADD_PENDING_PAYMENT_MESSAGE:
+    }
+    case ADD_PENDING_PAYMENT_MESSAGE: {
       const addedPaymentMessage = {
         ...state,
         pending: {
@@ -43,7 +44,8 @@ const paymentsReducer = (state = initialState, action) => {
         },
       };
       return addedPaymentMessage;
-    case SET_PAYMENT_SECRET:
+    }
+    case SET_PAYMENT_SECRET: {
       const paymentWithSecret = {
         ...state,
         pending: {
@@ -55,7 +57,8 @@ const paymentsReducer = (state = initialState, action) => {
         },
       };
       return paymentWithSecret;
-    case SET_PAYMENT_COMPLETE:
+    }
+    case SET_PAYMENT_COMPLETE: {
       const newComplete = {
         ...state,
         completed: {
@@ -67,11 +70,12 @@ const paymentsReducer = (state = initialState, action) => {
       };
       delete newComplete.pending[action.paymentId];
       return newComplete;
+    }
     case DELETE_ALL_PENDING_PAYMENTS:
       return { ...state, pending: {} };
     default:
       return state;
-    case SET_SECRET_MESSAGE_ID:
+    case SET_SECRET_MESSAGE_ID: {
       const secretId = {
         ...state,
         pending: {
@@ -83,6 +87,7 @@ const paymentsReducer = (state = initialState, action) => {
         },
       };
       return secretId;
+    }
   }
 };
 
