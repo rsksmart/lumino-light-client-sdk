@@ -44,17 +44,17 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const hashes = generateHashes();
     const { secrethash, hash: secret } = hashes;
     const channel = getLatestChannelByPartnerAndToken(partner, token_address);
-    // Check for sufficient funds
-    const actualBalance = bigNumberify(channel.offChainBalance);
-    if (actualBalance.lt(amount)) {
-      console.error("Insufficient funds for payment");
-      // TODO: Add a callback for this
-      dispatch({
-        type: PAYMENT_CREATION_ERROR,
-        reason: "Insufficient funds for payment`",
-      });
-      return null;
-    }
+    // // Check for sufficient funds
+    // const actualBalance = bigNumberify(channel.offChainBalance);
+    // if (actualBalance.lt(amount)) {
+    //   console.error("Insufficient funds for payment");
+    //   // TODO: Add a callback for this
+    //   dispatch({
+    //     type: PAYMENT_CREATION_ERROR,
+    //     reason: "Insufficient funds for payment`",
+    //   });
+    //   return null;
+    // }
     const requestBody = {
       creator_address: address,
       partner_address: partner,

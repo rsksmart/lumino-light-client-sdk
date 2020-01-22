@@ -133,11 +133,12 @@ const channel = (state = initialState, action) => {
         },
       };
       return channelsDeposited;
-    case CHANGE_CHANNEL_BALANCE:
+    case CHANGE_CHANNEL_BALANCE: {
       const { payment } = action;
       const { isReceived, secretMessageId, messages } = payment;
       const ccbChannel = getPaymentChannelKey(payment);
       // We get the BP
+      if (!state[ccbChannel]) return state;
       const amount = messages[secretMessageId].message.transferred_amount;
       // We parse the amounts as BN
       const bigAmount = bigNumberify(String(amount));
@@ -163,6 +164,7 @@ const channel = (state = initialState, action) => {
           sentTokens: channelSent.toString(),
         },
       };
+    }
     case UPDATE_NON_CLOSING_BP:
       const ncbpChannel = getPaymentChannelKey(action);
       return {

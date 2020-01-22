@@ -338,10 +338,10 @@ const manageSecret = (msg, payment, messageSignedKey) => {
 
   if (!hasSameSecret) return console.warn("Secret does not match");
 
-  const hasSameChannelId =
-    msg[messageSignedKey].channel_identifier === payment.channelId;
+  // const hasSameChannelId =
+  //   msg[messageSignedKey].channel_identifier === payment.channelId;
 
-  if (!hasSameChannelId) return console.warn("Channel Id does not match");
+  // if (!hasSameChannelId) return console.warn("Channel Id does not match");
 
   const hasSameNetworkTokenAddress =
     msg[messageSignedKey].token_network_address === payment.tokenNetworkAddress;
