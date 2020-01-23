@@ -378,7 +378,7 @@ export const putNonClosingBalanceProof = (message, payment) => async (
   signature = await resolver(dataToSign, lh, true);
   const body = {
     sender: getAddress(payment.partner),
-    payment_id: payment.paymentId,
+    light_client_payment_id: payment.paymentId,
     secret_hash: payment.secret_hash,
     nonce: message.nonce,
     channel_id: payment.channelId,
