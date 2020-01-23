@@ -176,6 +176,23 @@ export const getDataToSignForSecretRequest = message => {
   ]);
 };
 
+export const getDataToSignForLockExpired = message => {
+  return ethers.utils.concat([
+    hexEncode(MessageNumPad[MessageType.LOCK_EXPIRED], 1),
+    hexEncode(0, 3),
+    hexEncode(message.nonce, 8),
+    hexEncode(message.chain_id, 32),
+    hexEncode(message.message_identifier, 8, true),
+    hexEncode(message.token_network_address, 20),
+    hexEncode(message.channel_identifier, 32),
+    hexEncode(message.recipient, 20),
+    hexEncode(message.locksroot, 32),
+    hexEncode(message.secrethash, 32),
+    hexEncode(message.transferred_amount, 32, true),
+    hexEncode(message.locked_amount, 32, true),
+  ]);
+};
+
 export const getPackedData = message => {
   const { type } = message;
   switch (type) {
@@ -185,14 +202,14 @@ export const getPackedData = message => {
       return getDataToSignForProcessed(message);
     case MessageType.LOCKED_TRANSFER:
       return getDataToSignForLockedTransfer(message);
-    case MessageType.SECRET_REVEAL:
-      return getDataToSignForSecretReveal(message);
     case MessageType.SECRET_REQUEST:
       return getDataToSignForSecretRequest(message);
     case MessageType.REVEAL_SECRET:
       return getDataToSignForRevealSecret(message);
     case MessageType.SECRET:
       return getDataToSignForBalanceProof(message);
+    case MessageType.LOCK_EXPIRED:
+      return getDataToSignForLockExpired(message);
     default:
       console.warn("Unknown message type");
       return null;
