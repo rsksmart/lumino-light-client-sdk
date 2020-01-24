@@ -28,6 +28,7 @@ import { MessageType } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
 import { getLatestChannelByPartnerAndToken } from "../functions/channels";
 import { searchTokenDataInChannels } from "../functions/tokens";
+import { dispatch } from "rxjs/internal/observable/pairs";
 
 /**
  * Create a payment.
@@ -406,3 +407,12 @@ export const setPaymentSecret = (paymentId, secret) => ({
   secret,
   paymentId,
 });
+
+export const setPaymentFailed = (payment, actualState, reason) => dispatch => {
+  const obj = {
+    paymentId: payment.payment_id,
+    reason,
+    paymentState: actualState,
+  };
+  return dispatch(obj);
+};

@@ -1,8 +1,10 @@
+import { ethers } from "ethers";
 import {
   MessageType,
   MessageKeyForOrder,
   LIGHT_MESSAGE_TYPE,
 } from "../config/messagesConstants";
+import { FAILURE_REASONS } from "../config/paymentConstants";
 import {
   getPendingPaymentById,
   paymentExistsInAnyState,
@@ -19,6 +21,7 @@ import {
   putSecretRequest,
   setPaymentSecret,
   putNonClosingBalanceProof,
+  setPaymentFailed,
 } from "../store/actions/payment";
 import { saveLuminoData } from "../store/actions/storage";
 import {
@@ -32,9 +35,9 @@ import {
   RECEIVED_PAYMENT,
   SET_SECRET_MESSAGE_ID,
 } from "../store/actions/types";
-import { ethers } from "ethers";
 import Lumino from "../Lumino/index";
 import { searchTokenDataInChannels } from "../store/functions/tokens";
+import { getPaymentByIdAndState } from "../store/functions/payments";
 
 /**
  *
@@ -64,8 +67,18 @@ export const messageManager = messages => {
 };
 
 const manageNonPaymentMessages = messages => {
-  const { getAddress } = ethers.utils;
-  messages.forEach(({ message_content: msg }) => {});
+  // const { getAddress } = ethers.utils;
+  messages.forEach(({ message_content: msg, message_type }) => {
+    const paymentState = paymentExistsInAnyState(msg.payment_id);
+    const payment =
+      paymentState && getPaymentByIdAndState(paymentState, msg.payment_id);
+
+    switch (message_type) {
+      case MessageType.LOCK_EXPIRED: {
+        return manageLockExpired(msg, { ...payment, paymentState });
+      }
+    }
+  });
 };
 
 const managePaymentMessages = messages => {
@@ -79,7 +92,7 @@ const managePaymentMessages = messages => {
       const paymentId = payment_id.toString();
       const payment = getPendingPaymentById(paymentId);
 
-      // We can't handle payments that don't exist, but we can handle reception of a new one
+      // We can't handle payments that don't exist OR failed, but we can handle reception of a new one
       if (!payment && type !== MessageType.LOCKED_TRANSFER) return null;
       // We have to check if a locked transfer may be from a payment that has been processed already
       if (type === MessageType.LOCKED_TRANSFER) {
@@ -113,6 +126,14 @@ const managePaymentMessages = messages => {
   } catch (e) {
     console.warn(e);
   }
+};
+
+const manageLockExpired = (message, payment) => {
+  const store = Store.getStore();
+  const { payment_id, paymentState } = payment;
+  return store.dispatch(
+    setPaymentFailed(payment_id, paymentState, FAILURE_REASONS.EXPIRED)
+  );
 };
 
 const manageLockedTransfer = (message, payment, messageSignedKey) => {

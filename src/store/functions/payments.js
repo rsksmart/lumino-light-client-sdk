@@ -43,3 +43,10 @@ export const paymentExistsInAnyState = paymentId => {
   const payments = store.getState().paymentIds;
   return payments[paymentId];
 };
+
+export const getPaymentByIdAndState = (state, paymentId) => {
+  const store = Store.getStore();
+  const { payments } = store.getState();
+  const payment = payments[state][paymentId];
+  return payment;
+};
