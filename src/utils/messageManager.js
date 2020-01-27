@@ -22,6 +22,8 @@ import {
   setPaymentSecret,
   putNonClosingBalanceProof,
   setPaymentFailed,
+  recreatePaymentForFailure,
+  putLockExpired,
 } from "../store/actions/payment";
 import { saveLuminoData } from "../store/actions/storage";
 import {
@@ -70,12 +72,12 @@ const manageNonPaymentMessages = messages => {
   // const { getAddress } = ethers.utils;
   messages.forEach(({ message_content: msg, message_type }) => {
     const paymentState = paymentExistsInAnyState(msg.payment_id);
-    const payment =
+    const paymentData =
       paymentState && getPaymentByIdAndState(paymentState, msg.payment_id);
-
+    const payment = paymentData ? { ...paymentData, paymentState } : null;
     switch (message_type) {
       case MessageType.LOCK_EXPIRED: {
-        return manageLockExpired(msg, { ...payment, paymentState });
+        return manageLockExpired(msg, payment);
       }
     }
   });
@@ -87,8 +89,8 @@ const managePaymentMessages = messages => {
     messages.forEach(({ message_content: msg }) => {
       const { payment_id, is_signed } = msg;
       // TODO: Remove this, now we manage everything as message
-      const messageSignedKey = "message";
-      const { type } = msg[messageSignedKey];
+      const messageKey = "message";
+      const { type } = msg[messageKey];
       const paymentId = payment_id.toString();
       const payment = getPendingPaymentById(paymentId);
 
@@ -100,7 +102,7 @@ const managePaymentMessages = messages => {
         if (hasPaymentInPendingOrComplete) return null;
       }
       if (is_signed && type !== MessageType.LOCKED_TRANSFER) {
-        const signatureAddress = signatureRecover(msg[messageSignedKey]);
+        const signatureAddress = signatureRecover(msg[messageKey]);
         const { initiator, partner } = payment;
         if (!isAddressFromPayment(signatureAddress, initiator, partner))
           return null;
@@ -109,16 +111,16 @@ const managePaymentMessages = messages => {
       }
       switch (type) {
         case MessageType.LOCKED_TRANSFER:
-          return manageLockedTransfer(msg, payment, messageSignedKey);
+          return manageLockedTransfer(msg, payment, messageKey);
         case MessageType.DELIVERED:
         case MessageType.PROCESSED:
-          return manageDeliveredAndProcessed(msg, payment, messageSignedKey);
+          return manageDeliveredAndProcessed(msg, payment, messageKey);
         case MessageType.SECRET_REQUEST:
-          return manageSecretRequest(msg, payment, messageSignedKey);
+          return manageSecretRequest(msg, payment, messageKey);
         case MessageType.SECRET:
-          return manageSecret(msg, payment, messageSignedKey);
+          return manageSecret(msg, payment, messageKey);
         case MessageType.REVEAL_SECRET:
-          return manageRevealSecret(msg, payment, messageSignedKey);
+          return manageRevealSecret(msg, payment, messageKey);
         default:
           break;
       }
@@ -130,16 +132,21 @@ const managePaymentMessages = messages => {
 
 const manageLockExpired = (message, payment) => {
   const store = Store.getStore();
-  const { payment_id, paymentState } = payment;
-  return store.dispatch(
+  if (!payment) {
+    store.dispatch(recreatePaymentForFailure(message));
+  }
+  const paymentAux = getPendingPaymentById(message.payment_id);
+  const { payment_id, paymentState } = paymentAux;
+  store.dispatch(
     setPaymentFailed(payment_id, paymentState, FAILURE_REASONS.EXPIRED)
   );
+  return store.dispatch(putLockExpired(message));
 };
 
-const manageLockedTransfer = (message, payment, messageSignedKey) => {
+const manageLockedTransfer = (message, payment, messageKey) => {
   // We shouldn't have a payment, if the payment exists then the LT was processed
   if (payment) return null;
-  const msg = message[messageSignedKey];
+  const msg = message[messageKey];
   // Validate signature
   const signatureAddress = signatureRecover(msg);
   const { initiator } = msg;
@@ -205,9 +212,9 @@ const manageLockedTransfer = (message, payment, messageSignedKey) => {
  *
  * @param {*} msg The message to manage
  * @param {*} payment The payment associated to the message
- * @param {*} messageSignedKey The data key for accessing the message
+ * @param {*} messageKey The data key for accessing the message
  */
-const manageDeliveredAndProcessed = (msg, payment, messageSignedKey) => {
+const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
   if (payment.messages[msg.message_order]) {
     // Message already processed
     return null;
@@ -226,7 +233,7 @@ const manageDeliveredAndProcessed = (msg, payment, messageSignedKey) => {
 
   const isSameIdentifier =
     previousMessage.message[previousMsgIdentifierKey].toString() ===
-    msg[messageSignedKey][msgIdentifierKey].toString();
+    msg[messageKey][msgIdentifierKey].toString();
   if (!isSameIdentifier) {
     return console.warn("Identifier of previous message does not match");
   }
@@ -234,13 +241,13 @@ const manageDeliveredAndProcessed = (msg, payment, messageSignedKey) => {
   // This function add the message to the store in its proper order
   store.dispatch(
     addPendingPaymentMessage(msg.payment_id, msg.message_order, {
-      message: msg[messageSignedKey],
+      message: msg[messageKey],
       message_order: msg.message_order,
     })
   );
-  if (msg[messageSignedKey].type === MessageType.PROCESSED)
+  if (msg[messageKey].type === MessageType.PROCESSED)
     return store.dispatch(
-      putDelivered(msg[messageSignedKey], payment, msg.message_order + 1)
+      putDelivered(msg[messageKey], payment, msg.message_order + 1)
     );
   return store.dispatch(saveLuminoData());
 };
@@ -249,45 +256,41 @@ const manageDeliveredAndProcessed = (msg, payment, messageSignedKey) => {
  *
  * @param {*} msg The message to manage
  * @param {*} payment The payment associated to the message
- * @param {*} messageSignedKey The data key for accessing the message
+ * @param {*} messageKey The data key for accessing the message
  */
-const manageSecretRequest = (msg, payment, messageSignedKey) => {
+const manageSecretRequest = (msg, payment, messageKey) => {
   if (payment.messages[msg.message_order]) {
     // Message already processed
     return null;
   }
-  const hasSameSecretHash =
-    msg[messageSignedKey].secrethash === payment.secret_hash;
+  const hasSameSecretHash = msg[messageKey].secrethash === payment.secret_hash;
   if (!hasSameSecretHash) return console.warn("Secret hash does not match");
-  const hasSameAmount =
-    `${msg[messageSignedKey].amount}` === `${payment.amount}`;
+  const hasSameAmount = `${msg[messageKey].amount}` === `${payment.amount}`;
   if (!hasSameAmount) return console.warn("Amount does not match");
   const store = Store.getStore();
   // This function add the message to the store in its proper order
   store.dispatch(
     addPendingPaymentMessage(msg.payment_id, msg.message_order, {
-      message: msg[messageSignedKey],
+      message: msg[messageKey],
       message_order: msg.message_order,
     })
   );
   // If we are receiving it, we just put the reveal secret
   if (!payment.messages[6] && !payment.isReceived) {
-    store.dispatch(putDelivered(msg[messageSignedKey], payment, 6));
+    store.dispatch(putDelivered(msg[messageKey], payment, 6));
   }
   if (!payment.isReceived) store.dispatch(putRevealSecret(payment));
   if (payment.isReceived)
-    return store.dispatch(
-      putSecretRequest(msg[messageSignedKey], payment, true)
-    );
+    return store.dispatch(putSecretRequest(msg[messageKey], payment, true));
 };
 
 /**
  *
  * @param {*} msg The message to manage
  * @param {*} payment The payment associated to the message
- * @param {*} messageSignedKey The data key for accessing the message
+ * @param {*} messageKey The data key for accessing the message
  */
-const manageRevealSecret = (msg, payment, messageSignedKey) => {
+const manageRevealSecret = (msg, payment, messageKey) => {
   if (payment.messages[msg.message_order]) {
     // Message already processed
     return null;
@@ -295,48 +298,41 @@ const manageRevealSecret = (msg, payment, messageSignedKey) => {
   // If this is true, then we are on reception
   const store = Store.getStore();
   if (payment.secret && msg.is_signed) {
-    const hasSameSecret = msg[messageSignedKey].secret === payment.secret;
+    const hasSameSecret = msg[messageKey].secret === payment.secret;
     if (!hasSameSecret) return console.warn("Secret does not match");
 
     store.dispatch(
       addPendingPaymentMessage(msg.payment_id, msg.message_order, {
-        message: msg[messageSignedKey],
+        message: msg[messageKey],
         message_order: msg.message_order,
       })
     );
     if (!payment.messages[10]) {
-      store.dispatch(putDelivered(msg[messageSignedKey], payment, 10));
+      store.dispatch(putDelivered(msg[messageKey], payment, 10));
     }
   } else if (msg.message_order === 7) {
     const { keccak256 } = ethers.utils;
     const hasSameSecretHash =
-      keccak256(msg[messageSignedKey].secret) === payment.secret_hash;
+      keccak256(msg[messageKey].secret) === payment.secret_hash;
     if (!hasSameSecretHash) return console.warn("Secret does not match");
     store.dispatch(
       addPendingPaymentMessage(msg.payment_id, msg.message_order, {
-        message: msg[messageSignedKey],
+        message: msg[messageKey],
         message_order: msg.message_order,
       })
     );
-    store.dispatch(
-      setPaymentSecret(payment.paymentId, msg[messageSignedKey].secret)
-    );
+    store.dispatch(setPaymentSecret(payment.paymentId, msg[messageKey].secret));
     return store.dispatch(saveLuminoData());
   } else {
     store.dispatch(
       addPendingPaymentMessage(msg.payment_id, msg.message_order, {
-        message: msg[messageSignedKey],
+        message: msg[messageKey],
         message_order: msg.message_order,
       })
     );
     store.dispatch(putDelivered(payment.messages[7].message, payment, 8, true));
     store.dispatch(
-      putRevealSecret(
-        payment,
-        msg[messageSignedKey].message_identifier,
-        9,
-        true
-      )
+      putRevealSecret(payment, msg[messageKey].message_identifier, 9, true)
     );
   }
 };
@@ -345,27 +341,27 @@ const manageRevealSecret = (msg, payment, messageSignedKey) => {
  *
  * @param {*} msg The message to manage
  * @param {*} payment The payment associated to the message
- * @param {*} messageSignedKey The data key for accessing the message
+ * @param {*} messageKey The data key for accessing the message
  */
-const manageSecret = (msg, payment, messageSignedKey) => {
+const manageSecret = (msg, payment, messageKey) => {
   //  Is already processed?
   if (payment.messages[msg.message_order]) return null;
 
-  const hasSameChainId = msg[messageSignedKey].chain_id === payment.chainId;
+  const hasSameChainId = msg[messageKey].chain_id === payment.chainId;
 
   if (!hasSameChainId) return console.warn("ChainId does not match");
 
-  const hasSameSecret = msg[messageSignedKey].secret === payment.secret;
+  const hasSameSecret = msg[messageKey].secret === payment.secret;
 
   if (!hasSameSecret) return console.warn("Secret does not match");
 
   const hasSameChannelId =
-    msg[messageSignedKey].channel_identifier === payment.channelId;
+    msg[messageKey].channel_identifier === payment.channelId;
 
   if (!hasSameChannelId) return console.warn("Channel Id does not match");
 
   const hasSameNetworkTokenAddress =
-    msg[messageSignedKey].token_network_address === payment.tokenNetworkAddress;
+    msg[messageKey].token_network_address === payment.tokenNetworkAddress;
 
   if (!hasSameNetworkTokenAddress)
     return console.warn("Network Token Address does not match");
@@ -373,7 +369,7 @@ const manageSecret = (msg, payment, messageSignedKey) => {
   const store = Store.getStore();
   store.dispatch(
     addPendingPaymentMessage(msg.payment_id, msg.message_order, {
-      message: msg[messageSignedKey],
+      message: msg[messageKey],
       message_order: msg.message_order,
     })
   );
@@ -385,8 +381,8 @@ const manageSecret = (msg, payment, messageSignedKey) => {
   });
   // Put BP for sent payments
   if (!payment.isReceived)
-    return store.dispatch(putBalanceProof(msg[messageSignedKey], payment));
-  store.dispatch(putNonClosingBalanceProof(msg[messageSignedKey], payment));
-  store.dispatch(putDelivered(msg[messageSignedKey], payment, 12, true));
-  return store.dispatch(putProcessed(msg[messageSignedKey], payment, 13));
+    return store.dispatch(putBalanceProof(msg[messageKey], payment));
+  store.dispatch(putNonClosingBalanceProof(msg[messageKey], payment));
+  store.dispatch(putDelivered(msg[messageKey], payment, 12, true));
+  return store.dispatch(putProcessed(msg[messageKey], payment, 13));
 };

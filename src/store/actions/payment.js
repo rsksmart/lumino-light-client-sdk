@@ -1,3 +1,5 @@
+import { ethers } from "ethers";
+import BigNumber from "bignumber.js";
 import {
   CREATE_PAYMENT,
   ADD_PENDING_PAYMENT_MESSAGE,
@@ -7,6 +9,7 @@ import {
   SET_PAYMENT_SECRET,
   UPDATE_NON_CLOSING_BP,
   PAYMENT_CREATION_ERROR,
+  PUT_LOCK_EXPIRED,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -22,13 +25,10 @@ import {
 } from "../../utils/pack";
 import { validateLockedTransfer } from "../../utils/validators";
 import { getChannelsState } from "../functions";
-import { ethers } from "ethers";
-import BigNumber from "bignumber.js";
 import { MessageType } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
 import { getLatestChannelByPartnerAndToken } from "../functions/channels";
 import { searchTokenDataInChannels } from "../functions/tokens";
-import { dispatch } from "rxjs/internal/observable/pairs";
 
 /**
  * Create a payment.
@@ -415,4 +415,70 @@ export const setPaymentFailed = (payment, actualState, reason) => dispatch => {
     paymentState: actualState,
   };
   return dispatch(obj);
+};
+
+/**
+ *
+ * @param {*} data Data of the payment and message for the request
+ */
+export const putLockExpired = data => async (dispatch, getState, lh) => {
+  const { address } = getState().client;
+
+  try {
+    const sender = "";
+    const receiver = address;
+    const body = {
+      payment_id: data.paymentId,
+      message_order: 1,
+      sender,
+      receiver,
+      message: {
+        type: MessageType.LOCK_EXPIRED,
+        chain_id: data.chainId,
+        nonce: data.nonce,
+        token_network_address: data.tokenNetworkAddress,
+        message_identifier: data.message_identifier,
+        channel_identifier: data.channelId,
+        secrethash: data.secrethash,
+        transferred_amount: data.transferred_amount,
+        locked_amount: data.locked_amount,
+        recipient: receiver,
+        locksroot: data.locksroot,
+      },
+    };
+    const signature = await resolver(data, lh, true);
+    body.signature = signature;
+    const urlPut = "xxx";
+    await client.put(urlPut, body);
+    dispatch({
+      type: PUT_LOCK_EXPIRED,
+      paymentId: data.paymentId,
+      lockExpired: body,
+    });
+    dispatch(saveLuminoData());
+  } catch (error) {
+    console.error("Error in put LockExpired: ", error);
+  }
+};
+
+export const recreatePaymentForFailure = data => (dispatch, getState) => {
+  const { address } = getState().client;
+
+  dispatch({
+    type: CREATE_PAYMENT,
+    payment: {
+      partner: address,
+      paymentId: data.payment_id,
+      isReceived: true,
+      initiator: data.initiator,
+      amount: data.transferred_amount,
+      channelId: data.channel_identifier,
+      // token: token_address,
+      tokenNetworkAddress: data.token_network_address,
+      chainId: data.chain_id,
+    },
+    paymentId: data.payment_id,
+    channelId: data.channel_identifier,
+    token: data.token_address,
+  });
 };

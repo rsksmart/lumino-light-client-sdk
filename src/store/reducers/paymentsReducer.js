@@ -5,6 +5,8 @@ import {
   SET_PAYMENT_SECRET,
   SET_PAYMENT_COMPLETE,
   SET_SECRET_MESSAGE_ID,
+  SET_PAYMENT_FAILED,
+  PUT_LOCK_EXPIRED,
 } from "../actions/types";
 
 const initialState = {
@@ -14,13 +16,14 @@ const initialState = {
 };
 
 const paymentsReducer = (state = initialState, action) => {
+  const { paymentId } = action;
   switch (action.type) {
     case CREATE_PAYMENT: {
       const newPayment = {
         ...state,
         pending: {
           ...state.pending,
-          [action.paymentId]: {
+          [paymentId]: {
             secret: action.secret,
             ...action.payment,
           },
@@ -34,10 +37,10 @@ const paymentsReducer = (state = initialState, action) => {
         pending: {
           ...state.pending,
           [action.paymentId]: {
-            ...state.pending[action.paymentId],
+            ...state.pending[paymentId],
             message_order: action.messageOrder,
             messages: {
-              ...state.pending[action.paymentId].messages,
+              ...state.pending[paymentId].messages,
               [action.messageOrder]: action.message,
             },
           },
@@ -51,7 +54,7 @@ const paymentsReducer = (state = initialState, action) => {
         pending: {
           ...state.pending,
           [action.paymentId]: {
-            ...state.pending[action.paymentId],
+            ...state.pending[paymentId],
             secret: action.secret,
           },
         },
@@ -64,30 +67,44 @@ const paymentsReducer = (state = initialState, action) => {
         completed: {
           ...state.completed,
           [action.paymentId]: {
-            ...state.pending[action.paymentId],
+            ...state.pending[paymentId],
           },
         },
       };
-      delete newComplete.pending[action.paymentId];
+      delete newComplete.pending[paymentId];
       return newComplete;
     }
     case DELETE_ALL_PENDING_PAYMENTS:
       return { ...state, pending: {} };
-    default:
-      return state;
     case SET_SECRET_MESSAGE_ID: {
       const secretId = {
         ...state,
         pending: {
           ...state.pending,
           [action.paymentId]: {
-            ...state.pending[action.paymentId],
+            ...state.pending[paymentId],
             secretMessageId: action.id,
           },
         },
       };
       return secretId;
     }
+    case SET_PAYMENT_FAILED: {
+      const { reason, paymentState } = action;
+      const newState = { ...state };
+      newState.failed[paymentId] = state[paymentState][paymentId];
+      newState.failed[paymentId].failureReason = reason;
+      delete newState[paymentState][paymentId];
+      return newState;
+    }
+    case PUT_LOCK_EXPIRED: {
+      const { lockExpired } = action;
+      const newState = { ...state };
+      newState.failed[paymentId].lockExpired = lockExpired;
+      return newState;
+    }
+    default:
+      return state;
   }
 };
 
