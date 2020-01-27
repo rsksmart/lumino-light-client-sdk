@@ -1,5 +1,6 @@
 import { getPackedData } from "../../src/utils/pack";
 import { ethers } from "ethers";
+import { MessageType } from "../../src/config/messagesConstants";
 
 const PRIV_KEY =
   "0x15f570a7914ed27b13ba4a63cee82ad4d77bba3cc60b037abef2f1733423eb70";
@@ -9,7 +10,7 @@ const signer = new ethers.Wallet(PRIV_KEY);
 
 test("it should sign correctly a LockExpired", async () => {
   const LE = {
-    type: "LockExpired",
+    type: MessageType.LOCK_EXPIRED,
     chain_id: 33,
     nonce: 2,
     token_network_address: "0xb3df4fbd04d29a04d9d0666c009713076e364109",

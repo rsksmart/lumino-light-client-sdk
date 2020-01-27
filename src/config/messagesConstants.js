@@ -11,10 +11,12 @@ export const MessageType = {
 };
 
 export const PAYMENT_SUCCESSFUL = "PaymentSuccessful";
+export const PAYMENT_EXPIRED = "PaymentExpired";
 export const LC_PROTOCOL_MESSAGE_TYPE = "LightClientProtocolMessageType";
 
 export const LIGHT_MESSAGE_TYPE = {
   PAYMENT_OK_FLOW: `${LC_PROTOCOL_MESSAGE_TYPE}.${PAYMENT_SUCCESSFUL}`,
+  PAYMENT_EXPIRED: `${LC_PROTOCOL_MESSAGE_TYPE}.${PAYMENT_EXPIRED}`,
 };
 
 export const MessageIdentifierKey = {

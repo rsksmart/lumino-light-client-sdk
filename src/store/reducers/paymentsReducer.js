@@ -91,10 +91,14 @@ const paymentsReducer = (state = initialState, action) => {
     }
     case SET_PAYMENT_FAILED: {
       const { reason, paymentState } = action;
-      const newState = { ...state };
-      newState.failed[paymentId] = state[paymentState][paymentId];
+      const newState = {
+        pending: { ...state.pending },
+        completed: { ...state.completed },
+        failed: { ...state.failed },
+      };
+      newState.failed[paymentId] = state[paymentState.toLowerCase()][paymentId];
       newState.failed[paymentId].failureReason = reason;
-      delete newState[paymentState][paymentId];
+      delete newState[paymentState.toLowerCase()][paymentId];
       return newState;
     }
     case PUT_LOCK_EXPIRED: {

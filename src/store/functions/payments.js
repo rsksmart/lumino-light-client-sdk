@@ -47,6 +47,7 @@ export const paymentExistsInAnyState = paymentId => {
 export const getPaymentByIdAndState = (state, paymentId) => {
   const store = Store.getStore();
   const { payments } = store.getState();
-  const payment = payments[state][paymentId];
-  return payment;
+  if (payments[state.toLowerCase()])
+    return payments[state.toLowerCase()][paymentId];
+  return null;
 };

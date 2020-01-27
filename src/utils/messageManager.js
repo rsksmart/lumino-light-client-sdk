@@ -4,7 +4,7 @@ import {
   MessageKeyForOrder,
   LIGHT_MESSAGE_TYPE,
 } from "../config/messagesConstants";
-import { FAILURE_REASONS } from "../config/paymentConstants";
+import { FAILURE_REASONS, PENDING_PAYMENT } from "../config/paymentConstants";
 import {
   getPendingPaymentById,
   paymentExistsInAnyState,
@@ -51,7 +51,7 @@ export const messageManager = messages => {
   const paymentMessages = [];
   const nonPaymentMessages = [];
   messages.forEach(m => {
-    if ((m.message_type = LIGHT_MESSAGE_TYPE.PAYMENT_OK_FLOW))
+    if (m.message_type === LIGHT_MESSAGE_TYPE.PAYMENT_OK_FLOW)
       return paymentMessages.push(m);
     return nonPaymentMessages.push(m);
   });
@@ -74,9 +74,10 @@ const manageNonPaymentMessages = messages => {
     const paymentState = paymentExistsInAnyState(msg.payment_id);
     const paymentData =
       paymentState && getPaymentByIdAndState(paymentState, msg.payment_id);
-    const payment = paymentData ? { ...paymentData, paymentState } : null;
+    const payment =
+      paymentData || paymentState ? { ...paymentData, paymentState } : null;
     switch (message_type) {
-      case MessageType.LOCK_EXPIRED: {
+      case LIGHT_MESSAGE_TYPE.PAYMENT_EXPIRED: {
         return manageLockExpired(msg, payment);
       }
     }
@@ -88,7 +89,7 @@ const managePaymentMessages = messages => {
   try {
     messages.forEach(({ message_content: msg }) => {
       const { payment_id, is_signed } = msg;
-      // TODO: Remove this, now we manage everything as message
+
       const messageKey = "message";
       const { type } = msg[messageKey];
       const paymentId = payment_id.toString();
@@ -130,17 +131,28 @@ const managePaymentMessages = messages => {
   }
 };
 
-const manageLockExpired = (message, payment) => {
+const manageLockExpired = (msgData, payment) => {
   const store = Store.getStore();
+  const { message, payment_id } = msgData;
   if (!payment) {
-    store.dispatch(recreatePaymentForFailure(message));
+    store.dispatch(recreatePaymentForFailure(msgData));
   }
-  const paymentAux = getPendingPaymentById(message.payment_id);
-  const { payment_id, paymentState } = paymentAux;
+  const paymentAux = getPendingPaymentById(payment_id);
+  const { paymentId } = paymentAux;
+
   store.dispatch(
-    setPaymentFailed(payment_id, paymentState, FAILURE_REASONS.EXPIRED)
+    setPaymentFailed(paymentId, PENDING_PAYMENT, FAILURE_REASONS.EXPIRED)
   );
-  return store.dispatch(putLockExpired(message));
+
+  const dataForPut = {
+    ...paymentAux,
+    transferred_amount: message.transferred_amount,
+    locked_amount: message.locked_amount,
+    locksroot: message.locksroot,
+    message_identifier: message.message_identifier,
+    nonce: message.nonce,
+  };
+  return store.dispatch(putLockExpired(dataForPut));
 };
 
 const manageLockedTransfer = (message, payment, messageKey) => {

@@ -10,6 +10,7 @@ import {
   UPDATE_NON_CLOSING_BP,
   PAYMENT_CREATION_ERROR,
   PUT_LOCK_EXPIRED,
+  SET_PAYMENT_FAILED,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -22,6 +23,7 @@ import {
   getDataToSignForProcessed,
   getDataToSignForSecretRequest,
   getDataToSignForNonClosingBalanceProof,
+  getDataToSignForLockExpired,
 } from "../../utils/pack";
 import { validateLockedTransfer } from "../../utils/validators";
 import { getChannelsState } from "../functions";
@@ -49,7 +51,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const actualBalance = bigNumberify(channel.offChainBalance);
     if (actualBalance.lt(amount)) {
       console.error("Insufficient funds for payment");
-      // TODO: Add a callback for this
+
       dispatch({
         type: PAYMENT_CREATION_ERROR,
         reason: "Insufficient funds for payment`",
@@ -408,11 +410,12 @@ export const setPaymentSecret = (paymentId, secret) => ({
   paymentId,
 });
 
-export const setPaymentFailed = (payment, actualState, reason) => dispatch => {
+export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
   const obj = {
-    paymentId: payment.payment_id,
+    type: SET_PAYMENT_FAILED,
+    paymentId,
     reason,
-    paymentState: actualState,
+    paymentState: state,
   };
   return dispatch(obj);
 };
@@ -422,11 +425,12 @@ export const setPaymentFailed = (payment, actualState, reason) => dispatch => {
  * @param {*} data Data of the payment and message for the request
  */
 export const putLockExpired = data => async (dispatch, getState, lh) => {
-  const { address } = getState().client;
+  const { getAddress } = ethers.utils;
 
   try {
-    const sender = "";
-    const receiver = address;
+    const { isReceived } = data;
+    const sender = getAddress(isReceived ? data.partner : data.initiator);
+    const receiver = getAddress(isReceived ? data.initiator : data.partner);
     const body = {
       payment_id: data.paymentId,
       message_order: 1,
@@ -439,16 +443,18 @@ export const putLockExpired = data => async (dispatch, getState, lh) => {
         token_network_address: data.tokenNetworkAddress,
         message_identifier: data.message_identifier,
         channel_identifier: data.channelId,
-        secrethash: data.secrethash,
+        secrethash: data.secret_hash,
         transferred_amount: data.transferred_amount,
         locked_amount: data.locked_amount,
         recipient: receiver,
         locksroot: data.locksroot,
       },
     };
-    const signature = await resolver(data, lh, true);
-    body.signature = signature;
-    const urlPut = "xxx";
+
+    const dataToSign = getDataToSignForLockExpired(body.message);
+    const signature = await resolver(dataToSign, lh, true);
+    body.message.signature = signature;
+    const urlPut = "payments_light";
     await client.put(urlPut, body);
     dispatch({
       type: PUT_LOCK_EXPIRED,
