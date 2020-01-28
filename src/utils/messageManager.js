@@ -138,6 +138,10 @@ const manageLockExpired = (msgData, payment) => {
     store.dispatch(recreatePaymentForFailure(msgData));
   }
   const paymentAux = getPendingPaymentById(payment_id);
+  if (!paymentAux)
+    return console.error(
+      "DEVELOPMENT: Something happened with the manageLockExpired, on the paymentAuxConst"
+    );
   const { paymentId } = paymentAux;
 
   store.dispatch(
