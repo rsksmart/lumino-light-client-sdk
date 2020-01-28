@@ -1,3 +1,29 @@
+export const RECEIVED_PAYMENT = "ReceivedPayment";
+export const COMPLETED_PAYMENT = "CompletedPayment";
+export const EXPIRED_PAYMENT = "ExpiredPayment";
+
+export const CALLBACKS = {
+  [RECEIVED_PAYMENT]: RECEIVED_PAYMENT,
+  [COMPLETED_PAYMENT]: COMPLETED_PAYMENT,
+};
+
+export const newCallbacks = () => {
+  const callbacks = {};
+
+  const set = (CB, FN) => {
+    callbacks[CB] = FN;
+  };
+
+  const trigger = CB => {
+    if (callbacks[CB]) return callbacks[CB]();
+    return console.error("Callback was not set");
+  };
+
+  return { set, trigger };
+};
+
+export const newCbs = newCallbacks();
+
 const Callbacks = () => {
   // TODO: Rewrite this in a more extensible way
   let onReceivedPaymentCallback = () => {};
