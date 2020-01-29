@@ -8,7 +8,6 @@ import {
   SET_PAYMENT_FAILED,
   PUT_LOCK_EXPIRED,
 } from "../actions/types";
-import { newCbs, EXPIRED_PAYMENT } from "../../utils/callbacks";
 
 const initialState = {
   pending: {},
@@ -103,16 +102,9 @@ const paymentsReducer = (state = initialState, action) => {
       return newState;
     }
     case PUT_LOCK_EXPIRED: {
-      newCbs.set(EXPIRED_PAYMENT, () =>
-        console.warn(
-          "Payment has expired, a Lock Expired has been sent to the HUB"
-        )
-      );
-
       const { lockExpired } = action;
       const newState = { ...state };
       newState.failed[paymentId].lockExpired = lockExpired;
-      newCbs.trigger(EXPIRED_PAYMENT);
 
       return newState;
     }
