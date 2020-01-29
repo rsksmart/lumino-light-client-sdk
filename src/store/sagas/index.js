@@ -22,6 +22,7 @@ import { Lumino } from "../../index";
 import { findMaxMsgInternalId } from "../../utils/functions";
 import { manageNotificationData } from "../actions/notifier";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
+import { CALLBACKS } from "../../utils/callbacks";
 
 const getPendingPayments = state => state.payments.pending;
 
@@ -110,7 +111,7 @@ function* checkForOpenChannelInProcessing(
     if (channelBefore.sdk_status !== channelAfter.sdk_status) {
       // Is now open?
       if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_OPENED)
-        Lumino.callbacks.trigger.triggerOnOpenChannel(channelAfter);
+        yield Lumino.callbacks.trigger(CALLBACKS.OpenChannel, channelAfter);
     }
   } else {
     // Channel did not exist
@@ -183,25 +184,23 @@ export function* workCreatePayment() {
 export function* workPaymentComplete({ paymentId }) {
   const completed = yield select(getCompletedPaymentById);
   yield put(changeChannelBalance(completed[paymentId]));
-  Lumino.callbacks.trigger.triggerOnCompletedPaymentCallback(
-    completed[paymentId]
-  );
+  Lumino.callbacks.trigger(CALLBACKS.CompletedPayment, completed[paymentId]);
 }
 
 export function* workReceivedPayment({ payment: d }) {
-  Lumino.callbacks.trigger.triggerOnReceivedPaymentCallback(d);
+  yield Lumino.callbacks.trigger(CALLBACKS.ReceivedPayment, d);
 }
 
 export function* workDepositChannel({ channel }) {
-  Lumino.callbacks.trigger.triggerOnDepositChannel(channel);
+  yield Lumino.callbacks.trigger(CALLBACKS.ChannelDeposit, channel);
 }
 
 export function* workRequestClientOnboarding({ address }) {
-  Lumino.callbacks.trigger.triggerOnRequestClientOnboarding(address);
+  yield Lumino.callbacks.trigger(CALLBACKS.RequestClientOnboarding, address);
 }
 
 export function* workClientOnboardingSuccess({ address }) {
-  Lumino.callbacks.trigger.triggerOnClientOnboardingSuccess(address);
+  yield Lumino.callbacks.trigger(CALLBACKS.ClientOnboardingSuccess, address);
 }
 
 export default function* rootSaga() {

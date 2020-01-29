@@ -23,8 +23,12 @@ const Callbacks = () => {
     callbacks[CB] = FN;
   };
 
-  const trigger = CB => {
-    if (callbacks[CB]) return callbacks[CB]();
+  /**
+   *
+   * @param  {...any} args The first argument must be the name of the callback, the second could be data about the callback
+   */
+  const trigger = (...args) => {
+    if (callbacks[args[0]]) return callbacks[args[0]](args[1]);
     return () => {};
   };
 
