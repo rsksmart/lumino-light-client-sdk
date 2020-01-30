@@ -92,6 +92,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       message_order,
       receiver: getAddress(messageWithHash.target),
       sender: getAddress(messageWithHash.initiator),
+      message_type_value: PAYMENT_SUCCESSFUL,
       message: {
         ...messageWithHash,
         signature,
