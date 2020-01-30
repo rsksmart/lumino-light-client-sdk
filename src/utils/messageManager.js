@@ -196,6 +196,7 @@ const manageLockedTransfer = (message, payment, messageKey) => {
           message_order: 1,
           receiver: ethers.utils.getAddress(msg.target),
           sender: ethers.utils.getAddress(msg.initiator),
+          message_type_value: PAYMENT_SUCCESSFUL,
           message: { ...msg, message_order: 1 },
         },
       },
