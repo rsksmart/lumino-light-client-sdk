@@ -7,6 +7,7 @@ import {
   SET_SECRET_MESSAGE_ID,
   SET_PAYMENT_FAILED,
   PUT_LOCK_EXPIRED,
+  ADD_EXPIRED_PAYMENT_MESSAGE,
 } from "../actions/types";
 
 const initialState = {
@@ -14,6 +15,12 @@ const initialState = {
   completed: {},
   failed: {},
 };
+
+const cloneState = state => ({
+  pending: { ...state.pending },
+  completed: { ...state.completed },
+  failed: { ...state.failed },
+});
 
 const paymentsReducer = (state = initialState, action) => {
   const { paymentId } = action;
@@ -91,11 +98,7 @@ const paymentsReducer = (state = initialState, action) => {
     }
     case SET_PAYMENT_FAILED: {
       const { reason, paymentState } = action;
-      const newState = {
-        pending: { ...state.pending },
-        completed: { ...state.completed },
-        failed: { ...state.failed },
-      };
+      const newState = cloneState(state);
       newState.failed[paymentId] = state[paymentState.toLowerCase()][paymentId];
       newState.failed[paymentId].failureReason = reason;
       delete newState[paymentState.toLowerCase()][paymentId];
@@ -103,12 +106,20 @@ const paymentsReducer = (state = initialState, action) => {
     }
     case PUT_LOCK_EXPIRED: {
       const { lockExpired } = action;
-      const newState = { ...state };
+      const newState = cloneState(state);
       newState.failed[paymentId].expiration = {
         messages: { 1: lockExpired },
         message_order: 1,
       };
 
+      return newState;
+    }
+
+    case ADD_EXPIRED_PAYMENT_MESSAGE: {
+      const { message_order, message } = action;
+      const newState = cloneState(state);
+      newState.failed[paymentId].expiration.messages[message_order] = message;
+      newState.failed[paymentId].expiration.message_order = message_order;
       return newState;
     }
     default:
