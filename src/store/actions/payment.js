@@ -170,7 +170,8 @@ export const putDelivered = (
   message,
   payment,
   order = 4,
-  isReception = false
+  isReception = false,
+  message_type_value
 ) => async (dispatch, getState, lh) => {
   const sender = isReception ? payment.partner : payment.initiator;
   const receiver = isReception ? payment.initiator : payment.partner;
@@ -180,6 +181,7 @@ export const putDelivered = (
     message_order: order,
     sender: getAddress(sender),
     receiver: getAddress(receiver),
+    message_type_value: message_type_value,
     message: {
       type: MessageType.DELIVERED,
       delivered_message_identifier: message.message_identifier,
@@ -198,7 +200,7 @@ export const putDelivered = (
         message_order: body.message_order,
       })
     );
-    const urlPut = "payments_light";
+    const urlPut = "payments_light";    
     await client.put(urlPut, body);
 
     dispatch(saveLuminoData());
@@ -207,7 +209,7 @@ export const putDelivered = (
   }
 };
 
-export const putProcessed = (msg, payment, order = 3) => async (
+export const putProcessed = (msg, payment, order = 3, message_type_value) => async (
   dispatch,
   getState,
   lh
@@ -218,6 +220,7 @@ export const putProcessed = (msg, payment, order = 3) => async (
     message_order: order,
     sender: getAddress(payment.partner),
     receiver: getAddress(payment.initiator),
+    message_type_value: message_type_value,
     message: {
       type: MessageType.PROCESSED,
       message_identifier: msg.message_identifier,
@@ -264,6 +267,7 @@ export const putSecretRequest = (msg, payment, isReception = false) => async (
       amount: payment.amount,
       expiration: msg.expiration,
       secrethash: payment.secret_hash,
+      message_type_value: PAYMENT_SUCCESSFUL
     },
   };
   const dataToSign = getDataToSignForSecretRequest(body.message);
@@ -306,6 +310,7 @@ export const putRevealSecret = (
     message_order: order,
     sender,
     receiver,
+    message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       type: MessageType.REVEAL_SECRET,
       message_identifier,
@@ -350,6 +355,7 @@ export const putBalanceProof = (message, payment) => async (
     message_order: 11,
     sender: getAddress(payment.initiator),
     receiver: getAddress(payment.partner),
+    message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       ...data,
       signature,
@@ -436,6 +442,7 @@ export const putLockExpired = data => async (dispatch, getState, lh) => {
       message_order: 1,
       sender,
       receiver,
+      message_type_value: PAYMENT_SUCCESSFUL,
       message: {
         type: MessageType.LOCK_EXPIRED,
         chain_id: data.chainId,
