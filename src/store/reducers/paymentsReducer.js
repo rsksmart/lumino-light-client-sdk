@@ -104,7 +104,10 @@ const paymentsReducer = (state = initialState, action) => {
     case PUT_LOCK_EXPIRED: {
       const { lockExpired } = action;
       const newState = { ...state };
-      newState.failed[paymentId].lockExpired = lockExpired;
+      newState.failed[paymentId].expiration = {
+        messages: { 1: lockExpired },
+        message_order: 1,
+      };
 
       return newState;
     }

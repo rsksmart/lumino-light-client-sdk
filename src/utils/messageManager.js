@@ -4,7 +4,11 @@ import {
   MessageKeyForOrder,
   LIGHT_MESSAGE_TYPE,
 } from "../config/messagesConstants";
-import { FAILURE_REASONS, PENDING_PAYMENT } from "../config/paymentConstants";
+import {
+  FAILURE_REASONS,
+  PENDING_PAYMENT,
+  FAILED_PAYMENT,
+} from "../config/paymentConstants";
 import {
   getPendingPaymentById,
   paymentExistsInAnyState,
@@ -78,6 +82,7 @@ const manageNonPaymentMessages = messages => {
       paymentData || paymentState ? { ...paymentData, paymentState } : null;
     switch (message_type) {
       case LIGHT_MESSAGE_TYPE.PAYMENT_EXPIRED: {
+        if (payment && payment.paymentState === FAILED_PAYMENT) return null;
         return manageLockExpired(msg, payment);
       }
     }
@@ -138,10 +143,6 @@ const manageLockExpired = (msgData, payment) => {
     store.dispatch(recreatePaymentForFailure(msgData));
   }
   const paymentAux = getPendingPaymentById(payment_id);
-  if (!paymentAux)
-    return console.error(
-      "DEVELOPMENT: Something happened with the manageLockExpired, on the paymentAuxConst"
-    );
   const { paymentId } = paymentAux;
 
   store.dispatch(

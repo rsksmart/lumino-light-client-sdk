@@ -7,6 +7,7 @@ import {
 import {
   PENDING_PAYMENT,
   COMPLETED_PAYMENT,
+  FAILED_PAYMENT,
 } from "../../config/paymentConstants";
 
 const initialState = {};
@@ -30,9 +31,8 @@ const paymentIdsReducer = (state = initialState, action) => {
       return completed;
     }
     case SET_PAYMENT_FAILED: {
-      const { paymentState } = action;
       const newState = { ...state };
-      newState[paymentId] = paymentState;
+      newState[paymentId] = FAILED_PAYMENT;
       return newState;
     }
     default:
