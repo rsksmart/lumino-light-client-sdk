@@ -221,7 +221,7 @@ const manageLockedTransfer = (message, payment, messageKey) => {
   store.dispatch(actionObj);
   store.dispatch({ type: RECEIVED_PAYMENT, payment: actionObj });
   store.dispatch(
-    putDelivered(msg, actionObj.payment, message.message_order + 1, true, PAYMENT_SUCCESSFUL)
+    putDelivered(msg, actionObj.payment, message.message_order + 1, true)
   );
   store.dispatch(putProcessed(msg, actionObj.payment, 3, PAYMENT_SUCCESSFUL));
 };
@@ -265,7 +265,7 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
   );
   if (msg[messageKey].type === MessageType.PROCESSED)
     return store.dispatch(
-      putDelivered(msg[messageKey], payment, msg.message_order + 1, PAYMENT_SUCCESSFUL)
+      putDelivered(msg[messageKey], payment, msg.message_order + 1)
     );
   return store.dispatch(saveLuminoData());
 };
@@ -295,7 +295,7 @@ const manageSecretRequest = (msg, payment, messageKey) => {
   );
   // If we are receiving it, we just put the reveal secret
   if (!payment.messages[6] && !payment.isReceived) {
-    store.dispatch(putDelivered(msg[messageKey], payment, 6, PAYMENT_SUCCESSFUL));
+    store.dispatch(putDelivered(msg[messageKey], payment, 6));
   }
   if (!payment.isReceived) store.dispatch(putRevealSecret(payment));
   if (payment.isReceived)
@@ -326,7 +326,7 @@ const manageRevealSecret = (msg, payment, messageKey) => {
       })
     );
     if (!payment.messages[10]) {
-      store.dispatch(putDelivered(msg[messageKey], payment, 10, PAYMENT_SUCCESSFUL));
+      store.dispatch(putDelivered(msg[messageKey], payment, 10));
     }
   } else if (msg.message_order === 7) {
     const { keccak256 } = ethers.utils;
@@ -348,7 +348,7 @@ const manageRevealSecret = (msg, payment, messageKey) => {
         message_order: msg.message_order,
       })
     );
-    store.dispatch(putDelivered(payment.messages[7].message, payment, 8, true, PAYMENT_SUCCESSFUL));
+    store.dispatch(putDelivered(payment.messages[7].message, payment, 8, true));
     store.dispatch(
       putRevealSecret(payment, msg[messageKey].message_identifier, 9, true)
     );
@@ -401,6 +401,6 @@ const manageSecret = (msg, payment, messageKey) => {
   if (!payment.isReceived)
     return store.dispatch(putBalanceProof(msg[messageKey], payment));
   store.dispatch(putNonClosingBalanceProof(msg[messageKey], payment));
-  store.dispatch(putDelivered(msg[messageKey], payment, 12, true, PAYMENT_SUCCESSFUL));
-  return store.dispatch(putProcessed(msg[messageKey], payment, 13, PAYMENT_SUCCESSFUL));
+  store.dispatch(putDelivered(msg[messageKey], payment, 12, true));
+  return store.dispatch(putProcessed(msg[messageKey], payment, 13));
 };

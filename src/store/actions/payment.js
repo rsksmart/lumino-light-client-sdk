@@ -27,7 +27,7 @@ import {
 } from "../../utils/pack";
 import { validateLockedTransfer } from "../../utils/validators";
 import { getChannelsState } from "../functions";
-import { MessageType } from "../../config/messagesConstants";
+import { MessageType, PAYMENT_EXPIRED, PAYMENT_SUCCESSFUL } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
 import { getLatestChannelByPartnerAndToken } from "../functions/channels";
 import { searchTokenDataInChannels } from "../functions/tokens";
@@ -172,7 +172,7 @@ export const putDelivered = (
   payment,
   order = 4,
   isReception = false,
-  message_type_value
+  message_type_value = PAYMENT_SUCCESSFUL
 ) => async (dispatch, getState, lh) => {
   const sender = isReception ? payment.partner : payment.initiator;
   const receiver = isReception ? payment.initiator : payment.partner;
@@ -210,7 +210,7 @@ export const putDelivered = (
   }
 };
 
-export const putProcessed = (msg, payment, order = 3, message_type_value) => async (
+export const putProcessed = (msg, payment, order = 3, message_type_value = PAYMENT_SUCCESSFUL) => async (
   dispatch,
   getState,
   lh
@@ -443,7 +443,7 @@ export const putLockExpired = data => async (dispatch, getState, lh) => {
       message_order: 1,
       sender,
       receiver,
-      message_type_value: PAYMENT_SUCCESSFUL,
+      message_type_value: PAYMENT_EXPIRED,
       message: {
         type: MessageType.LOCK_EXPIRED,
         chain_id: data.chainId,
