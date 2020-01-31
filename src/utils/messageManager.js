@@ -3,6 +3,7 @@ import {
   MessageType,
   MessageKeyForOrder,
   LIGHT_MESSAGE_TYPE,
+  PAYMENT_SUCCESSFUL,
 } from "../config/messagesConstants";
 import {
   FAILURE_REASONS,
@@ -227,7 +228,7 @@ const manageLockedTransfer = (message, payment, messageKey) => {
   store.dispatch(
     putDelivered(msg, actionObj.payment, message.message_order + 1, true)
   );
-  store.dispatch(putProcessed(msg, actionObj.payment, 3));
+  store.dispatch(putProcessed(msg, actionObj.payment, 3, PAYMENT_SUCCESSFUL));
 };
 
 /**
