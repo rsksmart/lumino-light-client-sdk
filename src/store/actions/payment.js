@@ -11,6 +11,7 @@ import {
   PAYMENT_CREATION_ERROR,
   PUT_LOCK_EXPIRED,
   SET_PAYMENT_FAILED,
+  ADD_EXPIRED_PAYMENT_MESSAGE,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -163,6 +164,18 @@ export const addPendingPaymentMessage = (
     message,
   });
 
+export const addExpiredPaymentMessage = (
+  paymentId,
+  messageOrder,
+  message
+) => dispatch =>
+  dispatch({
+    type: ADD_EXPIRED_PAYMENT_MESSAGE,
+    paymentId,
+    messageOrder,
+    message,
+  });
+
 const getRandomBN = () => {
   const randomBN = BigNumber.random(18).toString();
   return new BigNumber(randomBN.split(".")[1]).toString();
@@ -173,12 +186,14 @@ export const putDelivered = (
   order = 4,
   isReception = false,
   message_type_value = PAYMENT_SUCCESSFUL
+  isExpiration = false
 ) => async (dispatch, getState, lh) => {
   const sender = isReception ? payment.partner : payment.initiator;
   const receiver = isReception ? payment.initiator : payment.partner;
   const { getAddress } = ethers.utils;
+  const { paymentId } = payment;
   const body = {
-    payment_id: payment.paymentId,
+    payment_id: paymentId,
     message_order: order,
     sender: getAddress(sender),
     receiver: getAddress(receiver),
@@ -195,13 +210,22 @@ export const putDelivered = (
 
   body.message.signature = signature;
   try {
-    dispatch(
-      addPendingPaymentMessage(payment.paymentId, body.message_order, {
-        message: body.message,
-        message_order: body.message_order,
-      })
-    );
-    const urlPut = "payments_light";    
+    if (isExpiration) {
+      dispatch(
+        addExpiredPaymentMessage(paymentId, order, {
+          message: body.message,
+          message_order: order,
+        })
+      );
+    } else {
+      dispatch(
+        addPendingPaymentMessage(payment.paymentId, body.message_order, {
+          message: body.message,
+          message_order: body.message_order,
+        })
+      );
+    }
+    const urlPut = "payments_light";
     await client.put(urlPut, body);
 
     dispatch(saveLuminoData());
@@ -210,12 +234,15 @@ export const putDelivered = (
   }
 };
 
-export const putProcessed = (msg, payment, order = 3, message_type_value = PAYMENT_SUCCESSFUL) => async (
-  dispatch,
-  getState,
-  lh
-) => {
+export const putProcessed = (
+  msg,
+  payment,
+  order = 3,
+  message_type_value = PAYMENT_SUCCESSFUL,
+  isExpiration = false
+) => async (dispatch, getState, lh) => {
   const { getAddress } = ethers.utils;
+  const { paymentId } = payment;
   const body = {
     payment_id: payment.paymentId,
     message_order: order,
@@ -234,12 +261,21 @@ export const putProcessed = (msg, payment, order = 3, message_type_value = PAYME
 
   body.message.signature = signature;
   try {
-    dispatch(
-      addPendingPaymentMessage(payment.paymentId, body.message_order, {
-        message: body.message,
-        message_order: body.message_order,
-      })
-    );
+    if (isExpiration) {
+      dispatch(
+        addExpiredPaymentMessage(paymentId, order, {
+          message: body.message,
+          message_order: order,
+        })
+      );
+    } else {
+      dispatch(
+        addPendingPaymentMessage(paymentId, order, {
+          message: body.message,
+          message_order: order,
+        })
+      );
+    }
     const urlPut = "payments_light";
     await client.put(urlPut, body);
     dispatch(saveLuminoData());
