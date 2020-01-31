@@ -4,6 +4,7 @@ import {
   MessageKeyForOrder,
   LIGHT_MESSAGE_TYPE,
   PAYMENT_SUCCESSFUL,
+  PAYMENT_EXPIRED,
 } from "../config/messagesConstants";
 import {
   FAILURE_REASONS,
@@ -88,8 +89,9 @@ const manageNonPaymentMessages = messages => {
         if (payment && payment.paymentState === FAILED_PAYMENT) return null;
         return manageLockExpired(msg, payment);
       }
-      case MessageType.DELIVERED: {
-        console.warn(msg);
+      case MessageType.DELIVERED:
+      case MessageType.PROCESSED: {
+        return manageDeliveredAndProcessed(msg, payment, "message");
       }
     }
   });
@@ -238,21 +240,22 @@ const manageLockedTransfer = (message, payment, messageKey) => {
  * @param {*} messageKey The data key for accessing the message
  */
 const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
-  if (payment.messages[msg.message_order]) {
-    // Message already processed
-    return null;
-  }
-  const paymentIsFailed = payment.paymentStatus === FAILED_PAYMENT;
+  const paymentIsFailed = payment.paymentState === FAILED_PAYMENT;
   const { message_order } = msg;
-
   let previousMessage = null;
+  const reason = payment.failureReason;
+  const isExpired = reason === EXPIRED;
+
+  // Message already processed?
+  if (!isExpired && payment.messages[message_order]) return null;
+  // Message already processed (Expired)?
+  if (isExpired && payment.expiration.messages[message_order]) return null;
 
   if (!paymentIsFailed) previousMessage = payment.messages[message_order - 1];
 
   if (paymentIsFailed) {
-    const reason = payment.failureReason;
-    if (reason === EXPIRED)
-      previousMessage = payment.lockExpired[message_order - 1];
+    if (isExpired)
+      previousMessage = payment.expiration.messages[message_order - 1];
   }
 
   if (!previousMessage) {
@@ -287,6 +290,17 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
       })
     );
   if (msg[messageKey].type === MessageType.PROCESSED) {
+    if (paymentIsFailed && isExpired)
+      return store.dispatch(
+        putDelivered(
+          msg[messageKey],
+          payment,
+          msg.message_order + 1,
+          false,
+          PAYMENT_EXPIRED,
+          true
+        )
+      );
     return store.dispatch(
       putDelivered(msg[messageKey], payment, msg.message_order + 1)
     );
