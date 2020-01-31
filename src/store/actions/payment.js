@@ -185,7 +185,7 @@ export const putDelivered = (
   payment,
   order = 4,
   isReception = false,
-  message_type_value = PAYMENT_SUCCESSFUL
+  message_type_value = PAYMENT_SUCCESSFUL,
   isExpiration = false
 ) => async (dispatch, getState, lh) => {
   const sender = isReception ? payment.partner : payment.initiator;
