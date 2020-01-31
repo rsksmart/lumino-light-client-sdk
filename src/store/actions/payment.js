@@ -297,6 +297,7 @@ export const putSecretRequest = (msg, payment, isReception = false) => async (
     message_order: 5,
     sender: getAddress(sender),
     receiver: getAddress(receiver),
+    message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       type: MessageType.SECRET_REQUEST,
       message_identifier: msg.message_identifier,
@@ -304,7 +305,6 @@ export const putSecretRequest = (msg, payment, isReception = false) => async (
       amount: payment.amount,
       expiration: msg.expiration,
       secrethash: payment.secret_hash,
-      message_type_value: PAYMENT_SUCCESSFUL
     },
   };
   const dataToSign = getDataToSignForSecretRequest(body.message);
