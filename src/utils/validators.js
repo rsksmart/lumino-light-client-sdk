@@ -5,7 +5,7 @@ import Lumino from "../Lumino/index";
 
 /**
  *
- * @param {arrayish} message The message with the signature to be checked
+ * @param {arrayish} message The message with the signature
  */
 export const signatureRecover = message => {
   const { verifyMessage } = ethers.utils;
