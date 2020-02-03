@@ -1,4 +1,10 @@
+import { ethers } from "ethers";
 import Store from "../index";
+import {
+  PAYMENT_SUCCESSFUL,
+  PAYMENT_EXPIRED,
+} from "../../config/messagesConstants";
+import { EXPIRED } from "../../config/paymentConstants";
 
 export const getPaymentIds = () => {
   const store = Store.getStore();
@@ -50,4 +56,23 @@ export const getPaymentByIdAndState = (state, paymentId) => {
   if (payments[state.toLowerCase()])
     return payments[state.toLowerCase()][paymentId];
   return null;
+};
+
+export const getPaymentMessageTypeValue = payment => {
+  const isFailed = payment.failureReason;
+  if (!isFailed) return PAYMENT_SUCCESSFUL;
+  switch (payment.failureReason) {
+    case EXPIRED:
+      return PAYMENT_EXPIRED;
+    default:
+      return null;
+  }
+};
+
+export const getSenderAndReceiver = payment => {
+  const { isReceived } = payment;
+  const { getAddress } = ethers.utils;
+  const sender = isReceived ? payment.partner : payment.initiator;
+  const receiver = isReceived ? payment.initiator : payment.partner;
+  return { sender: getAddress(sender), receiver: getAddress(receiver) };
 };
