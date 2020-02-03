@@ -147,25 +147,35 @@ const managePaymentMessages = messages => {
 const manageLockExpired = (msgData, payment) => {
   const store = Store.getStore();
   const { message, payment_id } = msgData;
-  if (!payment) {
-    store.dispatch(recreatePaymentForFailure(msgData));
-  }
+
+  // We have to recreate the payment in failures
+  if (!payment)
+    store.dispatch(recreatePaymentForFailure({ ...message, payment_id }));
+
   const paymentAux = getPendingPaymentById(payment_id);
-  const { paymentId } = paymentAux;
 
   store.dispatch(
-    setPaymentFailed(paymentId, PENDING_PAYMENT, FAILURE_REASONS.EXPIRED)
+    setPaymentFailed(payment_id, PENDING_PAYMENT, FAILURE_REASONS.EXPIRED)
   );
 
-  const dataForPut = {
-    ...paymentAux,
-    transferred_amount: message.transferred_amount,
-    locked_amount: message.locked_amount,
-    locksroot: message.locksroot,
-    message_identifier: message.message_identifier,
-    nonce: message.nonce,
-  };
-  return store.dispatch(putLockExpired(dataForPut));
+  // The payment is sent from the LC?
+  if (!paymentAux.isReceived) {
+    const dataForPut = {
+      ...paymentAux,
+      transferred_amount: message.transferred_amount,
+      locked_amount: message.locked_amount,
+      locksroot: message.locksroot,
+      message_identifier: message.message_identifier,
+      nonce: message.nonce,
+    };
+    return store.dispatch(putLockExpired(dataForPut));
+  }
+  // The payment was sent to the LC
+
+  store.dispatch(putDelivered(message, paymentAux, message.message_order + 1));
+  return store.dispatch(
+    putProcessed(message, paymentAux, 3, PAYMENT_EXPIRED, true)
+  );
 };
 
 const manageLockedTransfer = (message, payment, messageKey) => {
@@ -228,7 +238,7 @@ const manageLockedTransfer = (message, payment, messageKey) => {
   store.dispatch(actionObj);
   store.dispatch({ type: RECEIVED_PAYMENT, payment: actionObj });
   store.dispatch(
-    putDelivered(msg, actionObj.payment, message.message_order + 1, true)
+    putDelivered(msg, actionObj.payment, message.message_order + 1)
   );
   store.dispatch(putProcessed(msg, actionObj.payment, 3, PAYMENT_SUCCESSFUL));
 };
@@ -292,14 +302,7 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
   if (msg[messageKey].type === MessageType.PROCESSED) {
     if (paymentIsFailed && isExpired)
       return store.dispatch(
-        putDelivered(
-          msg[messageKey],
-          payment,
-          msg.message_order + 1,
-          false,
-          PAYMENT_EXPIRED,
-          true
-        )
+        putDelivered(msg[messageKey], payment, msg.message_order + 1)
       );
     return store.dispatch(
       putDelivered(msg[messageKey], payment, msg.message_order + 1)
@@ -386,7 +389,7 @@ const manageRevealSecret = (msg, payment, messageKey) => {
         message_order: msg.message_order,
       })
     );
-    store.dispatch(putDelivered(payment.messages[7].message, payment, 8, true));
+    store.dispatch(putDelivered(payment.messages[7].message, payment, 8));
     store.dispatch(
       putRevealSecret(payment, msg[messageKey].message_identifier, 9, true)
     );
@@ -439,6 +442,6 @@ const manageSecret = (msg, payment, messageKey) => {
   if (!payment.isReceived)
     return store.dispatch(putBalanceProof(msg[messageKey], payment));
   store.dispatch(putNonClosingBalanceProof(msg[messageKey], payment));
-  store.dispatch(putDelivered(msg[messageKey], payment, 12, true));
+  store.dispatch(putDelivered(msg[messageKey], payment, 12));
   return store.dispatch(putProcessed(msg[messageKey], payment, 13));
 };
