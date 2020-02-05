@@ -263,11 +263,11 @@ export const putDelivered = (message, payment, order = 4) => async (
   }
 };
 
-export const putProcessed = (
-  msg,
-  payment,
-  order = 3
-) => async (dispatch, getState, lh) => {
+export const putProcessed = (msg, payment, order = 3) => async (
+  dispatch,
+  getState,
+  lh
+) => {
   const { sender, receiver } = getSenderAndReceiver(payment);
   const message_type_value = getPaymentMessageTypeValue(payment);
   const { paymentId } = payment;
@@ -290,13 +290,13 @@ export const putProcessed = (
   body.message.signature = signature;
   try {
     if (message_type_value !== PAYMENT_SUCCESSFUL) {
-       const data = {
-         paymentId,
-         order,
-         message: body.message,
-         message_type_value,
-       };
-       dispatch(nonSuccessfulMessageAdd(data));
+      const data = {
+        paymentId,
+        order,
+        message: body.message,
+        message_type_value,
+      };
+      dispatch(nonSuccessfulMessageAdd(data));
     } else {
       dispatch(
         addPendingPaymentMessage(paymentId, order, {
@@ -483,6 +483,11 @@ export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
   return dispatch(obj);
 };
 
+export const setLockExpired = (paymentId, data) => dispatch =>
+  dispatch({
+    type: SET,
+  });
+
 /**
  *
  * @param {*} data Data of the payment and message for the request
@@ -510,6 +515,12 @@ export const putLockExpired = data => async (dispatch, getState, lh) => {
         locksroot: data.locksroot,
       },
     };
+    if (data.signature)
+      return dispatch({
+        type: PUT_LOCK_EXPIRED,
+        paymentId: data.paymentId,
+        lockExpired: body,
+      });
 
     const dataToSign = getDataToSignForLockExpired(body.message);
     const signature = await resolver(dataToSign, lh, true);

@@ -12,10 +12,32 @@ export const getPaymentIds = () => {
   return paymentIds;
 };
 
-export const getPendingPaymentById = paymentId => {
+export const getAllPayments = () => {
   const store = Store.getStore();
   const { payments } = store.getState();
+  return payments;
+};
+
+export const getPendingPaymentById = paymentId => {
+  const payments = getAllPayments();
   return payments.pending[paymentId];
+};
+
+export const getFailedPaymentById = paymentId => {
+  const payments = getAllPayments();
+
+  return payments.failed[paymentId];
+};
+
+export const getCompletedPaymentById = paymentId => {
+  const payments = getAllPayments();
+  return payments.completed[paymentId];
+};
+
+export const isPaymentCompleteOrPending = paymentId => {
+  const completed = getCompletedPaymentById(paymentId);
+  const pending = getPendingPaymentById(paymentId);
+  return completed || pending;
 };
 
 export const getPendingPayments = () => {

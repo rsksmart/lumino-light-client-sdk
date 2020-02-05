@@ -31,7 +31,7 @@ export const createCloseTx = async params => {
     value: "0x00",
     data: tokenNetwork.methods
       .closeChannel(
-        params.channel_identifier,
+        params.channelIdentifier,
         params.partner,
         balance_hash,
         nonce,

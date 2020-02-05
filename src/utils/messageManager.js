@@ -16,7 +16,6 @@ import {
   getPendingPaymentById,
   paymentExistsInAnyState,
   getChannelByIdAndToken,
-  getPaymentIds,
 } from "../store/functions";
 import Store from "../store";
 import {
@@ -47,7 +46,11 @@ import {
 } from "../store/actions/types";
 import Lumino from "../Lumino/index";
 import { searchTokenDataInChannels } from "../store/functions/tokens";
-import { getPaymentByIdAndState } from "../store/functions/payments";
+import {
+  getPaymentByIdAndState,
+  isPaymentCompleteOrPending,
+  getFailedPaymentById,
+} from "../store/functions/payments";
 
 /**
  *
@@ -107,13 +110,12 @@ const managePaymentMessages = messages => {
       const { type } = msg[messageKey];
       const paymentId = payment_id.toString();
       const payment = getPendingPaymentById(paymentId);
-
-      // We can't handle payments that don't exist OR failed, but we can handle reception of a new one
+      // We can't handle payments that don't exist , but we can handle reception of a new one
       if (!payment && type !== MessageType.LOCKED_TRANSFER) return null;
       // We have to check if a locked transfer may be from a payment that has been processed already
       if (type === MessageType.LOCKED_TRANSFER) {
-        const hasPaymentInPendingOrComplete = getPaymentIds()[paymentId];
-        if (hasPaymentInPendingOrComplete) return null;
+        const paymentPendingOrComplete = isPaymentCompleteOrPending(paymentId);
+        if (paymentPendingOrComplete) return null;
       }
       if (is_signed && type !== MessageType.LOCKED_TRANSFER) {
         const signatureAddress = signatureRecover(msg[messageKey]);
@@ -146,11 +148,16 @@ const managePaymentMessages = messages => {
 
 const manageLockExpired = (msgData, payment) => {
   const store = Store.getStore();
-  const { message, payment_id } = msgData;
+  const { message, payment_id, message_order } = msgData;
 
   // We have to recreate the payment in failures
   if (!payment)
-    store.dispatch(recreatePaymentForFailure({ ...message, payment_id }));
+    store.dispatch(
+      recreatePaymentForFailure({
+        ...message,
+        payment_id,
+      })
+    );
 
   const paymentAux = getPendingPaymentById(payment_id);
 
@@ -158,29 +165,35 @@ const manageLockExpired = (msgData, payment) => {
     setPaymentFailed(payment_id, PENDING_PAYMENT, FAILURE_REASONS.EXPIRED)
   );
 
-  // The payment is sent from the LC?
-  if (!paymentAux.isReceived) {
-    const dataForPut = {
-      ...paymentAux,
-      transferred_amount: message.transferred_amount,
-      locked_amount: message.locked_amount,
-      locksroot: message.locksroot,
-      message_identifier: message.message_identifier,
-      nonce: message.nonce,
-    };
-    return store.dispatch(putLockExpired(dataForPut));
-  }
-  // The payment was sent to the LC
+  const dataForPut = {
+    ...paymentAux,
+    signature: message.signature,
+    transferred_amount: message.transferred_amount,
+    locked_amount: message.locked_amount,
+    locksroot: message.locksroot,
+    message_identifier: message.message_identifier,
+    nonce: message.nonce,
+  };
 
-  store.dispatch(putDelivered(message, paymentAux, message.message_order + 1));
-  return store.dispatch(
-    putProcessed(message, paymentAux, 3, PAYMENT_EXPIRED, true)
-  );
+  // The payment is sent from the LC?
+  store.dispatch(putLockExpired(dataForPut));
+  if (!paymentAux.isReceived) return true;
+
+  // The payment was sent to the LC
+  store.dispatch(putDelivered(message, paymentAux, message_order + 1));
+  return store.dispatch(putProcessed(message, paymentAux, 3));
 };
 
 const manageLockedTransfer = (message, payment, messageKey) => {
   // We shouldn't have a payment, if the payment exists then the LT was processed
   if (payment) return null;
+  const failedPayment = getFailedPaymentById(message.payment_id);
+  // For these cases, we just acknowledge the LT and stop processing
+  if (failedPayment)
+    return store.dispatch(
+      putDelivered(msg, failedPayment, message.message_order + 1)
+    );
+
   const msg = message[messageKey];
   // Validate signature
   const signatureAddress = signatureRecover(msg);

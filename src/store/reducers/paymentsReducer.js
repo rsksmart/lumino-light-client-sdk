@@ -9,6 +9,7 @@ import {
   PUT_LOCK_EXPIRED,
   ADD_EXPIRED_PAYMENT_MESSAGE,
 } from "../actions/types";
+import { EXPIRED } from "../../config/paymentConstants";
 
 const initialState = {
   pending: {},
