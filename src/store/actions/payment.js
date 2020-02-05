@@ -483,11 +483,6 @@ export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
   return dispatch(obj);
 };
 
-export const setLockExpired = (paymentId, data) => dispatch =>
-  dispatch({
-    type: SET,
-  });
-
 /**
  *
  * @param {*} data Data of the payment and message for the request

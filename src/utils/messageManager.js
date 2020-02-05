@@ -4,7 +4,6 @@ import {
   MessageKeyForOrder,
   LIGHT_MESSAGE_TYPE,
   PAYMENT_SUCCESSFUL,
-  PAYMENT_EXPIRED,
 } from "../config/messagesConstants";
 import {
   FAILURE_REASONS,
