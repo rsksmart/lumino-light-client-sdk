@@ -9,7 +9,6 @@ import {
   PUT_LOCK_EXPIRED,
   ADD_EXPIRED_PAYMENT_MESSAGE,
 } from "../actions/types";
-import { EXPIRED } from "../../config/paymentConstants";
 
 const initialState = {
   pending: {},
@@ -119,8 +118,16 @@ const paymentsReducer = (state = initialState, action) => {
     case ADD_EXPIRED_PAYMENT_MESSAGE: {
       const { messageOrder, message } = action;
       const newState = cloneState(state);
-      newState.failed[paymentId].expiration.messages[messageOrder] = message;
-      newState.failed[paymentId].expiration.message_order = messageOrder;
+      const { failed } = newState;
+      const msg = failed[paymentId].expiration.messages[messageOrder];
+      if (msg && messageOrder === 2) {
+        if (!newState.failed[paymentId].messages)
+          newState.failed[paymentId].messages = {};
+        newState.failed[paymentId].messages[messageOrder] = message;
+      } else {
+        newState.failed[paymentId].expiration.messages[messageOrder] = message;
+        newState.failed[paymentId].expiration.message_order = messageOrder;
+      }
       return newState;
     }
     default:
