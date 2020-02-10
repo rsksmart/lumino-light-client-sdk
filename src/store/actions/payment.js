@@ -540,7 +540,7 @@ export const putLockExpired = data => async (dispatch, getState, lh) => {
         locksroot: data.locksroot,
       },
     };
-    if (data.signature)
+    if (data.signature && data.signature !== "0x")
       return dispatch({
         type: PUT_LOCK_EXPIRED,
         paymentId: data.paymentId,
