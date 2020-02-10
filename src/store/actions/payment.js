@@ -179,18 +179,18 @@ export const addPendingPaymentMessage = (
   });
 
 export const addExpiredPaymentMessage = (
-         paymentId,
-         messageOrder,
-         message,
-         storeInMessages = false
-       ) => dispatch =>
-         dispatch({
-           type: ADD_EXPIRED_PAYMENT_MESSAGE,
-           paymentId,
-           messageOrder,
-           message,
-           storeInMessages,
-         });
+  paymentId,
+  messageOrder,
+  message,
+  storeInMessages = false
+) => dispatch =>
+  dispatch({
+    type: ADD_EXPIRED_PAYMENT_MESSAGE,
+    paymentId,
+    messageOrder,
+    message,
+    storeInMessages,
+  });
 
 export const addExpiredPaymentNormalMessage = (
   paymentId,
@@ -221,11 +221,15 @@ const nonSuccessfulMessageAdd = data => dispatch => {
   switch (message_type_value) {
     case PAYMENT_EXPIRED: {
       return dispatch(
-        addExpiredPaymentMessage(paymentId, order, {
-          message,
-          message_order: order,
-        },
-        storeInMessages)
+        addExpiredPaymentMessage(
+          paymentId,
+          order,
+          {
+            message,
+            message_order: order,
+          },
+          storeInMessages
+        )
       );
     }
   }
