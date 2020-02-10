@@ -32,7 +32,7 @@ const hexEncode = (data, length, isUnsafe) => {
  * @param {number} lockedAmount - The tx locked amount
  * @param {string} locksRoot - The hexadecimal string of the locksroot
  */
-const createBalanceHash = (txAmount, lockedAmount, locksRoot) => {
+export const createBalanceHash = (txAmount, lockedAmount, locksRoot) => {
   const { HashZero } = ethers.constants;
   const txAmountHex = hexEncode(txAmount, 32, true);
   const lockedAmountHex = hexEncode(lockedAmount, 32, true);
@@ -50,6 +50,25 @@ const createBalanceHash = (txAmount, lockedAmount, locksRoot) => {
     locksRootHex,
   ]);
   return ethers.utils.keccak256(toHash);
+};
+
+export const createMessageHash = (data, type = MessageType.BALANCE_PROOF) => {
+  const messageHashUnhashed = ethers.utils.concat([
+    hexEncode(MessageNumPad[type], 1),
+    hexEncode(0, 3),
+    hexEncode(data.chain_id, 32),
+    hexEncode(data.message_identifier, 8, true),
+    hexEncode(data.payment_identifier, 8, true),
+    hexEncode(data.token_network_address, 20),
+    hexEncode(data.secret, 32),
+    hexEncode(data.nonce, 8),
+    hexEncode(data.channel_identifier, 32),
+    hexEncode(data.transferred_amount, 32, true),
+    hexEncode(data.locked_amount, 32, true),
+    hexEncode(data.locksroot, 32),
+  ]);
+
+  return ethers.utils.keccak256(messageHashUnhashed);
 };
 
 // TODO: Separate the methods and document their uses according to messages
