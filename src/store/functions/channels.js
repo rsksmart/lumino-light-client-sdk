@@ -6,7 +6,11 @@ export const getChannelsState = () => {
   const { channelStates } = store.getState();
   return channelStates;
 };
-
+/**
+ *
+ * @param {*} id The channel identifier
+ * @param {*} token The token address
+ */
 export const getChannelByIdAndToken = (id, token) => {
   const store = Store.getStore();
   const { channelReducer: channels } = store.getState();
