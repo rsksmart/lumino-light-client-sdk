@@ -8,7 +8,6 @@ import {
 import {
   FAILURE_REASONS,
   PENDING_PAYMENT,
-  FAILED_PAYMENT,
   EXPIRED,
 } from "../config/paymentConstants";
 import {
@@ -93,7 +92,6 @@ const manageNonPaymentMessages = messages => {
 
     switch (msg.message.type) {
       case MessageType.LOCK_EXPIRED: {
-        if (payment && payment.paymentState === FAILED_PAYMENT) return null;
         return manageLockExpired(msg, payment);
       }
       case MessageType.DELIVERED:
@@ -210,9 +208,10 @@ const manageLockedTransfer = (message, payment, messageKey) => {
   const msg = message[messageKey];
 
   if (payment && payment.failureReason) {
-    return store.dispatch(
+    store.dispatch(
       putDelivered(msg, payment, message.message_order + 1, PAYMENT_SUCCESSFUL)
     );
+    return store.dispatch(putProcessed(msg, payment, 3, PAYMENT_SUCCESSFUL));
   }
 
   // Validate signature
@@ -272,7 +271,7 @@ const manageLockedTransfer = (message, payment, messageKey) => {
   store.dispatch(
     putDelivered(msg, actionObj.payment, message.message_order + 1)
   );
-  store.dispatch(putProcessed(msg, actionObj.payment, 3, PAYMENT_SUCCESSFUL));
+  store.dispatch(putProcessed(msg, actionObj.payment, 3));
 };
 
 /**

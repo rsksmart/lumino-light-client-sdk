@@ -116,11 +116,9 @@ const paymentsReducer = (state = initialState, action) => {
     }
 
     case ADD_EXPIRED_PAYMENT_MESSAGE: {
-      const { messageOrder, message } = action;
+      const { messageOrder, message, storeInMessages } = action;
       const newState = cloneState(state);
-      const { failed } = newState;
-      const msg = failed[paymentId].expiration.messages[messageOrder];
-      if (msg && messageOrder === 2) {
+      if (storeInMessages) {
         if (!newState.failed[paymentId].messages)
           newState.failed[paymentId].messages = {};
         newState.failed[paymentId].messages[messageOrder] = message;

@@ -179,6 +179,20 @@ export const addPendingPaymentMessage = (
   });
 
 export const addExpiredPaymentMessage = (
+         paymentId,
+         messageOrder,
+         message,
+         storeInMessages = false
+       ) => dispatch =>
+         dispatch({
+           type: ADD_EXPIRED_PAYMENT_MESSAGE,
+           paymentId,
+           messageOrder,
+           message,
+           storeInMessages,
+         });
+
+export const addExpiredPaymentNormalMessage = (
   paymentId,
   messageOrder,
   message
@@ -188,6 +202,7 @@ export const addExpiredPaymentMessage = (
     paymentId,
     messageOrder,
     message,
+    storeInMessages: true,
   });
 
 const getRandomBN = () => {
@@ -196,24 +211,32 @@ const getRandomBN = () => {
 };
 
 const nonSuccessfulMessageAdd = data => dispatch => {
-  const { paymentId, order, message, message_type_value } = data;
+  const {
+    paymentId,
+    order,
+    message,
+    message_type_value,
+    storeInMessages,
+  } = data;
   switch (message_type_value) {
     case PAYMENT_EXPIRED: {
       return dispatch(
         addExpiredPaymentMessage(paymentId, order, {
           message,
           message_order: order,
-        })
+        },
+        storeInMessages)
       );
     }
   }
 };
 
-export const putDelivered = (message, payment, order = 4) => async (
-  dispatch,
-  getState,
-  lh
-) => {
+export const putDelivered = (
+  message,
+  payment,
+  order = 4,
+  storeInMessages = false
+) => async (dispatch, getState, lh) => {
   // We determine the type for failures or success flows
   const message_type_value = getPaymentMessageTypeValue(payment);
   const { sender, receiver } = getSenderAndReceiver(payment);
@@ -244,6 +267,7 @@ export const putDelivered = (message, payment, order = 4) => async (
         order,
         message: body.message,
         message_type_value,
+        storeInMessages,
       };
       dispatch(nonSuccessfulMessageAdd(data));
     } else {
@@ -263,11 +287,12 @@ export const putDelivered = (message, payment, order = 4) => async (
   }
 };
 
-export const putProcessed = (msg, payment, order = 3) => async (
-  dispatch,
-  getState,
-  lh
-) => {
+export const putProcessed = (
+  msg,
+  payment,
+  order = 3,
+  storeInMessages = false
+) => async (dispatch, getState, lh) => {
   const { sender, receiver } = getSenderAndReceiver(payment);
   const message_type_value = getPaymentMessageTypeValue(payment);
   const { paymentId } = payment;
@@ -295,6 +320,7 @@ export const putProcessed = (msg, payment, order = 3) => async (
         order,
         message: body.message,
         message_type_value,
+        storeInMessages,
       };
       dispatch(nonSuccessfulMessageAdd(data));
     } else {
