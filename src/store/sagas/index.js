@@ -205,8 +205,12 @@ export function* workClientOnboardingSuccess({ address }) {
   Lumino.callbacks.trigger.triggerOnClientOnboardingSuccess(address);
 }
 
-function workChannelClose({ channel }) {
-  Lumino.callbacks.trigger.triggerOnChannelClose(channel);
+function* workChannelClose({ channel }) {
+  const { channel_identifier, token_address } = channel;
+  const channels = yield select(getChannels);
+  const channelKey = `${channel_identifier}-${token_address}`;
+  const channelData = channels[channelKey];
+  Lumino.callbacks.trigger.triggerOnChannelClose(channelData);
 }
 
 export default function* rootSaga() {
