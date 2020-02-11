@@ -32,8 +32,8 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
     });
     const allData = getState();
     return await lh.storage.saveLuminoData(allData);
-  } catch (resolverError) {
-    console.error(resolverError);
+  } catch (error) {
+    console.error(error);
   }
 };
 
