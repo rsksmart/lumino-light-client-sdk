@@ -8,6 +8,7 @@ import {
   START_NOTIFICATIONS_POLLING,
   OPEN_CHANNEL_VOTE,
   REMOVE_NOTIFIER,
+  CLOSE_CHANNEL_VOTE,
 } from "./types";
 import { saveLuminoData } from "./storage";
 import { getChannelByIdAndToken } from "../functions";
@@ -232,9 +233,18 @@ export const manageNotificationData = notificationData => {
 
   return notifications.map(async e => {
     const { eventName } = e.notification;
+
     switch (eventName) {
       case events.CHANNEL_OPENED: {
         const action = manageNewChannel(e.notification, notifier);
+        return {
+          action,
+          notificationId: e.notificationId,
+          notifier,
+        };
+      }
+      case events.CHANNEL_CLOSED: {
+        const action = manageCloseChannel(e.notification, notifier);
         return {
           action,
           notificationId: e.notificationId,
@@ -245,6 +255,32 @@ export const manageNotificationData = notificationData => {
         return null;
     }
   });
+};
+
+const manageCloseChannel = async (notification, notifier) => {
+  const { getAddress } = ethers.utils;
+  const { values, contractAddress } = notification;
+
+  const channelId = values[0].value;
+
+  // const closerAddress = getAddress(values[1].value);
+  const tokenAddress = getTokenAddressByTokenNetwork(
+    getAddress(contractAddress)
+  );
+  // const nonce = values[2]; Not needed , but we document it anyway
+
+  const existingChannel = getChannelByIdAndToken(channelId, tokenAddress);
+  if (existingChannel) {
+    existingChannel.votes.close[notifier] = true;
+    return {
+      type: CLOSE_CHANNEL_VOTE,
+      channel: existingChannel,
+      notifier,
+      shouldClose: true,
+    };
+  }
+
+  return null;
 };
 
 const manageNewChannel = async (notification, notifier) => {
@@ -335,4 +371,5 @@ const createChannelFromNotification = data => ({
 
 const events = {
   CHANNEL_OPENED: "ChannelOpened",
+  CHANNEL_CLOSED: "ChannelClosed",
 };
