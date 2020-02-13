@@ -63,30 +63,36 @@ const prepareSubscribeActions = (data, url) => {
     }));
 };
 
+const getNotifierApiKey = (url, getStateFn) => {
+  const notifier = getStateFn().notifier.notifiers[url];
+  if (!notifier) return console.error(`Notifier ${url} not registered!`);
+  const { apiKey } = notifier;
+  if (!apiKey) return console.error(`API Key not present for notifier ${url}`);
+
+  return apiKey;
+};
+
 export const subscribeToOpenChannel = url => async (dispatch, getState) => {
   try {
     const { address } = getState().client;
-    const notifier = getState().notifier.notifiers[url];
-    if (!notifier) return console.error(`Notifier ${url} not registered!`);
-    const { apiKey } = notifier;
-    if (!apiKey)
-      return console.error(`API Key not present for notifier ${url}`);
-
+    const apiKey = getNotifierApiKey(url, getState);
+    if (!apiKey) return null;
     const endpoint = "subscribeToLuminoOpenChannels";
     notifierOperations.defaults.baseURL = url;
 
     let topicsToDispatch = [];
 
     let resOpenPartner;
+    const reqConfig = {
+      headers: {
+        apiKey,
+      },
+      params: {
+        participanttwo: address,
+      },
+    };
     try {
-      resOpenPartner = await notifierOperations.post(endpoint, null, {
-        headers: {
-          apiKey,
-        },
-        params: {
-          participanttwo: address,
-        },
-      });
+      resOpenPartner = await notifierOperations.post(endpoint, null, reqConfig);
     } catch (error) {
       console.error(error);
       if (error.response) {
@@ -138,6 +144,41 @@ export const subscribeToOpenChannel = url => async (dispatch, getState) => {
   }
 };
 
+export const subscribeToUserClosesChannelOnToken = (url, token) => async (
+  dispatch,
+  getState
+) => {
+  const { address } = getState().client;
+  const apiKey = getNotifierApiKey(url, getState);
+  if (!apiKey) return null;
+  const endpoint = "subscribeToLuminoOpenChannels";
+  notifierOperations.defaults.baseURL = url;
+  const reqConfig = {
+    headers: {
+      apiKey,
+    },
+    params: {
+      closingparticipant: address,
+      token,
+    },
+  };
+  let resClose = null;
+
+  try {
+    resClose = await notifierOperations.post(endpoint, null, reqConfig);
+    const actions = prepareSubscribeActions(resClose, url);
+    actions.forEach(a => dispatch(a));
+    return dispatch(saveLuminoData());
+  } catch (error) {
+    if (error.response) {
+      const actions = prepareSubscribeActions(error.response, url);
+      actions.forEach(a => dispatch(a));
+      return dispatch(saveLuminoData());
+    }
+    console.log(error);
+  }
+};
+
 export const removeNotifier = url => async (dispatch, getState) => {
   const { notifiers } = getState().notifier;
   if (notifiers[url]) {
@@ -148,8 +189,6 @@ export const removeNotifier = url => async (dispatch, getState) => {
   }
   console.error("Provided notifier was not found in the SDK");
 };
-
-export const subscribeToCloseChannel = () => {};
 
 const processSubscribe = res => {
   if (!res.data) return null;
