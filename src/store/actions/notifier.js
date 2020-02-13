@@ -54,13 +54,16 @@ export const notifierRegistration = url => async (dispatch, getState, lh) => {
 };
 
 const prepareSubscribeActions = (data, url) => {
-  const topics = processSubscribe(data);
+  let topics = processSubscribe(data);
+  if (!Array.isArray(topics)) topics = [topics];
+
   if (topics && topics.length)
     return topics.map(({ topicId }) => ({
       type: SUBSCRIBED_TO_NEW_TOPIC,
       topicId,
       notifierUrl: url,
     }));
+  return [];
 };
 
 const getNotifierApiKey = (url, getStateFn) => {
@@ -98,7 +101,6 @@ export const subscribeToOpenChannel = url => async (dispatch, getState) => {
       if (error.response) {
         const actions = prepareSubscribeActions(error.response, url);
         topicsToDispatch = topicsToDispatch.concat(actions);
-
         dispatch(saveLuminoData());
       }
     }
@@ -117,7 +119,6 @@ export const subscribeToOpenChannel = url => async (dispatch, getState) => {
       if (error.response) {
         const actions = prepareSubscribeActions(error.response, url);
         topicsToDispatch = topicsToDispatch.concat(actions);
-
         dispatch(saveLuminoData());
       }
     }
@@ -144,6 +145,32 @@ export const subscribeToOpenChannel = url => async (dispatch, getState) => {
   }
 };
 
+const requestForCloseChannel = async data => {
+  const { url, token, closingparticipant, apiKey } = data;
+  try {
+    const reqConfig = {
+      headers: {
+        apiKey,
+      },
+      params: {
+        closingparticipant,
+        token,
+      },
+    };
+    notifierOperations.defaults.baseURL = url;
+    const endpoint = "subscribeToCloseChannel";
+    const resClose = await notifierOperations.post(endpoint, null, reqConfig);
+
+    return prepareSubscribeActions(resClose.response, url);
+  } catch (error) {
+    if (error.response && error.response.data)
+      return prepareSubscribeActions(error.response, url);
+
+    console.log(error);
+    return [];
+  }
+};
+
 export const subscribeToUserClosesChannelOnToken = (url, token) => async (
   dispatch,
   getState
@@ -151,32 +178,10 @@ export const subscribeToUserClosesChannelOnToken = (url, token) => async (
   const { address } = getState().client;
   const apiKey = getNotifierApiKey(url, getState);
   if (!apiKey) return null;
-  const endpoint = "subscribeToLuminoOpenChannels";
-  notifierOperations.defaults.baseURL = url;
-  const reqConfig = {
-    headers: {
-      apiKey,
-    },
-    params: {
-      closingparticipant: address,
-      token,
-    },
-  };
-  let resClose = null;
-
-  try {
-    resClose = await notifierOperations.post(endpoint, null, reqConfig);
-    const actions = prepareSubscribeActions(resClose, url);
-    actions.forEach(a => dispatch(a));
-    return dispatch(saveLuminoData());
-  } catch (error) {
-    if (error.response) {
-      const actions = prepareSubscribeActions(error.response, url);
-      actions.forEach(a => dispatch(a));
-      return dispatch(saveLuminoData());
-    }
-    console.log(error);
-  }
+  const data = { url, token, closingparticipant: address, apiKey };
+  const actions = await requestForCloseChannel(data);
+  actions.forEach(a => dispatch(a));
+  return dispatch(saveLuminoData());
 };
 
 export const removeNotifier = url => async (dispatch, getState) => {
