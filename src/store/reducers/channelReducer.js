@@ -6,6 +6,7 @@ import {
   UPDATE_NON_CLOSING_BP,
   OPEN_CHANNEL_VOTE,
   DELETE_CHANNEL_FROM_SDK,
+  CLOSE_CHANNEL_VOTE,
 } from "../actions/types";
 import { ethers } from "ethers";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
@@ -50,6 +51,17 @@ const addVote = (channel, vote, voteType) => {
           open: {
             ...channel.votes.open,
             [vote.notifier]: vote.shouldOpen,
+          },
+        },
+      };
+    case VOTE_TYPE.CLOSE_CHANNEL_VOTE:
+      return {
+        ...channel,
+        votes: {
+          ...channel.votes,
+          close: {
+            ...channel.votes.close,
+            [vote.notifier]: vote.shouldClose,
           },
         },
       };
@@ -186,6 +198,30 @@ const channel = (state = initialState, action) => {
 
       delete stateClone[dChannelKey];
       return stateClone;
+    }
+    case CLOSE_CHANNEL_VOTE: {
+      const { notifier, shouldClose } = action;
+      const channelKey = getChannelKey(action.channel);
+      const newState = { ...state };
+
+      // Add the corresponding vote, whether is positive or not
+      newState[channelKey] = addVote(
+        state[channelKey],
+        { notifier, shouldClose },
+        VOTE_TYPE.CLOSE_CHANNEL_VOTE
+      );
+
+      // Check for valid votes and quantity of notifiers
+      const openVotesQuantity = Object.values(
+        newState[channelKey].votes.close
+      ).filter(v => v).length;
+      const { numberOfNotifiers } = action;
+
+      // If we have the half + 1 votes of approval, we close the channel
+      if (openVotesQuantity >= Math.ceil(numberOfNotifiers / 2))
+        newState[channelKey].sdk_status = SDK_CHANNEL_STATUS.CHANNEL_CLOSED;
+
+      return newState;
     }
     default:
       return state;
