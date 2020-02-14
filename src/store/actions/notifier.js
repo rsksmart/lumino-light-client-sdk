@@ -147,7 +147,7 @@ export const subscribeToOpenChannel = url => async (dispatch, getState) => {
 };
 
 const requestForCloseChannel = async data => {
-  const { url, token, closingparticipant, apiKey } = data;
+  const { url, token, closingparticipant, channelId = null, apiKey } = data;
   try {
     const reqConfig = {
       headers: {
@@ -156,8 +156,11 @@ const requestForCloseChannel = async data => {
       params: {
         closingparticipant,
         token,
+        channelidentifier: channelId,
       },
     };
+    if (!reqConfig.params.channelidentifier)
+      delete reqConfig.params.channelidentifier;
     notifierOperations.defaults.baseURL = url;
     const endpoint = "subscribeToCloseChannel";
     const resClose = await notifierOperations.post(endpoint, null, reqConfig);
@@ -184,6 +187,31 @@ export const subscribeToUserClosesChannelOnToken = (url, token) => async (
   actions.forEach(a => dispatch(a));
   return dispatch(saveLuminoData());
 };
+/**
+ *
+ * @param {*} url Notifier URL
+ * @param {*} channelId The channel identifier
+ * @param {*} token The token network
+ */
+export const subscribeToPartnerClosesSpecificChannel = (
+  url,
+  channelId,
+  token
+) => async (dispatch, getState) => {
+  const apiKey = getNotifierApiKey(url, getState);
+  if (!apiKey) return null;
+  const tokenAddress = await getTokenAddressByTokenNetwork(token);
+  const channel = getChannelByIdAndToken(channelId, tokenAddress);
+
+  if (!channel)
+    return console.error("No channel found for the parameters specified");
+  const { partner_address } = channel;
+
+  const data = { url, token, closingparticipant: partner_address, apiKey };
+  const actions = await requestForCloseChannel(data);
+  actions.forEach(a => dispatch(a));
+  return dispatch(saveLuminoData());
+};
 
 export const removeNotifier = url => async (dispatch, getState) => {
   const { notifiers } = getState().notifier;
@@ -197,7 +225,7 @@ export const removeNotifier = url => async (dispatch, getState) => {
 };
 
 const processSubscribe = res => {
-  if (!res.data) return null;
+  if (!res.data) return {};
   const { data } = res.data;
   return JSON.parse(String(data));
 };
