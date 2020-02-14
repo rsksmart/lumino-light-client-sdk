@@ -270,15 +270,13 @@ const manageCloseChannel = async (notification, notifier) => {
   // const nonce = values[2]; Not needed , but we document it anyway
 
   const existingChannel = getChannelByIdAndToken(channelId, tokenAddress);
-  if (existingChannel) {
-    existingChannel.votes.close[notifier] = true;
+  if (existingChannel)
     return {
       type: CLOSE_CHANNEL_VOTE,
       channel: existingChannel,
       notifier,
       shouldClose: true,
     };
-  }
 
   return null;
 };
