@@ -1,9 +1,10 @@
-import { SET_CHANNEL_CLOSED, DELETE_CHANNEL_FROM_SDK } from "./types";
+import { DELETE_CHANNEL_FROM_SDK, SET_CHANNEL_CLOSED } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
-import { CHANNEL_CLOSED } from "../../config/channelStates";
+
 import { createCloseTx } from "../../scripts/close";
 import { saveLuminoData } from "./storage";
+import { CHANNEL_WAITING_FOR_CLOSE } from "../../config/channelStates";
 
 /**
  * Close a channel.
@@ -28,7 +29,7 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
     const res = await client.patch(url, { ...requestBody });
     dispatch({
       type: SET_CHANNEL_CLOSED,
-      channel: { ...res.data, sdk_status: CHANNEL_CLOSED },
+      channel: { ...res.data, sdk_status: CHANNEL_WAITING_FOR_CLOSE },
     });
     const allData = getState();
     return await lh.storage.saveLuminoData(allData);
