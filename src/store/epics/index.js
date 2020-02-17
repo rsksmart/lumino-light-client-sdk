@@ -19,8 +19,6 @@ import {
   NOTIFICATIONS_POLLING_ERROR,
   NOTIFICATIONS_POLLING,
 } from "../actions/types";
-import Store from "..";
-import { manageNotificationData } from "../actions/notifier";
 
 const paymentsMonitoredEpic = action$ => {
   const stopPolling$ = action$.pipe(ofType(MESSAGE_POLLING_STOP));

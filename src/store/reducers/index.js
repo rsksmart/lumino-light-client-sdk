@@ -6,6 +6,7 @@ import payments from "./paymentsReducer";
 import clientReducer from "./clientReducer";
 import notifierReducer from "./notifierReducer";
 import tokensNetworkReducer from "./tokensNetworkReducer";
+import tokenNamesReducer from "./tokenNamesReducer";
 
 const rootReducer = combineReducers({
   channelReducer: channel,
@@ -15,6 +16,7 @@ const rootReducer = combineReducers({
   client: clientReducer,
   notifier: notifierReducer,
   tokenNetworks: tokensNetworkReducer,
+  tokenNames: tokenNamesReducer,
 });
 
 export default rootReducer;
