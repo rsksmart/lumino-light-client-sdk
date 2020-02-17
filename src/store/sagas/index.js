@@ -67,6 +67,7 @@ export function* workMessagePolling({ data }) {
     });
     yield all(completed.map(paymentId => setCompleted(paymentId)));
     const maxIdentifier = findMaxMsgInternalId(data);
+
     yield put({ type: SET_LATEST_INTERNAL_MSG_ID, id: maxIdentifier });
     // const pendingAfterCompletion = yield select(getPendingPayments);
     // const actualPaymentPollingTime = yield select(getPaymentPollingTime);

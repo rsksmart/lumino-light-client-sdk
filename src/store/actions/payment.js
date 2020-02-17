@@ -1,3 +1,5 @@
+import { ethers } from "ethers";
+import BigNumber from "bignumber.js";
 import {
   CREATE_PAYMENT,
   ADD_PENDING_PAYMENT_MESSAGE,
@@ -7,6 +9,9 @@ import {
   SET_PAYMENT_SECRET,
   UPDATE_NON_CLOSING_BP,
   PAYMENT_CREATION_ERROR,
+  PUT_LOCK_EXPIRED,
+  SET_PAYMENT_FAILED,
+  ADD_EXPIRED_PAYMENT_MESSAGE,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -19,13 +24,11 @@ import {
   getDataToSignForProcessed,
   getDataToSignForSecretRequest,
   getDataToSignForNonClosingBalanceProof,
+  getDataToSignForLockExpired,
 } from "../../utils/pack";
 import { validateLockedTransfer } from "../../utils/validators";
 import { getChannelsState } from "../functions";
-import { ethers } from "ethers";
-import JSONbig from "json-bigint";
-import BigNumber from "bignumber.js";
-import { MessageType } from "../../config/messagesConstants";
+import { MessageType, PAYMENT_EXPIRED, PAYMENT_SUCCESSFUL } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
 import { getLatestChannelByPartnerAndToken } from "../functions/channels";
 import { searchTokenDataInChannels } from "../functions/tokens";
@@ -49,10 +52,10 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const actualBalance = bigNumberify(channel.offChainBalance);
     if (actualBalance.lt(amount)) {
       console.error("Insufficient funds for payment");
-      // TODO: Add a callback for this
+
       dispatch({
         type: PAYMENT_CREATION_ERROR,
-        reason: `Insufficient funds for payment`,
+        reason: "Insufficient funds for payment`",
       });
       return null;
     }
@@ -64,10 +67,11 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       secrethash,
     };
     const urlCreate = "payments_light/create";
-    const res = await client.post(urlCreate, requestBody, {
-      transformResponse: res => JSONbig.parse(res),
-    });
-    const { message, message_id, message_order } = { ...res.data };
+    const res = await client.post(urlCreate, requestBody);
+    const {
+      message_content: { message, message_order, payment_id },
+    } = { ...res.data };
+
     const messageWithHash = {
       ...message,
       lock: {
@@ -79,27 +83,26 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const dataToSign = ethers.utils.arrayify(
       getDataToSignForLockedTransfer(messageWithHash)
     );
-    try {
-      signature = await resolver(dataToSign, lh, true);
-    } catch (resolverError) {
-      throw resolverError;
-    }
+
+    signature = await resolver(dataToSign, lh, true);
+
     const channels = getChannelsState();
     validateLockedTransfer(message, requestBody, channels);
     const dataToPut = {
-      message_id,
+      payment_id: payment_id,
       message_order,
       receiver: getAddress(messageWithHash.target),
       sender: getAddress(messageWithHash.initiator),
+      message_type_value: PAYMENT_SUCCESSFUL,
       message: {
         ...messageWithHash,
         signature,
       },
     };
+
     const urlPut = "payments_light";
-    await client.put(urlPut, dataToPut, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    // Send signed LT to HUB
+    await client.put(urlPut, dataToPut);
     const { tokenName, tokenSymbol } = searchTokenDataInChannels(token_address);
     dispatch({
       type: CREATE_PAYMENT,
@@ -108,7 +111,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         message_order: 1,
         secret,
         partner: message.target,
-        paymentId: `${dataToPut.message_id}`,
+        paymentId: payment_id,
         initiator: message.initiator,
         amount: message.lock.amount,
         secret_hash: secrethash,
@@ -119,14 +122,14 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         tokenNetworkAddress: dataToPut.message.token_network_address,
         chainId: dataToPut.message.chain_id,
       },
-      paymentId: `${dataToPut.message_id}`,
+      paymentId: payment_id,
       channelId: dataToPut.message.channel_identifier,
       token: token_address,
     });
     const allData = getState();
     return await lh.storage.saveLuminoData(allData);
   } catch (apiError) {
-    throw apiError;
+    console.error(apiError);
   }
 };
 
@@ -136,11 +139,11 @@ export const clearAllPendingPayments = () => async (dispatch, getState, lh) => {
   return await lh.storage.saveLuminoData(allData);
 };
 
-export const mockPulling = () => async (dispatch, getState, lh) => {
+export const mockPulling = () => async dispatch => {
   dispatch({ type: MESSAGE_POLLING_START });
 };
 
-export const mockStopPulling = () => async (dispatch, getState, lh) => {
+export const mockStopPulling = () => async dispatch => {
   dispatch({ type: MESSAGE_POLLING_STOP });
 };
 
@@ -161,6 +164,18 @@ export const addPendingPaymentMessage = (
     message,
   });
 
+export const addExpiredPaymentMessage = (
+  paymentId,
+  messageOrder,
+  message
+) => dispatch =>
+  dispatch({
+    type: ADD_EXPIRED_PAYMENT_MESSAGE,
+    paymentId,
+    messageOrder,
+    message,
+  });
+
 const getRandomBN = () => {
   const randomBN = BigNumber.random(18).toString();
   return new BigNumber(randomBN.split(".")[1]).toString();
@@ -169,16 +184,20 @@ export const putDelivered = (
   message,
   payment,
   order = 4,
-  isReception = false
+  isReception = false,
+  message_type_value = PAYMENT_SUCCESSFUL,
+  isExpiration = false
 ) => async (dispatch, getState, lh) => {
   const sender = isReception ? payment.partner : payment.initiator;
   const receiver = isReception ? payment.initiator : payment.partner;
   const { getAddress } = ethers.utils;
+  const { paymentId } = payment;
   const body = {
-    message_id: payment.paymentId,
+    payment_id: paymentId,
     message_order: order,
     sender: getAddress(sender),
     receiver: getAddress(receiver),
+    message_type_value: message_type_value,
     message: {
       type: MessageType.DELIVERED,
       delivered_message_identifier: message.message_identifier,
@@ -186,23 +205,28 @@ export const putDelivered = (
   };
   const dataToSign = getDataToSignForDelivered(body.message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   body.message.signature = signature;
   try {
-    dispatch(
-      addPendingPaymentMessage(payment.paymentId, body.message_order, {
-        message: body.message,
-        message_order: body.message_order,
-      })
-    );
+    if (isExpiration) {
+      dispatch(
+        addExpiredPaymentMessage(paymentId, order, {
+          message: body.message,
+          message_order: order,
+        })
+      );
+    } else {
+      dispatch(
+        addPendingPaymentMessage(payment.paymentId, body.message_order, {
+          message: body.message,
+          message_order: body.message_order,
+        })
+      );
+    }
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
 
     dispatch(saveLuminoData());
   } catch (reqEx) {
@@ -210,17 +234,21 @@ export const putDelivered = (
   }
 };
 
-export const putProcessed = (msg, payment, order = 3) => async (
-  dispatch,
-  getState,
-  lh
-) => {
+export const putProcessed = (
+  msg,
+  payment,
+  order = 3,
+  message_type_value = PAYMENT_SUCCESSFUL,
+  isExpiration = false
+) => async (dispatch, getState, lh) => {
   const { getAddress } = ethers.utils;
+  const { paymentId } = payment;
   const body = {
-    message_id: payment.paymentId,
+    payment_id: payment.paymentId,
     message_order: order,
     sender: getAddress(payment.partner),
     receiver: getAddress(payment.initiator),
+    message_type_value: message_type_value,
     message: {
       type: MessageType.PROCESSED,
       message_identifier: msg.message_identifier,
@@ -228,40 +256,48 @@ export const putProcessed = (msg, payment, order = 3) => async (
   };
   const dataToSign = getDataToSignForProcessed(body.message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   body.message.signature = signature;
   try {
-    dispatch(
-      addPendingPaymentMessage(payment.paymentId, body.message_order, {
-        message: body.message,
-        message_order: body.message_order,
-      })
-    );
+    if (isExpiration) {
+      dispatch(
+        addExpiredPaymentMessage(paymentId, order, {
+          message: body.message,
+          message_order: order,
+        })
+      );
+    } else {
+      dispatch(
+        addPendingPaymentMessage(paymentId, order, {
+          message: body.message,
+          message_order: order,
+        })
+      );
+    }
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put Processed", reqEx);
   }
 };
 
-export const putSecretRequest = (msg, payment) => async (
+export const putSecretRequest = (msg, payment, isReception = false) => async (
   dispatch,
   getState,
   lh
 ) => {
   const { getAddress } = ethers.utils;
+  const sender = isReception ? payment.partner : payment.initiator;
+  const receiver = isReception ? payment.initiator : payment.partner;
   const body = {
-    message_id: payment.paymentId,
+    payment_id: payment.paymentId,
     message_order: 5,
-    sender: getAddress(payment.initiator),
-    receiver: getAddress(payment.partner),
+    sender: getAddress(sender),
+    receiver: getAddress(receiver),
+    message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       type: MessageType.SECRET_REQUEST,
       message_identifier: msg.message_identifier,
@@ -273,11 +309,9 @@ export const putSecretRequest = (msg, payment) => async (
   };
   const dataToSign = getDataToSignForSecretRequest(body.message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   body.message.signature = signature;
   try {
     dispatch(
@@ -287,12 +321,10 @@ export const putSecretRequest = (msg, payment) => async (
       })
     );
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put SecretRequest", reqEx);
   }
 };
 
@@ -311,10 +343,11 @@ export const putRevealSecret = (
     : getAddress(payment.partner);
 
   const body = {
-    message_id: payment.paymentId,
+    payment_id: payment.paymentId,
     message_order: order,
     sender,
     receiver,
+    message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       type: MessageType.REVEAL_SECRET,
       message_identifier,
@@ -323,11 +356,9 @@ export const putRevealSecret = (
   };
   const dataToSign = getDataToSignForRevealSecret(body.message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   body.message.signature = signature;
   try {
     dispatch(
@@ -337,12 +368,10 @@ export const putRevealSecret = (
       })
     );
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put RevealSecret", reqEx);
   }
 };
 
@@ -352,19 +381,18 @@ export const putBalanceProof = (message, payment) => async (
   lh
 ) => {
   const { getAddress } = ethers.utils;
-  const { signature: oldSignature, ...data } = message;
+  const data = message;
   const dataToSign = getDataToSignForBalanceProof(data);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+
+  signature = await resolver(dataToSign, lh, true);
+
   const body = {
-    message_id: payment.paymentId,
+    payment_id: payment.paymentId,
     message_order: 11,
     sender: getAddress(payment.initiator),
     receiver: getAddress(payment.partner),
+    message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       ...data,
       signature,
@@ -378,12 +406,10 @@ export const putBalanceProof = (message, payment) => async (
       })
     );
     const urlPut = "payments_light";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put BalanceProof", reqEx);
   }
 };
 
@@ -395,11 +421,7 @@ export const putNonClosingBalanceProof = (message, payment) => async (
   const { getAddress } = ethers.utils;
   const dataToSign = getDataToSignForNonClosingBalanceProof(message);
   let signature = "";
-  try {
-    signature = await resolver(dataToSign, lh, true);
-  } catch (resolverError) {
-    throw resolverError;
-  }
+  signature = await resolver(dataToSign, lh, true);
   const body = {
     sender: getAddress(payment.partner),
     light_client_payment_id: payment.paymentId,
@@ -412,9 +434,7 @@ export const putNonClosingBalanceProof = (message, payment) => async (
   };
   try {
     const urlPut = "watchtower";
-    await client.put(urlPut, body, {
-      transformResponse: res => JSONbig.parse(res),
-    });
+    await client.put(urlPut, body);
     dispatch({
       type: UPDATE_NON_CLOSING_BP,
       channelId: payment.channelId,
@@ -423,7 +443,7 @@ export const putNonClosingBalanceProof = (message, payment) => async (
     });
     dispatch(saveLuminoData());
   } catch (reqEx) {
-    console.error("reqEx Put SecretReveal", reqEx);
+    console.error("reqEx Put NonClosingBP", reqEx);
   }
 };
 
@@ -432,3 +452,83 @@ export const setPaymentSecret = (paymentId, secret) => ({
   secret,
   paymentId,
 });
+
+export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
+  const obj = {
+    type: SET_PAYMENT_FAILED,
+    paymentId,
+    reason,
+    paymentState: state,
+  };
+  return dispatch(obj);
+};
+
+/**
+ *
+ * @param {*} data Data of the payment and message for the request
+ */
+export const putLockExpired = data => async (dispatch, getState, lh) => {
+  const { getAddress } = ethers.utils;
+
+  try {
+    const { isReceived } = data;
+    const sender = getAddress(isReceived ? data.partner : data.initiator);
+    const receiver = getAddress(isReceived ? data.initiator : data.partner);
+    const body = {
+      payment_id: data.paymentId,
+      message_order: 1,
+      sender,
+      receiver,
+      message_type_value: PAYMENT_EXPIRED,
+      message: {
+        type: MessageType.LOCK_EXPIRED,
+        chain_id: data.chainId,
+        nonce: data.nonce,
+        token_network_address: data.tokenNetworkAddress,
+        message_identifier: data.message_identifier,
+        channel_identifier: data.channelId,
+        secrethash: data.secret_hash,
+        transferred_amount: data.transferred_amount,
+        locked_amount: data.locked_amount,
+        recipient: receiver,
+        locksroot: data.locksroot,
+      },
+    };
+
+    const dataToSign = getDataToSignForLockExpired(body.message);
+    const signature = await resolver(dataToSign, lh, true);
+    body.message.signature = signature;
+    const urlPut = "payments_light";
+    await client.put(urlPut, body);
+    dispatch({
+      type: PUT_LOCK_EXPIRED,
+      paymentId: data.paymentId,
+      lockExpired: body,
+    });
+    dispatch(saveLuminoData());
+  } catch (error) {
+    console.error("Error in put LockExpired: ", error);
+  }
+};
+
+export const recreatePaymentForFailure = data => (dispatch, getState) => {
+  const { address } = getState().client;
+
+  dispatch({
+    type: CREATE_PAYMENT,
+    payment: {
+      partner: address,
+      paymentId: data.payment_id,
+      isReceived: true,
+      initiator: data.initiator,
+      amount: data.transferred_amount,
+      channelId: data.channel_identifier,
+      // token: token_address,
+      tokenNetworkAddress: data.token_network_address,
+      chainId: data.chain_id,
+    },
+    paymentId: data.payment_id,
+    channelId: data.channel_identifier,
+    token: data.token_address,
+  });
+};

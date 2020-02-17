@@ -14,7 +14,7 @@ const findMaxByKey = (arr, key) => {
 };
 
 export const findMaxMsgInternalId = arr =>
-  findMaxByKey(arr, "internal_msg_identifer");
+  findMaxByKey(arr, "internal_msg_identifier");
 
 export const findMaxBlockId = notifications =>
   findMaxByKey(notifications, "id");

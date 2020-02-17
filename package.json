@@ -4,7 +4,7 @@
   "description": "Lumino Light Client SDK for JS",
   "main": "./src/index.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --timeout 100000 --require @babel/register --recursive --exit test",
+    "test": "jest",
     "start": "node index.js",
     "build": "gulp babel",
     "prettier": "prettier --print-width 80 --end-of-line lf --trailing-comma es5 --write 'src/**/*.js'"
@@ -33,21 +33,25 @@
     "@babel/core": "^7.7.2",
     "@babel/plugin-proposal-class-properties": "^7.7.4",
     "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
+    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
+    "@babel/plugin-transform-modules-commonjs": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.8.3",
     "@babel/polyfill": "^7.4.4",
     "@babel/preset-env": "^7.5.5",
     "@babel/register": "^7.7.0",
-    "babel-polyfill": "^6.26.0",
+    "babel-jest": "^25.1.0",
+    "core-js": "^3.6.4",
     "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0",
     "gulp-connect": "^5.7.0",
     "gulp-eslint": "^6.0.0",
     "gulp-jsdoc3": "^2.0.0",
-    "jest": "^24.9.0",
+    "jest": "^25.1.0",
     "json-loader": "^0.5.7",
-    "mocha": "^6.2.2",
     "path": "^0.12.7",
     "prettier": "^1.18.2",
-    "sinon": "^7.5.0",
-    "webpack": "^4.39.3"
+    "redux-mock-store": "^1.5.4",
+    "regenerator-runtime": "^0.13.3",
+    "sinon": "^7.5.0"
   }
 }
