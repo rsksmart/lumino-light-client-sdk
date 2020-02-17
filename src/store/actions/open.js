@@ -1,5 +1,5 @@
 import { OPEN_CHANNEL } from "./types";
-import { CHANNEL_OPENED } from "../../config/channelStates";
+import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { createOpenTx } from "../../scripts/open";
@@ -58,7 +58,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
           ...res.data,
           token_symbol,
           token_name,
-          sdk_status: CHANNEL_OPENED,
+          sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
         },
       });
 

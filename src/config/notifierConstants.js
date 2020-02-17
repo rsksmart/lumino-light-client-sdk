@@ -1,1 +1,7 @@
 export const NOTIFIER_BASE_URL = "http://192.168.1.240:8080/";
+
+const OPEN_CHANNEL_VOTE = "OPEN_CHANNEL_VOTE";
+
+export const VOTE_TYPE = {
+  [OPEN_CHANNEL_VOTE]: OPEN_CHANNEL_VOTE,
+};

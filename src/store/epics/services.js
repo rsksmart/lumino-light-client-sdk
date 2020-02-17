@@ -2,7 +2,8 @@ import { from } from "rxjs";
 import client from "../../apiRest";
 import JSONbig from "json-bigint";
 import Store from "../index";
-import notifier from "../../notifierRest";
+import notifierGet from "../../notifierRest";
+import allSettled from "promise.allsettled";
 
 const url = "payments_light/get_messages";
 
@@ -19,23 +20,41 @@ const getTransactionInfo = () => {
 };
 
 const getNotificationsInfo = () => {
-  const state = Store.getStore().getState();
-  const { notifierApiKey } = state.client;
-  const url = "getNotifications";
-  const topics = Object.keys(state.notifier).join(",");
+  // We process the data from the reducer to get a simple array of objects
+  const notifierObj = Store.getStore().getState().notifier;
+  const notifiers = Object.entries(notifierObj.notifiers).map(([k, v]) => ({
+    url: k,
+    apiKey: v.apiKey,
+    topics: Object.keys(v.topics || {}).join(","),
+    fromId: v.fromNotificationId,
+  }));
+  const endpoint = "getNotifications";
 
+  // We settle promises for each notifier, using all settled to prevent short circuits
+  const results = allSettled(
+    notifiers.map(n => {
+      const { apiKey, topics: idTopic, url, fromId } = n;
+      notifierGet.defaults.baseURL = url;
+      notifierGet.defaults.headers = {
+        apiKey,
+      };
+      notifierGet.defaults.params = {
+        idTopic,
+        lastRows: 5,
+        fromId,
+      };
+
+      return notifierGet.get(endpoint);
+    })
+  );
   return from(
-    notifier
-      .get(url, {
-        headers: {
-          apiKey: notifierApiKey,
-        },
-        params: {
-          idTopic: topics,
-          lastRows: 5,
-        },
-      })
-      .then(res => res.data.data)
+    results.then(promises => {
+      const errors = promises
+        .filter(p => p.status === "rejected")
+        .map(p => p.reason);
+      const fulfilled = promises.filter(p => p.status !== "rejected");
+      return { errors, fulfilled };
+    })
   );
 };
 
