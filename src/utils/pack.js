@@ -32,16 +32,45 @@ const hexEncode = (data, length, isUnsafe) => {
  * @param {number} lockedAmount - The tx locked amount
  * @param {string} locksRoot - The hexadecimal string of the locksroot
  */
-const createBalanceHash = (txAmount, lockedAmount, locksRoot) => {
+export const createBalanceHash = (txAmount, lockedAmount, locksRoot) => {
+  const { HashZero } = ethers.constants;
+  const txAmountHex = hexEncode(txAmount, 32, true);
+  const lockedAmountHex = hexEncode(lockedAmount, 32, true);
+  const locksRootHex = hexEncode(locksRoot, 32);
+  // We check for the 0 hash
+  if (
+    locksRootHex === HashZero &&
+    lockedAmountHex === HashZero &&
+    txAmountHex === HashZero
+  )
+    return HashZero;
   const toHash = ethers.utils.concat([
-    hexEncode(txAmount, 32, true),
-    hexEncode(lockedAmount, 32, true),
-    hexEncode(locksRoot, 32),
+    txAmountHex,
+    lockedAmountHex,
+    locksRootHex,
   ]);
   return ethers.utils.keccak256(toHash);
 };
 
-// TODO: Create JSDOC for this method
+export const createMessageHash = (data, type = MessageType.BALANCE_PROOF) => {
+  const messageHashUnhashed = ethers.utils.concat([
+    hexEncode(MessageNumPad[type], 1),
+    hexEncode(0, 3),
+    hexEncode(data.chain_id, 32),
+    hexEncode(data.message_identifier, 8, true),
+    hexEncode(data.payment_identifier, 8, true),
+    hexEncode(data.token_network_address, 20),
+    hexEncode(data.secret, 32),
+    hexEncode(data.nonce, 8),
+    hexEncode(data.channel_identifier, 32),
+    hexEncode(data.transferred_amount, 32, true),
+    hexEncode(data.locked_amount, 32, true),
+    hexEncode(data.locksroot, 32),
+  ]);
+
+  return ethers.utils.keccak256(messageHashUnhashed);
+};
+
 // TODO: Separate the methods and document their uses according to messages
 
 export const getDataToSignForLockedTransfer = message => {
@@ -177,7 +206,7 @@ export const getDataToSignForSecretRequest = message => {
 };
 
 export const getDataToSignForLockExpired = message => {
-  return ethers.utils.concat([
+  const messageHashUnhashed = ethers.utils.concat([
     hexEncode(MessageNumPad[MessageType.LOCK_EXPIRED], 1),
     hexEncode(0, 3),
     hexEncode(message.nonce, 8),
@@ -191,6 +220,27 @@ export const getDataToSignForLockExpired = message => {
     hexEncode(message.transferred_amount, 32, true),
     hexEncode(message.locked_amount, 32, true),
   ]);
+
+  const messageHash = ethers.utils.keccak256(messageHashUnhashed);
+
+  const balanceHash = createBalanceHash(
+    message.transferred_amount,
+    message.locked_amount,
+    message.locksroot
+  );
+
+  const BPType = 1;
+
+  const dataToSign = ethers.utils.concat([
+    hexEncode(message.token_network_address, 20),
+    hexEncode(message.chain_id, 32),
+    hexEncode(BPType, 32), // Balance Proof Num
+    hexEncode(message.channel_identifier, 32),
+    hexEncode(balanceHash, 32), // balance hash
+    hexEncode(message.nonce, 32),
+    hexEncode(messageHash, 32), // additional hash
+  ]);
+  return dataToSign;
 };
 
 export const getPackedData = message => {

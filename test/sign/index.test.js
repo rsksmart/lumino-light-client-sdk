@@ -13,11 +13,11 @@ test("it should sign correctly a LockExpired", async () => {
     type: MessageType.LOCK_EXPIRED,
     chain_id: 33,
     nonce: 2,
-    token_network_address: "0xb3df4fbd04d29a04d9d0666c009713076e364109",
-    message_identifier: "100261347073025339",
-    channel_identifier: 4,
+    token_network_address: "0x877ec5961d18d3413fabbd67696b758fe95408d6",
+    message_identifier: "10893010622325126424",
+    channel_identifier: 1,
     secrethash:
-      "0xbec0cbd74af7dcc4e2a0d382f7c02562a812c041950746d8c81f42b347075341",
+      "0x2f3a1f9425850b04e2ea7f572594fd2c6a80e3632bdd04144c825a7e49cf21e2",
     transferred_amount: 0,
     locked_amount: 0,
     recipient: "0x29021129f5d038897f01bd4bc050525ca01a4758",
@@ -28,6 +28,10 @@ test("it should sign correctly a LockExpired", async () => {
   const signature = await signer.signMessage(dataToSign);
   const recoveredAddress = ethers.utils.verifyMessage(dataToSign, signature);
   expect(recoveredAddress).toBe(address);
+  // Signature from python test
+  const pythonSignature =
+    "2cce698001efcc72992d8f7004e7a66d441a4aa2e3ee582176a4b65bd07e106920fb93a7647c447eaac1fb4468dd0724b559b1dca6f3fdfa4cc5a5c6261759281c";
+  expect(signature.slice(2)).toBe(pythonSignature);
 });
 
 test("should sign and recover from NonClosingBP", async () => {

@@ -16,6 +16,7 @@ import {
   REQUEST_CLIENT_ONBOARDING,
   CLIENT_ONBOARDING_SUCCESS,
   OPEN_CHANNEL_VOTE,
+  CLOSE_CHANNEL_VOTE,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
@@ -96,11 +97,12 @@ const getChannelKey = channelData => {
   return key;
 };
 
-function* checkForOpenChannelInProcessing(
-  channelsBefore,
-  channelsAfter,
-  action
-) {
+function* checkForOpenChannelInProcessing(data) {
+  const {
+    channelsBeforeProcessing: channelsBefore,
+    channelsAfterProcessing: channelsAfter,
+    action,
+  } = data;
   const k = getChannelKey(action.channel);
   const channelBefore = channelsBefore[k];
   // Channel did exist
@@ -112,6 +114,32 @@ function* checkForOpenChannelInProcessing(
       // Is now open?
       if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_OPENED)
         yield Lumino.callbacks.trigger(CALLBACKS.OpenChannel, channelAfter);
+    }
+  } else {
+    // Channel did not exist
+  }
+}
+
+function checkForCloseChannelInProcessing(data) {
+  const {
+    channelsBeforeProcessing: channelsBefore,
+    channelsAfterProcessing: channelsAfter,
+    action,
+  } = data;
+
+  const k = getChannelKey(action.channel);
+  const channelBefore = channelsBefore[k];
+  // Channel did exist
+  if (channelBefore) {
+    const channelAfter = channelsAfter[k];
+    // Did the state change?
+
+    if (!channelAfter) return null;
+    if (channelBefore.sdk_status !== channelAfter.sdk_status) {
+      // Is now closed?
+
+      if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_CLOSED)
+        Lumino.callbacks.trigger.triggerOnChannelClose(channelAfter);
     }
   } else {
     // Channel did not exist
@@ -145,13 +173,17 @@ export function* workNotificationPolling({ data }) {
 
         if (processedFlat[i].action) {
           yield put({ ...processedFlat[i].action, numberOfNotifiers });
-          if (processedFlat[i].action.type === OPEN_CHANNEL_VOTE) {
-            const channelsAfterProcessing = yield select(getChannels);
-            yield checkForOpenChannelInProcessing(
-              channelsBeforeProcessing,
-              channelsAfterProcessing,
-              processedFlat[i].action
-            );
+          const channelsAfterProcessing = yield select(getChannels);
+          const dataForPostProcess = {
+            channelsBeforeProcessing,
+            channelsAfterProcessing,
+            action: processedFlat[i].action,
+          };
+
+          if (processedFlat[i].action.type === OPEN_CHANNEL_VOTE)
+            yield checkForOpenChannelInProcessing(dataForPostProcess);
+          if (processedFlat[i].action.type === CLOSE_CHANNEL_VOTE) {
+            yield checkForCloseChannelInProcessing(dataForPostProcess);
           }
         }
       }
