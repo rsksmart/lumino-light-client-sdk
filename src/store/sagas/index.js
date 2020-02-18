@@ -113,7 +113,7 @@ function* checkForOpenChannelInProcessing(data) {
     if (channelBefore.sdk_status !== channelAfter.sdk_status) {
       // Is now open?
       if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_OPENED)
-        yield Lumino.callbacks.trigger(CALLBACKS.OpenChannel, channelAfter);
+        yield Lumino.callbacks.trigger(CALLBACKS.OPEN_CHANNEL, channelAfter);
     }
   } else {
     // Channel did not exist
@@ -139,7 +139,7 @@ function checkForCloseChannelInProcessing(data) {
       // Is now closed?
 
       if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_CLOSED)
-        Lumino.callbacks.trigger(CALLBACKS.CloseChannel, channelAfter);
+        Lumino.callbacks.trigger(CALLBACKS.CLOSE_CHANNEL, channelAfter);
     }
   } else {
     // Channel did not exist
@@ -216,23 +216,23 @@ export function* workCreatePayment() {
 export function* workPaymentComplete({ paymentId }) {
   const completed = yield select(getCompletedPaymentById);
   yield put(changeChannelBalance(completed[paymentId]));
-  Lumino.callbacks.trigger(CALLBACKS.CompletedPayment, completed[paymentId]);
+  Lumino.callbacks.trigger(CALLBACKS.COMPLETED_PAYMENT, completed[paymentId]);
 }
 
 export function* workReceivedPayment({ payment: d }) {
-  yield Lumino.callbacks.trigger(CALLBACKS.ReceivedPayment, d);
+  yield Lumino.callbacks.trigger(CALLBACKS.RECEIVED_PAYMENT, d);
 }
 
 export function* workDepositChannel({ channel }) {
-  yield Lumino.callbacks.trigger(CALLBACKS.ChannelDeposit, channel);
+  yield Lumino.callbacks.trigger(CALLBACKS.DEPOSIT_CHANNEL, channel);
 }
 
 export function* workRequestClientOnboarding({ address }) {
-  yield Lumino.callbacks.trigger(CALLBACKS.RequestClientOnboarding, address);
+  yield Lumino.callbacks.trigger(CALLBACKS.REQUEST_CLIENT_ONBOARDING, address);
 }
 
 export function* workClientOnboardingSuccess({ address }) {
-  yield Lumino.callbacks.trigger(CALLBACKS.ClientOnboardingSuccess, address);
+  yield Lumino.callbacks.trigger(CALLBACKS.CLIENT_ONBOARDING_SUCCESS, address);
 }
 
 export default function* rootSaga() {
