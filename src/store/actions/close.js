@@ -39,7 +39,7 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
     return await lh.storage.saveLuminoData(allData);
   } catch (error) {
     console.error(error);
-    Lumino.callbacks.trigger(CALLBACKS.FAILED_CLOSE_CHANNEL, [channel, error]);
+    Lumino.callbacks.trigger(CALLBACKS.FAILED_CLOSE_CHANNEL, channel, error);
   }
 };
 
