@@ -249,5 +249,5 @@ export default function* rootSaga() {
   yield takeEvery(NOTIFICATIONS_POLLING, workNotificationPolling);
   yield takeEvery(REQUEST_CLIENT_ONBOARDING, workRequestClientOnboarding);
   yield takeEvery(CLIENT_ONBOARDING_SUCCESS, workClientOnboardingSuccess);
-  yield takeEvery(SET_PAYMENT_FAILED, workPaymentFailed);
+  yield takeEvery(SET_PAYMENT_FAILED, workFailedPayment);
 }
