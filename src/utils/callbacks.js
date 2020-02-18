@@ -54,7 +54,7 @@ const Callbacks = () => {
    * @param  {...any} args Any number of data to pass to the callback
    */
   const trigger = (name, ...args) => {
-    if (callbacks[name]) return callbacks[name](args[0]);
+    if (callbacks[name]) return callbacks[name](...args);
     return () => {};
   };
 
