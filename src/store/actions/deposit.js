@@ -3,6 +3,9 @@ import { CHANNEL_OPENED } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { createApprovalTx, createDepositTx } from "../../scripts/deposit";
+import { getChannelByIdAndToken } from "../functions";
+import { Lumino } from "../..";
+import { CALLBACKS } from "../../utils/callbacks";
 
 /**
  * Create a deposit.
@@ -13,6 +16,8 @@ import { createApprovalTx, createDepositTx } from "../../scripts/deposit";
  * @param {string} total_deposit -  The amount to deposit
  */
 export const createDeposit = params => async (dispatch, getState, lh) => {
+  const { amount, partner, channelId, tokenAddress } = params;
+  const channel = getChannelByIdAndToken(channelId, tokenAddress);
   try {
     const clientAddress = getState().client.address;
 
@@ -25,7 +30,6 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
     const signed_approval_tx = await resolver(unsignedApprovalTx, lh);
     const signed_deposit_tx = await resolver(unsignedDepositTx, lh);
 
-    const { amount, partner, tokenAddress } = params;
     const requestBody = {
       total_deposit: amount,
       signed_approval_tx,
@@ -33,6 +37,7 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
       signed_close_tx: "",
     };
     const url = `light_channels/${tokenAddress}/${clientAddress}/${partner}`;
+    Lumino.callbacks.trigger(CALLBACKS.REQUEST_DEPOSIT_CHANNEL, channel);
     const res = await client.patch(url, { ...requestBody });
     dispatch({
       type: NEW_DEPOSIT,
@@ -41,6 +46,8 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
     const allData = getState();
     return await lh.storage.saveLuminoData(allData);
   } catch (error) {
+    Lumino.callbacks.trigger(CALLBACKS.FAILED_DEPOSIT_CHANNEL, channel, error);
+
     console.error(error);
   }
 };
