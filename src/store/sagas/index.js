@@ -139,7 +139,7 @@ function checkForCloseChannelInProcessing(data) {
       // Is now closed?
 
       if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_CLOSED)
-        Lumino.callbacks.trigger.triggerOnChannelClose(channelAfter);
+        Lumino.callbacks.trigger(CALLBACKS.CloseChannel, channelAfter);
     }
   } else {
     // Channel did not exist

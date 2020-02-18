@@ -5,6 +5,7 @@ const OPEN_CHANNEL = "OpenChannel";
 const REQUEST_CLIENT_ONBOARDING = "RequestClientOnboarding";
 const CLIENT_ONBOARDING_SUCCESS = "ClientOnboardingSuccess";
 const DEPOSIT_CHANNEL = "ChannelDeposit";
+const CLOSE_CHANNEL = "CloseChannel";
 
 export const CALLBACKS = {
   [RECEIVED_PAYMENT]: RECEIVED_PAYMENT,
@@ -14,6 +15,7 @@ export const CALLBACKS = {
   [REQUEST_CLIENT_ONBOARDING]: REQUEST_CLIENT_ONBOARDING,
   [CLIENT_ONBOARDING_SUCCESS]: CLIENT_ONBOARDING_SUCCESS,
   [DEPOSIT_CHANNEL]: DEPOSIT_CHANNEL,
+  [CLOSE_CHANNEL]: CLOSE_CHANNEL,
 };
 
 const Callbacks = () => {
