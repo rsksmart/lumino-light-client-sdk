@@ -17,6 +17,7 @@ import {
   CLIENT_ONBOARDING_SUCCESS,
   OPEN_CHANNEL_VOTE,
   CLOSE_CHANNEL_VOTE,
+  SET_PAYMENT_FAILED,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
@@ -223,6 +224,10 @@ export function* workReceivedPayment({ payment: d }) {
   yield Lumino.callbacks.trigger(CALLBACKS.RECEIVED_PAYMENT, d);
 }
 
+export function* workFailedPayment({ payment: d }) {
+  yield Lumino.callbacks.trigger(CALLBACKS.FAILED_PAYMENT, d);
+}
+
 export function* workDepositChannel({ channel }) {
   yield Lumino.callbacks.trigger(CALLBACKS.DEPOSIT_CHANNEL, channel);
 }
@@ -244,4 +249,5 @@ export default function* rootSaga() {
   yield takeEvery(NOTIFICATIONS_POLLING, workNotificationPolling);
   yield takeEvery(REQUEST_CLIENT_ONBOARDING, workRequestClientOnboarding);
   yield takeEvery(CLIENT_ONBOARDING_SUCCESS, workClientOnboardingSuccess);
+  yield takeEvery(SET_PAYMENT_FAILED, workPaymentFailed);
 }
