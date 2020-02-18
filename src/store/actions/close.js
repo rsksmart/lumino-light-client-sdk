@@ -5,6 +5,9 @@ import resolver from "../../utils/handlerResolver";
 import { createCloseTx } from "../../scripts/close";
 import { saveLuminoData } from "./storage";
 import { CHANNEL_WAITING_FOR_CLOSE } from "../../config/channelStates";
+import { Lumino } from "../..";
+import { CALLBACKS } from "../../utils/callbacks";
+import { getChannelByIdAndToken } from "../functions";
 
 /**
  * Close a channel.
@@ -17,8 +20,9 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
   const unsignedCloseTx = await createCloseTx(params);
   const signed_close_tx = await resolver(unsignedCloseTx, lh);
 
+  const { address, partner, tokenAddress, channelIdentifier } = params;
+  const channel = getChannelByIdAndToken(channelIdentifier, tokenAddress);
   try {
-    const { address, partner, tokenAddress } = params;
     const requestBody = {
       signed_approval_tx: "",
       signed_close_tx,
@@ -35,6 +39,7 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
     return await lh.storage.saveLuminoData(allData);
   } catch (error) {
     console.error(error);
+    Lumino.callbacks.trigger(CALLBACKS.FAILED_CLOSE_CHANNEL, [channel, error]);
   }
 };
 
