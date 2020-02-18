@@ -1,3 +1,6 @@
+import { Lumino } from "..";
+import { CALLBACKS } from "./callbacks";
+
 /**
  * Resolves a signature of data, with a lumino handler implementation
  * @param {string} data - The data to sign
@@ -7,12 +10,15 @@
  * @throws Error indicating that the signing failed
  */
 const resolver = async (data, luminoHandler, isOffChain = false) =>
-  await new Promise(async (resolve, reject) => {
+  await new Promise((resolve, reject) => {
     let lhSign = luminoHandler.sign;
     if (isOffChain) lhSign = luminoHandler.offChainSign;
-    const signed_data = await lhSign(data);
-    if (signed_data) return resolve(signed_data);
-    return reject(new Error("Lumino handler had an error signing"));
+    return lhSign(data)
+      .then(data => resolve(data))
+      .catch(err => {
+        Lumino.callbacks.trigger(CALLBACKS.SIGNING_FAIL, err);
+        return reject(err);
+      });
   });
 
 export default resolver;
