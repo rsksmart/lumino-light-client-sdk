@@ -39,16 +39,22 @@ export const CALLBACKS = {
 const Callbacks = () => {
   const callbacks = {};
 
+  /**
+   *
+   * @param {*} CB The constant name of the callback
+   * @param  {Function} FN A function that may accept one or many arguments
+   */
   const set = (CB, FN) => {
     callbacks[CB] = FN;
   };
 
   /**
    *
-   * @param  {...any} args The first argument must be the name of the callback, the second could be data about the callback
+   * @param {*} name The constant name of the callback
+   * @param  {...any} args Any number of data to pass to the callback
    */
-  const trigger = (...args) => {
-    if (callbacks[args[0]]) return callbacks[args[0]](args[1]);
+  const trigger = (name, ...args) => {
+    if (callbacks[name]) return callbacks[name](args[0]);
     return () => {};
   };
 
