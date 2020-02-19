@@ -4,7 +4,7 @@ const initialState = {};
 
 const tokenNamesReducer = (state = initialState, action) => {
   switch (action.type) {
-    case ADD_NEW_TOKEN_NAME_SYMBOL:
+    case ADD_NEW_TOKEN_NAME_SYMBOL: {
       const { token_name, token_symbol, token_address } = action;
       const newToken = {
         ...state,
@@ -14,6 +14,7 @@ const tokenNamesReducer = (state = initialState, action) => {
         },
       };
       return newToken;
+    }
     default:
       return state;
   }
