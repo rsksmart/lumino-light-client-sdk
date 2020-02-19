@@ -46,6 +46,8 @@ import {
   getPaymentMessageTypeValue,
   getSenderAndReceiver,
 } from "../functions/payments";
+import { Lumino } from "../..";
+import { CALLBACKS } from "../../utils/callbacks";
 
 /**
  * Create a payment.
@@ -118,24 +120,33 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     // Send signed LT to HUB
     await client.put(urlPut, dataToPut);
     const { tokenName, tokenSymbol } = searchTokenDataInChannels(token_address);
+
+    const paymentData = {
+      messages: { 1: { ...dataToPut, message_order: 1 } },
+      message_order: 1,
+      secret,
+      partner: message.target,
+      paymentId: payment_id,
+      initiator: message.initiator,
+      amount: message.lock.amount,
+      secret_hash: secrethash,
+      channelId: dataToPut.message.channel_identifier,
+      token: token_address,
+      tokenName,
+      tokenSymbol,
+      tokenNetworkAddress: dataToPut.message.token_network_address,
+      chainId: dataToPut.message.chain_id,
+    };
+
+    Lumino.callbacks.trigger(CALLBACKS.SENT_PAYMENT, {
+      payment: paymentData,
+      paymentId: payment_id,
+      channelId: dataToPut.message.channel_identifier,
+      token: token_address,
+    });
     dispatch({
       type: CREATE_PAYMENT,
-      payment: {
-        messages: { 1: { ...dataToPut, message_order: 1 } },
-        message_order: 1,
-        secret,
-        partner: message.target,
-        paymentId: payment_id,
-        initiator: message.initiator,
-        amount: message.lock.amount,
-        secret_hash: secrethash,
-        channelId: dataToPut.message.channel_identifier,
-        token: token_address,
-        tokenName,
-        tokenSymbol,
-        tokenNetworkAddress: dataToPut.message.token_network_address,
-        chainId: dataToPut.message.chain_id,
-      },
+      payment: paymentData,
       paymentId: payment_id,
       channelId: dataToPut.message.channel_identifier,
       token: token_address,
