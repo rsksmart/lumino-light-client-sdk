@@ -57,6 +57,7 @@ import { CALLBACKS } from "../../utils/callbacks";
  * @param {string} token_address -  The address of the lumino token
  */
 export const createPayment = params => async (dispatch, getState, lh) => {
+  let paymentData = {};
   try {
     const { getAddress, bigNumberify } = ethers.utils;
     const { partner, token_address, amount } = params;
@@ -66,15 +67,6 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const channel = getLatestChannelByPartnerAndToken(partner, token_address);
     // Check for sufficient funds
     const actualBalance = bigNumberify(channel.offChainBalance);
-    if (actualBalance.lt(amount)) {
-      console.error("Insufficient funds for payment");
-
-      dispatch({
-        type: PAYMENT_CREATION_ERROR,
-        reason: "Insufficient funds for payment`",
-      });
-      return null;
-    }
     const requestBody = {
       creator_address: address,
       partner_address: partner,
@@ -82,6 +74,26 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       token_address,
       secrethash,
     };
+    paymentData = {
+      token: token_address,
+      partner,
+      amount,
+    };
+    if (actualBalance.lt(amount)) {
+      console.error("Insufficient funds for payment");
+
+      dispatch({
+        type: PAYMENT_CREATION_ERROR,
+        reason: "Insufficient funds for payment`",
+      });
+      Lumino.callbacks.trigger(
+        CALLBACKS.FAILED_CREATE_PAYMENT,
+        paymentData,
+        new Error("Insufficient funds")
+      );
+      return null;
+    }
+
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody);
     const {
@@ -121,7 +133,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     await client.put(urlPut, dataToPut);
     const { tokenName, tokenSymbol } = searchTokenDataInChannels(token_address);
 
-    const paymentData = {
+    paymentData = {
       messages: { 1: { ...dataToPut, message_order: 1 } },
       message_order: 1,
       secret,
@@ -138,12 +150,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       chainId: dataToPut.message.chain_id,
     };
 
-    Lumino.callbacks.trigger(CALLBACKS.SENT_PAYMENT, {
-      payment: paymentData,
-      paymentId: payment_id,
-      channelId: dataToPut.message.channel_identifier,
-      token: token_address,
-    });
+    Lumino.callbacks.trigger(CALLBACKS.SENT_PAYMENT, paymentData);
     dispatch({
       type: CREATE_PAYMENT,
       payment: paymentData,
@@ -153,8 +160,13 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     });
     const allData = getState();
     return await lh.storage.saveLuminoData(allData);
-  } catch (apiError) {
-    console.error(apiError);
+  } catch (error) {
+    Lumino.callbacks.trigger(
+      CALLBACKS.FAILED_CREATE_PAYMENT,
+      paymentData,
+      error
+    );
+    console.error(error);
   }
 };
 
