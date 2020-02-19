@@ -11,7 +11,7 @@ import {
  * @param {number} length -  The data length for hex conversion
  * @param {boolean} isUnsafe - If the data is a number that might be over the JS Safe integer, this should be true
  */
-const hexEncode = (data, length, isUnsafe) => {
+export const hexEncode = (data, length, isUnsafe) => {
   let hex;
   if (typeof data === "number" || isUnsafe) {
     data = ethers.utils.bigNumberify(`${data}`);
@@ -141,22 +141,7 @@ export const getDataToSignForBalanceProof = (
   message,
   type = MessageType.BALANCE_PROOF
 ) => {
-  const messageHashUnhashed = ethers.utils.concat([
-    hexEncode(MessageNumPad[MessageType.BALANCE_PROOF], 1), // Always 4
-    hexEncode(0, 3),
-    hexEncode(message.chain_id, 32),
-    hexEncode(message.message_identifier, 8, true),
-    hexEncode(message.payment_identifier, 8, true),
-    hexEncode(message.token_network_address, 20),
-    hexEncode(message.secret, 32),
-    hexEncode(message.nonce, 8),
-    hexEncode(message.channel_identifier, 32),
-    hexEncode(message.transferred_amount, 32, true),
-    hexEncode(message.locked_amount, 32, true),
-    hexEncode(message.locksroot, 32),
-  ]);
-
-  const messageHash = ethers.utils.keccak256(messageHashUnhashed);
+  const messageHash = createMessageHash(message, type);
 
   const balanceHash = createBalanceHash(
     message.transferred_amount,
@@ -261,7 +246,6 @@ export const getPackedData = message => {
     case MessageType.LOCK_EXPIRED:
       return getDataToSignForLockExpired(message);
     default:
-      console.warn("Unknown message type");
       return null;
   }
 };
