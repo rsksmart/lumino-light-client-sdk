@@ -82,7 +82,7 @@ export const getDataToSignForLockedTransfer = message => {
     hexEncode(message.message_identifier, 8, true),
     hexEncode(message.payment_identifier, 8, true),
     hexEncode(0, 32), // payment_hash if it is 0x0, we are doing it with 0x0 for the moment which is 0
-    hexEncode(message.lock.expiration, 32),
+    hexEncode(message.lock.expiration, 32, true),
     hexEncode(message.token_network_address, 20),
     hexEncode(message.token, 20),
     hexEncode(message.channel_identifier, 32),
@@ -201,7 +201,7 @@ export const getDataToSignForSecretRequest = message => {
     hexEncode(message.payment_identifier, 8, true),
     hexEncode(message.secrethash, 32),
     hexEncode(message.amount, 32, true),
-    hexEncode(message.expiration, 32),
+    hexEncode(message.expiration, 32, true),
   ]);
 };
 
