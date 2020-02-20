@@ -21,8 +21,6 @@ const defaultStorage = {
 };
 let storage = defaultStorage;
 
-const observableMiddleware = createEpicMiddleware();
-
 const setApiKeyFromStore = store => {
   // We set the api key if teh redux store has one, if not, we fallback to the one from the developer
   const api_key = store.getState().client.apiKey;
@@ -40,6 +38,8 @@ const initStore = async (storageImpl, luminoHandler) => {
     storage,
   };
   const sagaMiddleware = createSagaMiddleware();
+  const observableMiddleware = createEpicMiddleware();
+
   store = createStore(
     rootReducer,
     data,
