@@ -63,7 +63,24 @@ const Lumino = () => {
     throw new Error("Lumino has not been initialized");
   };
 
-  return { callbacks, init, get, getConfig };
+  /**
+   * Destroys the lumino instance
+   */
+  const destroy = () => {
+    actions = undefined;
+    store = undefined;
+    luminoFns = undefined;
+    luminoConfig = {
+      rskEndpoint: "",
+      chainId: 0,
+      hubEndpoint: "http://localhost:5001/api/v1",
+      address: "",
+      apiKey: "",
+      notifierEndPoint: NOTIFIER_BASE_URL,
+    };
+  };
+
+  return { callbacks, init, get, getConfig, destroy };
 };
 
 const instance = Lumino();
