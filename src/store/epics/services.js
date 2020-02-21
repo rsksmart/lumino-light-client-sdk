@@ -1,13 +1,13 @@
 import { from } from "rxjs";
 import client from "../../apiRest";
-import Store from "../index";
 import notifierGet from "../../notifierRest";
 import allSettled from "promise.allsettled";
+import getState from "../functions/state";
 
 const url = "light_client_messages";
 
 const getTransactionInfo = () => {
-  const from_message = Store.getStore().getState().client.internal_msg_id || 1;
+  const from_message = getState().client.internal_msg_id || 1;
   return from(
     client
       .get(url, {
@@ -19,7 +19,7 @@ const getTransactionInfo = () => {
 
 const getNotificationsInfo = () => {
   // We process the data from the reducer to get a simple array of objects
-  const notifierObj = Store.getStore().getState().notifier;
+  const notifierObj = getState().notifier;
   const notifiers = Object.entries(notifierObj.notifiers).map(([k, v]) => ({
     url: k,
     apiKey: v.apiKey,

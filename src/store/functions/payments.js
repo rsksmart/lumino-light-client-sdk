@@ -1,20 +1,19 @@
 import { ethers } from "ethers";
-import Store from "../index";
+
 import {
   PAYMENT_SUCCESSFUL,
   PAYMENT_EXPIRED,
 } from "../../config/messagesConstants";
 import { EXPIRED } from "../../config/paymentConstants";
+import getState from "./state";
 
 export const getPaymentIds = () => {
-  const store = Store.getStore();
-  const { paymentIds } = store.getState();
+  const { paymentIds } = getState();
   return paymentIds;
 };
 
 export const getAllPayments = () => {
-  const store = Store.getStore();
-  const { payments } = store.getState();
+  const { payments } = getState();
   return payments;
 };
 
@@ -41,8 +40,7 @@ export const isPaymentCompleteOrPending = paymentId => {
 };
 
 export const getPendingPayments = () => {
-  const store = Store.getStore();
-  const { payments } = store.getState();
+  const { payments } = getState();
   return [...payments.pending];
 };
 
@@ -53,10 +51,9 @@ export const paymentHasMessageOrder = (paymentId, order) => {
 };
 
 export const getPendingPaymentsKeyAndOrder = () => {
-  const store = Store.getStore();
   const {
     payments: { pending },
-  } = store.getState();
+  } = getState();
   const pendingKeys = Object.keys(pending);
   const pendingKeyPair = {};
 
@@ -67,14 +64,12 @@ export const getPendingPaymentsKeyAndOrder = () => {
 };
 
 export const paymentExistsInAnyState = paymentId => {
-  const store = Store.getStore();
-  const payments = store.getState().paymentIds;
+  const payments = getState().paymentIds;
   return payments[paymentId];
 };
 
 export const getPaymentByIdAndState = (state, paymentId) => {
-  const store = Store.getStore();
-  const { payments } = store.getState();
+  const { payments } = getState();
   if (payments[state.toLowerCase()])
     return payments[state.toLowerCase()][paymentId];
   return null;

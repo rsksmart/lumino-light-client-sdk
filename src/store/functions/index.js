@@ -6,3 +6,4 @@ export {
   paymentHasMessageOrder,
 } from "./payments";
 export { getChannelByIdAndToken, getChannelsState } from "./channels";
+export { getState } from "./state";

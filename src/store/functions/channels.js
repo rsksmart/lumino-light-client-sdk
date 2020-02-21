@@ -1,9 +1,8 @@
-import Store from "../index";
 import { findMaxChannelId } from "../../utils/functions";
+import getState from "./state";
 
 export const getChannelsState = () => {
-  const store = Store.getStore();
-  const { channelStates } = store.getState();
+  const { channelStates } = getState();
   return channelStates;
 };
 /**
@@ -12,14 +11,12 @@ export const getChannelsState = () => {
  * @param {*} token The token address
  */
 export const getChannelByIdAndToken = (id, token) => {
-  const store = Store.getStore();
-  const { channelReducer: channels } = store.getState();
+  const { channelReducer: channels } = getState();
   return channels[`${id}-${token}`];
 };
 
 export const getLatestChannelByPartnerAndToken = (partner, token) => {
-  const store = Store.getStore();
-  const { channelReducer: channels } = store.getState();
+  const { channelReducer: channels } = getState();
   // We don't want channels outside the specified token
   const channelsOnToken = Object.keys(channels)
     .map(c => {

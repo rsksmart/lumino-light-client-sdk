@@ -1,7 +1,6 @@
-import Store from "..";
+import getState from "./state";
 
 export const getNumberOfNotifiers = () => {
-  const store = Store.getStore();
-  const { notifiers } = store.getState().notifier;
+  const { notifiers } = getState().notifier;
   return Object.keys(notifiers);
 };

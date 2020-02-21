@@ -19,6 +19,7 @@ import {
 } from "./tokens";
 import Store from "..";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
+import getState from "../functions/state";
 
 export const notifierRegistration = url => async (dispatch, getState, lh) => {
   try {
@@ -327,7 +328,7 @@ const manageNewChannel = async (notification, notifier) => {
     channel_identifier,
     token_address
   );
-  const selfAddress = Store.getStore().getState().client.address;
+  const selfAddress = getState().client.address;
 
   let partner_address = getAddress(values[1].value);
   // We check it to make sure to get the correct partner
