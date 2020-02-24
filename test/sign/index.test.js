@@ -8,6 +8,7 @@ import { MessageType } from "../../src/config/messagesConstants";
 import resolver from "../../src/utils/handlerResolver";
 import Web3 from "web3";
 import { SigningHandler } from "../../src";
+import callbacks, { CALLBACKS } from "../../src/utils/callbacks";
 
 const PRIV_KEY =
   "0x15f570a7914ed27b13ba4a63cee82ad4d77bba3cc60b037abef2f1733423eb70";
@@ -61,6 +62,22 @@ test("signature resolver can sign a message", async () => {
     signature
   );
   expect(recoveredAddress).toBe(address);
+});
+
+test("signature resolver should trigger the failure callback and return the error", async () => {
+  const web3 = new Web3();
+  const handler = SigningHandler();
+  handler.init(web3, PRIV_KEY);
+  const lh = {
+    offChainSign: handler.offChainSign,
+    sign: handler.sign,
+  };
+  const cbSpy = jest.fn();
+  callbacks.set(CALLBACKS.SIGNING_FAIL, cbSpy);
+
+  const result = await resolver(null, lh, true);
+  expect(result.error.message).toBe("Cannot read property 'length' of null");
+  expect(cbSpy).toBeCalled();
 });
 
 test("it should sign correctly a LockExpired", async () => {
