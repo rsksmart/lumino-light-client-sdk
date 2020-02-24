@@ -14,7 +14,15 @@ import {
 import client from "../apiRest";
 
 let store = null;
-const defaultStore = { channelReducer: [] };
+const defaultStore = {
+  channelReducer: {},
+  paymentIds: {},
+  payments: {
+    completed: {},
+    pending: {},
+    failed: {},
+  },
+};
 const defaultStorage = {
   getLuminoData: () => defaultStore,
   saveLuminoData: () => {},
@@ -72,6 +80,8 @@ const bindActions = (actions, dispatch) =>
 
 const getStore = () => store;
 
-const Store = { initStore, getStore, bindActions };
+const destroyStore = () => (store = null);
+
+const Store = { initStore, getStore, bindActions, destroyStore };
 
 export default Store;
