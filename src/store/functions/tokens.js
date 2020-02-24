@@ -2,7 +2,7 @@ import { swapObjValueForKey } from "../../utils/functions";
 import Lumino from "../../Lumino";
 import Web3 from "web3";
 import { tokenAbi } from "../../scripts/constants";
-import getState from "./state";
+import { getState } from "./state";
 
 /**
  * Returns the Token Networks and their corresponding Token Address

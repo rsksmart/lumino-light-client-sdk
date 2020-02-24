@@ -1,4 +1,4 @@
-import getState from "./state";
+import { getState } from "./state";
 
 export const getNumberOfNotifiers = () => {
   const { notifiers } = getState().notifier;

@@ -1,5 +1,5 @@
 import { findMaxChannelId } from "../../utils/functions";
-import getState from "./state";
+import { getState } from "./state";
 
 export const getChannelsState = () => {
   const { channelStates } = getState();
