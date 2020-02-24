@@ -19,8 +19,7 @@ export const getAllPayments = () => {
 
 export const getPendingPaymentById = paymentId => {
   const payments = getAllPayments();
-  if (payments && payments.pending) return payments.pending[paymentId] || null;
-  return null;
+  return payments.pending[paymentId] || null;
 };
 
 export const getFailedPaymentById = paymentId => {
