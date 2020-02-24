@@ -1,8 +1,6 @@
 import Store from "..";
 
-const getState = () => {
+export const getState = () => {
   const store = Store.getStore();
   return store.getState();
 };
-
-export default getState;
