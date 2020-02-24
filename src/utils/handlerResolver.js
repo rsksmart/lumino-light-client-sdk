@@ -9,16 +9,17 @@ import { CALLBACKS } from "./callbacks";
  * @returns {string} The signed data
  * @throws Error indicating that the signing failed
  */
-const resolver = async (data, luminoHandler, isOffChain = false) =>
-  await new Promise((resolve, reject) => {
-    let lhSign = luminoHandler.sign;
-    if (isOffChain) lhSign = luminoHandler.offChainSign;
-    return lhSign(data)
-      .then(data => resolve(data))
-      .catch(err => {
-        Lumino.callbacks.trigger(CALLBACKS.SIGNING_FAIL, err);
-        return reject(err);
-      });
-  });
+const resolver = async (data, luminoHandler, isOffChain = false) => {
+  let lhSign = luminoHandler.sign;
+  if (isOffChain) lhSign = luminoHandler.offChainSign;
+  let signature = null;
+  try {
+    signature = await lhSign(data);
+  } catch (error) {
+    Lumino.callbacks.trigger(CALLBACKS.SIGNING_FAIL, error);
+    return { error };
+  }
+  return signature;
+};
 
 export default resolver;
