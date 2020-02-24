@@ -15,4 +15,9 @@ describe("Callback tests", () => {
     callbacks.trigger(CALLBACKS.FAILED_OPEN_CHANNEL, "123", error);
     expect(stubFn).toBeCalledWith("123", error);
   });
+
+  test("Will return an anonymous function if callback is not set", () => {
+    const returned = callbacks.trigger(CALLBACKS.CLOSE_CHANNEL, "123");
+    expect(returned).toBeInstanceOf(Function);
+  });
 });
