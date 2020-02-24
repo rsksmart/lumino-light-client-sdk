@@ -5,7 +5,7 @@ import {
   PAYMENT_EXPIRED,
 } from "../../config/messagesConstants";
 import { EXPIRED } from "../../config/paymentConstants";
-import getState from "./state";
+import { getState } from "./state";
 
 export const getPaymentIds = () => {
   const { paymentIds } = getState();
@@ -19,7 +19,8 @@ export const getAllPayments = () => {
 
 export const getPendingPaymentById = paymentId => {
   const payments = getAllPayments();
-  return payments.pending[paymentId];
+  if (payments && payments.pending) return payments.pending[paymentId] || null;
+  return null;
 };
 
 export const getFailedPaymentById = paymentId => {
@@ -39,30 +40,10 @@ export const isPaymentCompleteOrPending = paymentId => {
   return completed || pending;
 };
 
-export const getPendingPayments = () => {
-  const { payments } = getState();
-  return [...payments.pending];
-};
-
-export const paymentHasMessageOrder = (paymentId, order) => {
-  const payment = getPendingPaymentById(paymentId);
-  if (payment) return payment.messages[order];
-  return false;
-};
-
-export const getPendingPaymentsKeyAndOrder = () => {
-  const {
-    payments: { pending },
-  } = getState();
-  const pendingKeys = Object.keys(pending);
-  const pendingKeyPair = {};
-
-  pendingKeys.forEach(e => {
-    pendingKeyPair[`${e}`] = pending[`${e}`].message_order;
-  });
-  return pendingKeyPair;
-};
-
+/**
+ * Checks the paymentsId stored and returns the state of the payment
+ * @param {*} paymentId A paymentId
+ */
 export const paymentExistsInAnyState = paymentId => {
   const payments = getState().paymentIds;
   return payments[paymentId];
@@ -70,7 +51,7 @@ export const paymentExistsInAnyState = paymentId => {
 
 export const getPaymentByIdAndState = (state, paymentId) => {
   const { payments } = getState();
-  if (payments[state.toLowerCase()])
+  if (payments[state.toLowerCase()] && payments[state.toLowerCase()][paymentId])
     return payments[state.toLowerCase()][paymentId];
   return null;
 };
