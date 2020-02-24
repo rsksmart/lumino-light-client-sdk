@@ -2,7 +2,7 @@ import { from } from "rxjs";
 import client from "../../apiRest";
 import notifierGet from "../../notifierRest";
 import allSettled from "promise.allsettled";
-import getState from "../functions/state";
+import { getState } from "../functions/state";
 
 const url = "light_client_messages";
 
