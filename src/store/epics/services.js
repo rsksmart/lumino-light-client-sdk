@@ -1,5 +1,6 @@
 import { from } from "rxjs";
 import client from "../../apiRest";
+
 import notifierGet from "../../notifierRest";
 import allSettled from "promise.allsettled";
 import { getState } from "../functions/state";
@@ -20,6 +21,32 @@ const getTransactionInfo = () => {
   return from(requestMessages(from_message, url));
 };
 
+const requestNotifications = data => {
+  const endpoint = "getNotifications";
+
+  const { apiKey, topics: idTopic, url, fromId } = data;
+  notifierGet.defaults.baseURL = url;
+  notifierGet.defaults.headers = {
+    apiKey,
+  };
+  notifierGet.defaults.params = {
+    idTopic,
+    lastRows: 5,
+    fromId,
+  };
+  const val = notifierGet.get(endpoint);
+  return val;
+};
+
+const resolveNotificationPromises = data =>
+  data.then(promises => {
+    const errors = promises
+      .filter(p => p.status === "rejected")
+      .map(p => p.reason);
+    const fulfilled = promises.filter(p => p.status !== "rejected");
+    return { errors, fulfilled };
+  });
+
 const getNotificationsInfo = () => {
   // We process the data from the reducer to get a simple array of objects
   const notifierObj = getState().notifier;
@@ -29,34 +56,16 @@ const getNotificationsInfo = () => {
     topics: Object.keys(v.topics || {}).join(","),
     fromId: v.fromNotificationId,
   }));
-  const endpoint = "getNotifications";
 
   // We settle promises for each notifier, using all settled to prevent short circuits
-  const results = allSettled(
-    notifiers.map(n => {
-      const { apiKey, topics: idTopic, url, fromId } = n;
-      notifierGet.defaults.baseURL = url;
-      notifierGet.defaults.headers = {
-        apiKey,
-      };
-      notifierGet.defaults.params = {
-        idTopic,
-        lastRows: 5,
-        fromId,
-      };
-
-      return notifierGet.get(endpoint);
-    })
-  );
-  return from(
-    results.then(promises => {
-      const errors = promises
-        .filter(p => p.status === "rejected")
-        .map(p => p.reason);
-      const fulfilled = promises.filter(p => p.status !== "rejected");
-      return { errors, fulfilled };
-    })
-  );
+  const results = allSettled(notifiers.map(requestNotifications));
+  return from(resolveNotificationPromises(results));
 };
 
-export { getTransactionInfo, getNotificationsInfo, requestMessages };
+export {
+  getTransactionInfo,
+  getNotificationsInfo,
+  requestMessages,
+  resolveNotificationPromises,
+  requestNotifications,
+};
