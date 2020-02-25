@@ -4,17 +4,20 @@ import notifierGet from "../../notifierRest";
 import allSettled from "promise.allsettled";
 import { getState } from "../functions/state";
 
-const url = "light_client_messages";
+const requestMessages = async (from_message, url) =>
+  client
+    .get(url, {
+      params: { from_message },
+    })
+    .then(res => {
+      return res.data;
+    })
+    .catch(err => err);
 
 const getTransactionInfo = () => {
   const from_message = getState().client.internal_msg_id || 1;
-  return from(
-    client
-      .get(url, {
-        params: { from_message },
-      })
-      .then(res => res.data)
-  );
+  const url = "light_client_messages";
+  return from(requestMessages(from_message, url));
 };
 
 const getNotificationsInfo = () => {
@@ -56,4 +59,4 @@ const getNotificationsInfo = () => {
   );
 };
 
-export { getTransactionInfo, getNotificationsInfo };
+export { getTransactionInfo, getNotificationsInfo, requestMessages };
