@@ -19,7 +19,7 @@ import {
 } from "./tokens";
 import Store from "..";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
-import getState from "../functions/state";
+import { getState } from "../functions/state";
 
 export const notifierRegistration = url => async (dispatch, getState, lh) => {
   try {
