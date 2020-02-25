@@ -10,8 +10,7 @@ const client = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  transformResponse: res => JSONbig.parse(res),
 });
-
-client.defaults.transformResponse = res => JSONbig.parse(res);
 
 export default client;
