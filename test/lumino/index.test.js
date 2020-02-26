@@ -88,3 +88,19 @@ test("should return config of initialized Lumino", async () => {
   const config = Lumino.getConfig();
   expect(config.address).toBeTruthy();
 });
+
+test("should return an instance of lumino on double init", async () => {
+  const lumino = await Lumino.init(
+    signingHandler,
+    stubStorageHandler,
+    configParams
+  );
+  expect(lumino).toBeTruthy();
+  const lumino2 = await Lumino.init(
+    signingHandler,
+    stubStorageHandler,
+    configParams
+  );
+  expect(lumino2).toBeTruthy();
+  expect(lumino2.actions).toBeTruthy();
+});
