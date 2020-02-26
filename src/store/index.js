@@ -24,8 +24,8 @@ const defaultStore = {
   },
 };
 const defaultStorage = {
-  getLuminoData: () => defaultStore,
-  saveLuminoData: () => {},
+  getLuminoData: /* istanbul ignore next */ () => defaultStore,
+  saveLuminoData: /* istanbul ignore next */ () => {},
 };
 let storage = defaultStorage;
 
