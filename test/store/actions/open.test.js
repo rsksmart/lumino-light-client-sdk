@@ -27,6 +27,11 @@ describe("test open channel action", () => {
     tokenFunctions,
     "requestTokenNameAndSymbol"
   );
+  const state = {
+    client: {
+      address,
+    },
+  };
 
   afterEach(() => {
     spyOpen.mockReset();
@@ -37,13 +42,7 @@ describe("test open channel action", () => {
   });
 
   test("should request a new channel with success", async () => {
-    const state = {
-      client: {
-        address,
-      },
-    };
     const store = mockStore(state);
-
     // Values
 
     const token_name = "LUMINO";
@@ -90,5 +89,51 @@ describe("test open channel action", () => {
       type: "OPEN_CHANNEL",
     };
     expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("should trigger error callback on error (request to HUB)", async () => {
+    const store = mockStore(state);
+    // Values
+
+    const token_name = "LUMINO";
+    const token_symbol = "LUM";
+
+    // Spies
+
+    spyTokenNetwork.mockReturnValue("123");
+    spyOpen.mockReturnValue({ rawTx: 123 });
+    spyResolver.mockResolvedValue("0x123456");
+    spyTokenNameSymbol.mockResolvedValue({
+      name: token_name,
+      symbol: token_symbol,
+    });
+    client.put.mockImplementationOnce(() => Promise.reject("Generic Error"));
+
+    await store.dispatch(
+      openActions.openChannel({
+        partner: randomPartner,
+        tokenAddress: randomAddress,
+      })
+    );
+
+    expect(spyCallbacks).toBeCalledTimes(2);
+    const channelData = {
+      token_name,
+      token_symbol,
+      partner_address: randomPartner,
+      creator_address: address,
+      token_address: randomAddress,
+    };
+    expect(spyCallbacks).toHaveBeenNthCalledWith(
+      1,
+      CALLBACKS.REQUEST_OPEN_CHANNEL,
+      channelData
+    );
+    expect(spyCallbacks).toHaveBeenNthCalledWith(
+      2,
+      CALLBACKS.FAILED_OPEN_CHANNEL,
+      channelData,
+      "Generic Error"
+    );
   });
 });
