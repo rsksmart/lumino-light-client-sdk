@@ -115,7 +115,8 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     signature = await resolver(dataToSign, lh, true);
 
     const channels = getChannelsState();
-    validateLockedTransfer(message, requestBody, channels);
+    const valid = validateLockedTransfer(message, requestBody, channels);
+    if (valid !== true) throw valid;
     const dataToPut = {
       payment_id: payment_id,
       message_order,
