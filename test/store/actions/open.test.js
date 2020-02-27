@@ -8,7 +8,10 @@ import configureMockStore from "redux-mock-store";
 import thunk from "redux-thunk";
 
 // Mock store
-const middlewares = [thunk];
+const lh = {
+  storage: { saveLuminoData: jest.fn() },
+};
+const middlewares = [thunk.withExtraArgument(lh)];
 const mockStore = configureMockStore(middlewares);
 
 const address = "0x920984391853d81CCeeC41AdB48a45D40594A0ec";
