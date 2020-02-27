@@ -9,7 +9,10 @@ import * as stateFunctions from "../../../src/store/functions/state";
 import * as hashes from "../../../src/utils/generateHashes";
 import { ethers } from "ethers";
 import { CHANNEL_OPENED } from "../../../src/config/channelStates";
-import { CREATE_PAYMENT } from "../../../src/store/actions/types";
+import {
+  CREATE_PAYMENT,
+  PAYMENT_CREATION_ERROR,
+} from "../../../src/store/actions/types";
 
 // Mock store
 const lh = {
@@ -141,6 +144,40 @@ describe("test payment actions", () => {
       paymentId: paymentData.paymentId,
       token: paymentData.token,
       type: CREATE_PAYMENT,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("should reject creation if insufficient funds", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const params = {
+      amount: "1000000000000000000000",
+      partner: randomPartner,
+      token_address: randomAddress,
+    };
+
+    // Spies
+    spyGetState.mockImplementation(() => store.getState());
+
+    await store.dispatch(paymentFunctions.createPayment(params));
+    const expectedCallbackData = {
+      amount: params.amount,
+      partner: params.partner,
+      token: params.token_address,
+    };
+    expect(spyCallbacks).toHaveBeenCalledWith(
+      CALLBACKS.FAILED_CREATE_PAYMENT,
+      expectedCallbackData,
+      Error("Insufficient funds")
+    );
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      reason: "Insufficient funds for payment",
+      type: PAYMENT_CREATION_ERROR,
     };
     expect(actions[0]).toStrictEqual(expectedAction);
   });
