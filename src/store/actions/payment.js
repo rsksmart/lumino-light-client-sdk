@@ -1,11 +1,9 @@
 import { ethers } from "ethers";
-import BigNumber from "bignumber.js";
 import {
   CREATE_PAYMENT,
   ADD_PENDING_PAYMENT_MESSAGE,
   SET_PAYMENT_SECRET,
   UPDATE_NON_CLOSING_BP,
-  PAYMENT_CREATION_ERROR,
   PUT_LOCK_EXPIRED,
   SET_PAYMENT_FAILED,
   ADD_EXPIRED_PAYMENT_MESSAGE,
@@ -45,6 +43,7 @@ import {
 } from "../functions/payments";
 import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
+import { getRandomBN } from "../../utils/functions";
 
 /**
  * Create a payment.
@@ -193,11 +192,6 @@ export const addExpiredPaymentNormalMessage = (
     message,
     storeInMessages: true,
   });
-
-export const getRandomBN = () => {
-  const randomBN = BigNumber.random(18).toString();
-  return new BigNumber(randomBN.split(".")[1]).toString();
-};
 
 const nonSuccessfulMessageAdd = data => dispatch => {
   const {

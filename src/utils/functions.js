@@ -1,3 +1,5 @@
+import BigNumber from "bignumber.js";
+
 const getGreater = (n1, n2) => (n1 > n2 ? n1 : n2);
 
 /**
@@ -28,3 +30,8 @@ export const findMaxChannelId = channels =>
  */
 export const swapObjValueForKey = data =>
   Object.keys(data).reduce((obj, key) => ((obj[data[key]] = key), obj), {});
+
+export const getRandomBN = () => {
+  const randomBN = BigNumber.random(18).toString();
+  return new BigNumber(randomBN.split(".")[1]).toString();
+};
