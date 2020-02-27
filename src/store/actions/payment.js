@@ -81,7 +81,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
 
       dispatch({
         type: PAYMENT_CREATION_ERROR,
-        reason: "Insufficient funds for payment`",
+        reason: "Insufficient funds for payment",
       });
       Lumino.callbacks.trigger(
         CALLBACKS.FAILED_CREATE_PAYMENT,
