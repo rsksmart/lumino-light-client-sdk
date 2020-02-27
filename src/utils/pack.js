@@ -117,7 +117,7 @@ export const getDataToSignForLockedTransfer = message => {
 
   // dataArray is a byte array, this can be signed with an ethers wallet
   // signing it with an ethers wallet is equal as the method with python
-  return dataArray;
+  return ethers.utils.arrayify(dataArray);
 };
 
 export const getDataToSignForDelivered = message => {

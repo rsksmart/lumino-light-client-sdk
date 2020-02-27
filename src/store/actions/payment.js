@@ -108,9 +108,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       },
     };
     let signature;
-    const dataToSign = ethers.utils.arrayify(
-      getDataToSignForLockedTransfer(messageWithHash)
-    );
+    const dataToSign = getDataToSignForLockedTransfer(messageWithHash);
 
     signature = await resolver(dataToSign, lh, true);
 
