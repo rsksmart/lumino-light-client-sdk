@@ -11,8 +11,12 @@ import { ethers } from "ethers";
 import { CHANNEL_OPENED } from "../../../src/config/channelStates";
 import {
   CREATE_PAYMENT,
-  PAYMENT_CREATION_ERROR,
+  ADD_PENDING_PAYMENT_MESSAGE,
+  ADD_EXPIRED_PAYMENT_MESSAGE,
 } from "../../../src/store/actions/types";
+import { MessageType } from "../../../src/config/messagesConstants";
+import { EXPIRED } from "../../../src/config/paymentConstants";
+import { getRandomBN } from "../../../src/utils/functions";
 
 // Mock store
 const lh = {
@@ -172,5 +176,276 @@ describe("test payment actions", () => {
       expectedCallbackData,
       Error("Insufficient funds for payment")
     );
+  });
+
+  test("should successfully put a delivered message for Successful flow", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const payment = {
+      isReceived: false,
+      initiator: address,
+      partner: randomPartner,
+      paymentId: "1234",
+    };
+    const message = {
+      message_identifier: 1123123,
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForDelivered");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    client.put.mockResolvedValue("Message received");
+    spyGetState.mockImplementation(() => store.getState());
+
+    await store.dispatch(paymentFunctions.putDelivered(message, payment));
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      message: {
+        message: {
+          delivered_message_identifier: message.message_identifier,
+          signature: mockedSignature,
+          type: MessageType.DELIVERED,
+        },
+        message_order: 4,
+      },
+      messageOrder: 4,
+      paymentId: payment.paymentId,
+      type: ADD_PENDING_PAYMENT_MESSAGE,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("should put delivered for expired payment flow", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const payment = {
+      isReceived: false,
+      initiator: address,
+      partner: randomPartner,
+      paymentId: "1234",
+      failureReason: EXPIRED,
+    };
+    const message = {
+      message_identifier: 1123123,
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForDelivered");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    client.put.mockResolvedValue("Message received");
+    spyGetState.mockImplementation(() => store.getState());
+
+    await store.dispatch(paymentFunctions.putDelivered(message, payment));
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      message: {
+        message: {
+          delivered_message_identifier: message.message_identifier,
+          signature: mockedSignature,
+          type: MessageType.DELIVERED,
+        },
+        message_order: 4,
+      },
+      messageOrder: 4,
+      paymentId: payment.paymentId,
+      storeInMessages: false,
+      type: ADD_EXPIRED_PAYMENT_MESSAGE,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("should successfully put a processed message for Successful flow", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const payment = {
+      isReceived: false,
+      initiator: address,
+      partner: randomPartner,
+      paymentId: "1234",
+    };
+    const message = {
+      message_identifier: 1123123,
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForProcessed");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    client.put.mockResolvedValue("Message received");
+    spyGetState.mockImplementation(() => store.getState());
+
+    await store.dispatch(paymentFunctions.putProcessed(message, payment));
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      message: {
+        message: {
+          message_identifier: message.message_identifier,
+          signature: mockedSignature,
+          type: MessageType.PROCESSED,
+        },
+        message_order: 3,
+      },
+      messageOrder: 3,
+      paymentId: payment.paymentId,
+      type: ADD_PENDING_PAYMENT_MESSAGE,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("should successfully put a processed message for Expired flow", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const payment = {
+      isReceived: false,
+      initiator: address,
+      partner: randomPartner,
+      failureReason: EXPIRED,
+      paymentId: "1234",
+    };
+    const message = {
+      message_identifier: 1123123,
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForProcessed");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    client.put.mockResolvedValue("Message received");
+    spyGetState.mockImplementation(() => store.getState());
+
+    await store.dispatch(paymentFunctions.putProcessed(message, payment));
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      message: {
+        message: {
+          message_identifier: message.message_identifier,
+          signature: mockedSignature,
+          type: MessageType.PROCESSED,
+        },
+        message_order: 3,
+      },
+      messageOrder: 3,
+      paymentId: payment.paymentId,
+      storeInMessages: false,
+      type: ADD_EXPIRED_PAYMENT_MESSAGE,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("Should successfully put a SecretRequest", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const payment = {
+      isReceived: false,
+      initiator: address,
+      amount: "10000000000",
+      partner: randomPartner,
+      paymentId: "1234",
+      secret_hash: "0x129Af",
+    };
+    const message = {
+      message_identifier: 1123123,
+      expiration: 5000000,
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForSecretRequest");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    client.put.mockResolvedValue("Message received");
+    spyGetState.mockImplementation(() => store.getState());
+
+    await store.dispatch(paymentFunctions.putSecretRequest(message, payment));
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      message: {
+        message: {
+          amount: payment.amount,
+          expiration: message.expiration,
+          message_identifier: message.message_identifier,
+          signature: mockedSignature,
+          payment_identifier: payment.paymentId,
+          secrethash: payment.secret_hash,
+          type: MessageType.SECRET_REQUEST,
+        },
+        message_order: 5,
+      },
+      messageOrder: 5,
+      paymentId: payment.paymentId,
+      type: ADD_PENDING_PAYMENT_MESSAGE,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("it should put a RevealSecret", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const payment = {
+      isReceived: false,
+      initiator: address,
+      amount: "10000000000",
+      partner: randomPartner,
+      paymentId: "1234",
+      secret: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForSecretRequest");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    client.put.mockResolvedValue("Message received");
+    spyGetState.mockImplementation(() => store.getState());
+    const message_identifier = getRandomBN();
+    await store.dispatch(
+      paymentFunctions.putRevealSecret(payment, message_identifier)
+    );
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      message: {
+        message: {
+          message_identifier,
+          secret: payment.secret,
+          signature: mockedSignature,
+          type: MessageType.REVEAL_SECRET,
+        },
+        message_order: 7,
+      },
+      messageOrder: 7,
+      paymentId: payment.paymentId,
+      type: ADD_PENDING_PAYMENT_MESSAGE,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
   });
 });
