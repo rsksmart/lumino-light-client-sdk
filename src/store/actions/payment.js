@@ -3,9 +3,6 @@ import BigNumber from "bignumber.js";
 import {
   CREATE_PAYMENT,
   ADD_PENDING_PAYMENT_MESSAGE,
-  DELETE_ALL_PENDING_PAYMENTS,
-  MESSAGE_POLLING_START,
-  MESSAGE_POLLING_STOP,
   SET_PAYMENT_SECRET,
   UPDATE_NON_CLOSING_BP,
   PAYMENT_CREATION_ERROR,
@@ -168,25 +165,6 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     console.error(error);
   }
 };
-
-export const clearAllPendingPayments = () => async (dispatch, getState, lh) => {
-  dispatch(deleteAllPendingPayments());
-  const allData = getState();
-  return await lh.storage.saveLuminoData(allData);
-};
-
-export const mockPulling = () => async dispatch => {
-  dispatch({ type: MESSAGE_POLLING_START });
-};
-
-export const mockStopPulling = () => async dispatch => {
-  dispatch({ type: MESSAGE_POLLING_STOP });
-};
-
-export const deleteAllPendingPayments = () => dispatch =>
-  dispatch({
-    type: DELETE_ALL_PENDING_PAYMENTS,
-  });
 
 export const addPendingPaymentMessage = (
   paymentId,
