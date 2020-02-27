@@ -22,6 +22,7 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
 
   const { address, partner, tokenAddress, channelIdentifier } = params;
   const channel = getChannelByIdAndToken(channelIdentifier, tokenAddress);
+
   try {
     const requestBody = {
       signed_approval_tx: "",
@@ -30,7 +31,10 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
       state: "closed",
     };
     const url = `light_channels/${tokenAddress}/${address}/${partner}`;
+
+    Lumino.callbacks.trigger(CALLBACKS.REQUEST_CLOSE_CHANNEL, channel);
     const res = await client.patch(url, { ...requestBody });
+
     dispatch({
       type: SET_CHANNEL_CLOSED,
       channel: { ...res.data, sdk_status: CHANNEL_WAITING_FOR_CLOSE },
