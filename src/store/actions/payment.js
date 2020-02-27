@@ -76,20 +76,9 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       partner,
       amount,
     };
-    if (actualBalance.lt(amount)) {
-      console.error("Insufficient funds for payment");
-
-      dispatch({
-        type: PAYMENT_CREATION_ERROR,
-        reason: "Insufficient funds for payment",
-      });
-      Lumino.callbacks.trigger(
-        CALLBACKS.FAILED_CREATE_PAYMENT,
-        paymentData,
-        new Error("Insufficient funds")
-      );
-      return null;
-    }
+    // If we don't have enough balance
+    if (actualBalance.lt(amount))
+      throw new Error("Insufficient funds for payment");
 
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody);

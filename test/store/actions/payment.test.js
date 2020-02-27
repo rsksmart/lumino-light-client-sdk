@@ -170,15 +170,7 @@ describe("test payment actions", () => {
     expect(spyCallbacks).toHaveBeenCalledWith(
       CALLBACKS.FAILED_CREATE_PAYMENT,
       expectedCallbackData,
-      Error("Insufficient funds")
+      Error("Insufficient funds for payment")
     );
-    const actions = store.getActions();
-
-    expect(actions.length).toBe(1);
-    const expectedAction = {
-      reason: "Insufficient funds for payment",
-      type: PAYMENT_CREATION_ERROR,
-    };
-    expect(actions[0]).toStrictEqual(expectedAction);
   });
 });
