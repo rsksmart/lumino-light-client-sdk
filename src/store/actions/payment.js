@@ -194,7 +194,7 @@ export const addExpiredPaymentNormalMessage = (
     storeInMessages: true,
   });
 
-const getRandomBN = () => {
+export const getRandomBN = () => {
   const randomBN = BigNumber.random(18).toString();
   return new BigNumber(randomBN.split(".")[1]).toString();
 };
