@@ -6,6 +6,7 @@ import * as closeActions from "../../../src/store/actions/close";
 import configureMockStore from "redux-mock-store";
 import thunk from "redux-thunk";
 import * as stateFunctions from "../../../src/store/functions/state";
+import { DELETE_CHANNEL_FROM_SDK } from "../../../src/store/actions/types";
 
 // Mock store
 const lh = {
@@ -109,5 +110,17 @@ describe("test close channel action", () => {
       channelData,
       errorString
     );
+  });
+
+  test("should delete channel from SDK when invoked", () => {
+    const store = mockStore(state);
+
+    store.dispatch(closeActions.deleteChannelFromSDK(1, randomAddress));
+    const actions = store.getActions();
+    expect(actions[0]).toStrictEqual({
+      type: DELETE_CHANNEL_FROM_SDK,
+      id: 1,
+      token_address: randomAddress,
+    });
   });
 });
