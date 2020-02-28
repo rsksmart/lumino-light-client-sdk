@@ -413,9 +413,8 @@ export const putBalanceProof = (message, payment) => async (
   getState,
   lh
 ) => {
-  const data = message;
   const { sender, receiver } = getSenderAndReceiver(payment);
-  const dataToSign = getDataToSignForBalanceProof(data);
+  const dataToSign = getDataToSignForBalanceProof(message);
   let signature = "";
 
   signature = await resolver(dataToSign, lh, true);
@@ -427,7 +426,7 @@ export const putBalanceProof = (message, payment) => async (
     receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
-      ...data,
+      ...message,
       signature,
     },
   };
