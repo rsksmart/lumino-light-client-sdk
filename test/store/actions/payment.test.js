@@ -13,10 +13,17 @@ import {
   CREATE_PAYMENT,
   ADD_PENDING_PAYMENT_MESSAGE,
   ADD_EXPIRED_PAYMENT_MESSAGE,
+  UPDATE_NON_CLOSING_BP,
+  PUT_LOCK_EXPIRED,
 } from "../../../src/store/actions/types";
-import { MessageType } from "../../../src/config/messagesConstants";
+import {
+  MessageType,
+  PAYMENT_EXPIRED,
+} from "../../../src/config/messagesConstants";
 import { EXPIRED } from "../../../src/config/paymentConstants";
 import { getRandomBN } from "../../../src/utils/functions";
+import * as tokenFunctions from "../../../src/store/functions/tokens";
+import * as recover from "../../../src/utils/validators";
 
 // Mock store
 const lh = {
@@ -445,6 +452,317 @@ describe("test payment actions", () => {
       messageOrder: 7,
       paymentId: payment.paymentId,
       type: ADD_PENDING_PAYMENT_MESSAGE,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("should successfully put a BalanceProof", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const payment = {
+      isReceived: false,
+      initiator: address,
+      amount: "10000000000",
+      partner: randomPartner,
+      paymentId: "1234",
+      secret: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
+    };
+    const message = {
+      type: MessageType.SECRET,
+      chain_id: 33,
+      message_identifier: "123321",
+      payment_identifier: "1231234",
+      token_network_address: randomAddress,
+      secret:
+        "0x2f3a1f9425850b04e2ea7f572594fd2c6a80e3632bdd04144c825a7e49cf21e2",
+      nonce: 1,
+      channel_identifier: 1,
+      transferred_amount: "1000000000000000",
+      locked_amount: 0,
+      locksroot:
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForSecretRequest");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    client.put.mockResolvedValue("Message received");
+    spyGetState.mockImplementation(() => store.getState());
+    await store.dispatch(paymentFunctions.putBalanceProof(message, payment));
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      message: {
+        message: {
+          chain_id: message.chain_id,
+          channel_identifier: message.channel_identifier,
+          locked_amount: message.locked_amount,
+          locksroot: message.locksroot,
+          message_identifier: message.message_identifier,
+          nonce: message.nonce,
+          payment_identifier: message.payment_identifier,
+          secret: message.secret,
+          signature: mockedSignature,
+          token_network_address: message.token_network_address,
+          transferred_amount: message.transferred_amount,
+          type: MessageType.SECRET,
+        },
+        message_order: 11,
+      },
+      messageOrder: 11,
+      paymentId: payment.paymentId,
+      type: ADD_PENDING_PAYMENT_MESSAGE,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("should successfully put a NonClosingBalanceProof", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const payment = {
+      isReceived: false,
+      initiator: randomPartner,
+      amount: "10000000000",
+      partner: randomPartner,
+      paymentId: "1234",
+      secret: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
+      tokenNetworkAddress: randomAddress,
+      token: randomAddress,
+      channelId: 1,
+      secret_hash: constantHashes.secrethash,
+    };
+    const message = {
+      type: MessageType.SECRET,
+      chain_id: 33,
+      message_identifier: "123321",
+      payment_identifier: "1231234",
+      token_network_address: randomAddress,
+      secret:
+        "0x2f3a1f9425850b04e2ea7f572594fd2c6a80e3632bdd04144c825a7e49cf21e2",
+      nonce: 1,
+      channel_identifier: 1,
+      transferred_amount: "1000000000000000",
+      locked_amount: 0,
+      locksroot:
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(
+      packFunctions,
+      "getDataToSignForNonClosingBalanceProof"
+    );
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    client.put.mockResolvedValue("Message received");
+    spyGetState.mockImplementation(() => store.getState());
+    await store.dispatch(
+      paymentFunctions.putNonClosingBalanceProof(message, payment)
+    );
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      channelId: payment.channelId,
+      nonClosingBp: {
+        channel_id: payment.channelId,
+        lc_bp_signature: mockedSignature,
+        nonce: message.nonce,
+        light_client_payment_id: payment.paymentId,
+        secret_hash: payment.secret_hash,
+        sender: payment.initiator,
+        token_network_address: payment.tokenNetworkAddress,
+        partner_balance_proof: {
+          chain_id: message.chain_id,
+          channel_identifier: message.channel_identifier,
+          locked_amount: message.locked_amount,
+          locksroot: message.locksroot,
+          message_identifier: message.message_identifier,
+          nonce: message.nonce,
+          payment_identifier: message.payment_identifier,
+          secret: message.secret,
+          token_network_address: message.token_network_address,
+          transferred_amount: message.transferred_amount,
+          type: MessageType.SECRET,
+        },
+      },
+      token: payment.token,
+      type: UPDATE_NON_CLOSING_BP,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("should successfully put a LockExpired (sending payment)", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const data = {
+      type: MessageType.SECRET,
+      initiator: randomPartner,
+      partner: randomPartner,
+      paymentId: "1234",
+      chainId: 33,
+      message_identifier: "123321",
+      payment_identifier: "1231234",
+      tokenNetworkAddress: randomAddress,
+      secret_hash: constantHashes.secrethash,
+      nonce: 1,
+      channelId: 1,
+      transferred_amount: "1000000000000000",
+      locked_amount: 0,
+      locksroot:
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForLockExpired");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    client.put.mockResolvedValue("Message received");
+    spyGetState.mockImplementation(() => store.getState());
+    await store.dispatch(paymentFunctions.putLockExpired(data));
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      lockExpired: {
+        message_order: 1,
+        message_type_value: PAYMENT_EXPIRED,
+        payment_id: data.paymentId,
+        receiver: data.partner,
+        sender: data.initiator,
+        message: {
+          chain_id: data.chainId,
+          channel_identifier: data.channelId,
+          locked_amount: data.locked_amount,
+          locksroot: data.locksroot,
+          message_identifier: data.message_identifier,
+          nonce: data.nonce,
+          recipient: data.partner,
+          secrethash: data.secret_hash,
+          signature: mockedSignature,
+          token_network_address: data.tokenNetworkAddress,
+          transferred_amount: data.transferred_amount,
+          type: MessageType.LOCK_EXPIRED,
+        },
+      },
+      paymentId: data.paymentId,
+      type: PUT_LOCK_EXPIRED,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("should successfully put a LockExpired (reception of payment)", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const data = {
+      type: MessageType.SECRET,
+      initiator: randomPartner,
+      partner: address,
+      paymentId: "1234",
+      chainId: 33,
+      message_identifier: "123321",
+      payment_identifier: "1231234",
+      tokenNetworkAddress: randomAddress,
+      secret_hash: constantHashes.secrethash,
+      nonce: 1,
+      channelId: 1,
+      transferred_amount: "1000000000000000",
+      locked_amount: 0,
+      locksroot:
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+      signature: mockedSignature,
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForLockExpired");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyGetState.mockImplementation(() => store.getState());
+    await store.dispatch(paymentFunctions.putLockExpired(data));
+    expect(spyPack).toHaveBeenCalledTimes(0);
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      lockExpired: {
+        message_order: 1,
+        message_type_value: PAYMENT_EXPIRED,
+        payment_id: data.paymentId,
+        receiver: data.partner,
+        sender: data.initiator,
+        message: {
+          chain_id: data.chainId,
+          channel_identifier: data.channelId,
+          locked_amount: data.locked_amount,
+          locksroot: data.locksroot,
+          message_identifier: data.message_identifier,
+          nonce: data.nonce,
+          recipient: data.partner,
+          secrethash: data.secret_hash,
+          token_network_address: data.tokenNetworkAddress,
+          transferred_amount: data.transferred_amount,
+          type: MessageType.LOCK_EXPIRED,
+        },
+      },
+      paymentId: data.paymentId,
+      type: PUT_LOCK_EXPIRED,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
+  test("can recreate a payment object from a failure message", async () => {
+    const store = mockStore(state);
+    const data = {
+      payment_id: "123",
+      isReceived: true,
+      transferred_amount: "100000",
+      token: randomAddress,
+      channel_identifier: "1",
+      token_network_address: randomAddress,
+      chain_id: 33,
+    };
+
+    const spyRecover = jest.spyOn(recover, "signatureRecover");
+    const spyToken = jest.spyOn(
+      tokenFunctions,
+      "getTokenAddressByTokenNetwork"
+    );
+    spyToken.mockReturnValue(randomAddress);
+    spyRecover.mockReturnValue(randomPartner);
+    spyGetState.mockImplementation(() => store.getState());
+    await store.dispatch(paymentFunctions.recreatePaymentForFailure(data));
+
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      type: CREATE_PAYMENT,
+      payment: {
+        partner: address,
+        paymentId: data.payment_id,
+        isReceived: true,
+        initiator: randomPartner,
+        amount: data.transferred_amount,
+        token: randomAddress,
+        channelId: data.channel_identifier,
+        tokenNetworkAddress: data.token_network_address,
+        chainId: data.chain_id,
+      },
+      paymentId: data.payment_id,
+      channelId: data.channel_identifier,
+      token: randomAddress,
     };
     expect(actions[0]).toStrictEqual(expectedAction);
   });
