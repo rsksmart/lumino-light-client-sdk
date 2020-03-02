@@ -7,6 +7,7 @@ import {
   UNSUBSCRIBE_FROM_TOPIC,
   START_NOTIFICATIONS_POLLING,
   OPEN_CHANNEL_VOTE,
+  REMOVE_NOTIFIER,
 } from "./types";
 import { saveLuminoData } from "./storage";
 import { getChannelByIdAndToken } from "../functions";
@@ -62,7 +63,7 @@ const prepareSubscribeActions = (data, url) => {
     }));
 };
 
-export const subscribeToOpenChannel = url => async (dispatch, getState, lh) => {
+export const subscribeToOpenChannel = url => async (dispatch, getState) => {
   try {
     const { address } = getState().client;
     const notifier = getState().notifier.notifiers[url];
@@ -126,9 +127,6 @@ export const subscribeToOpenChannel = url => async (dispatch, getState, lh) => {
     }
 
     if (topicsToDispatch.length) {
-      bugger;
-      bugger;
-
       topicsToDispatch.forEach(t => dispatch(t));
       dispatch({
         type: START_NOTIFICATIONS_POLLING,
@@ -151,7 +149,7 @@ export const removeNotifier = url => async (dispatch, getState) => {
   console.error("Provided notifier was not found in the SDK");
 };
 
-export const subscribeToCloseChannel = url => {};
+export const subscribeToCloseChannel = () => {};
 
 const processSubscribe = res => {
   if (!res.data) return null;
@@ -166,7 +164,7 @@ export const unsubscribeFromTopic = (url, idTopic) => async (
   try {
     const { notifierApiKey } = getState().client;
     const url = "unsubscribeFromTopic";
-    await notifier.post(url, null, {
+    await notifierOperations.post(url, null, {
       headers: {
         apiKey: notifierApiKey,
       },
@@ -191,13 +189,14 @@ export const manageNotificationData = notificationData => {
   return notifications.map(async e => {
     const { eventName } = e.notification;
     switch (eventName) {
-      case events.CHANNEL_OPENED:
+      case events.CHANNEL_OPENED: {
         const action = manageNewChannel(e.notification, notifier);
         return {
           action,
           notificationId: e.notificationId,
           notifier,
         };
+      }
       default:
         return null;
     }
@@ -276,23 +275,19 @@ const manageNewChannel = async (notification, notifier) => {
   };
 };
 
-const createChannelFromNotification = data => {
-  const { getAddress } = ethers.utils;
-
-  return {
-    channel_identifier: data.channel_identifier,
-    partner_address: data.partner_address,
-    settle_timeout: data[3].value,
-    token_address: data.token_address,
-    token_name: data.token_name,
-    token_symbol: data.token_symbol,
-    balance: "0",
-    state: "opened",
-    total_deposit: "0",
-    reveal_timeout: "50",
-    token_network_identifier: data.token_network_identifier,
-  };
-};
+const createChannelFromNotification = data => ({
+  channel_identifier: data.channel_identifier,
+  partner_address: data.partner_address,
+  settle_timeout: data[3].value,
+  token_address: data.token_address,
+  token_name: data.token_name,
+  token_symbol: data.token_symbol,
+  balance: "0",
+  state: "opened",
+  total_deposit: "0",
+  reveal_timeout: "50",
+  token_network_identifier: data.token_network_identifier,
+});
 
 const events = {
   CHANNEL_OPENED: "ChannelOpened",
