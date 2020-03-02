@@ -5,6 +5,7 @@ const Callbacks = () => {
 
   let onOpenChannel = () => {};
   let onChannelDeposit = () => {};
+  let onChannelClose = () => {};
 
   let onRequestClientOnboarding = () => {};
   let onClientOnboardingSuccess = () => {};
@@ -14,6 +15,7 @@ const Callbacks = () => {
 
   const setOnOpenChannelCallback = fn => (onOpenChannel = fn);
   const setOnChannelDepositCallback = fn => (onChannelDeposit = fn);
+  const setOnChannelCloseCallback = fn => (onChannelClose = fn);
 
   const setOnRequestClientOnboarding = fn => (onRequestClientOnboarding = fn);
   const setOnClientOnboardingSuccess = fn => (onClientOnboardingSuccess = fn);
@@ -30,6 +32,7 @@ const Callbacks = () => {
 
   const triggerOnOpenChannel = channel => onOpenChannel(channel);
   const triggerOnDepositChannel = channel => onChannelDeposit(channel);
+  const triggerOnChannelClose = channel => onChannelClose(channel);
 
   // Onboarding trigger
 
@@ -46,6 +49,7 @@ const Callbacks = () => {
       triggerOnDepositChannel,
       triggerOnRequestClientOnboarding,
       triggerOnClientOnboardingSuccess,
+      triggerOnChannelClose,
     },
     set: {
       setOnCompletedPaymentCallback,
@@ -54,6 +58,7 @@ const Callbacks = () => {
       setOnChannelDepositCallback,
       setOnRequestClientOnboarding,
       setOnClientOnboardingSuccess,
+      setOnChannelCloseCallback,
     },
   };
 

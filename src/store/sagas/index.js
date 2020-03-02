@@ -16,6 +16,7 @@ import {
   REQUEST_CLIENT_ONBOARDING,
   CLIENT_ONBOARDING_SUCCESS,
   OPEN_CHANNEL_VOTE,
+  SET_CHANNEL_CLOSED,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
@@ -204,6 +205,14 @@ export function* workClientOnboardingSuccess({ address }) {
   Lumino.callbacks.trigger.triggerOnClientOnboardingSuccess(address);
 }
 
+function* workChannelClose({ channel }) {
+  const { channel_identifier, token_address } = channel;
+  const channels = yield select(getChannels);
+  const channelKey = `${channel_identifier}-${token_address}`;
+  const channelData = channels[channelKey];
+  Lumino.callbacks.trigger.triggerOnChannelClose(channelData);
+}
+
 export default function* rootSaga() {
   yield takeEvery(MESSAGE_POLLING, workMessagePolling);
   yield takeEvery(CREATE_PAYMENT, workCreatePayment);
@@ -213,4 +222,5 @@ export default function* rootSaga() {
   yield takeEvery(NOTIFICATIONS_POLLING, workNotificationPolling);
   yield takeEvery(REQUEST_CLIENT_ONBOARDING, workRequestClientOnboarding);
   yield takeEvery(CLIENT_ONBOARDING_SUCCESS, workClientOnboardingSuccess);
+  yield takeEvery(SET_CHANNEL_CLOSED, workChannelClose);
 }
