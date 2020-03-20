@@ -5,11 +5,11 @@ import Lumino from "../Lumino/index";
 
 /**
  *
- * @param {arrayish} message The message with the signature to be checked
+ * @param {arrayish} message The message with the signature
  */
 export const signatureRecover = message => {
   const { verifyMessage } = ethers.utils;
-  if (message.signature === "0x") return "0x";
+  if (message.signature === "0x" || !message.signature) return "0x";
   return verifyMessage(getPackedData(message), message.signature);
 };
 
@@ -31,19 +31,21 @@ export const validateLockedTransfer = (message, requestBody, channels = {}) => {
   const { getAddress } = ethers.utils;
   const hasSamePartner =
     getAddress(message.target) === requestBody.partner_address;
-  if (!hasSamePartner) throwGenericLockedTransfer("Partner");
+  if (!hasSamePartner) return throwGenericLockedTransfer("Partner");
   const hasSameAmount =
     getBN(message.lock.amount) === getBN(requestBody.amount);
-  if (!hasSameAmount) throwGenericLockedTransfer("Amount");
+  if (!hasSameAmount) return throwGenericLockedTransfer("Amount");
   const hasSameTokenAddress =
     getAddress(message.token) === requestBody.token_address;
-  if (!hasSameTokenAddress) throwGenericLockedTransfer("Token Address");
+  if (!hasSameTokenAddress) return throwGenericLockedTransfer("Token Address");
   const channelId = `${message.channel_identifier}-${getAddress(
     message.token
   )}`;
   const hasChannelAndIsOpened = channels[channelId] === CHANNEL_OPENED;
   if (!hasChannelAndIsOpened)
-    throwChannelNotFoundOrNotOpened(message.partner_address);
+    return throwChannelNotFoundOrNotOpened(message.partner_address);
+
+  return true;
 };
 
 export const validateReceptionLT = (msg, channel = {}) => {

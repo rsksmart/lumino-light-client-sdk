@@ -14,18 +14,24 @@ import {
 import client from "../apiRest";
 
 let store = null;
-const defaultStore = { channelReducer: [] };
+const defaultStore = {
+  channelReducer: {},
+  paymentIds: {},
+  payments: {
+    completed: {},
+    pending: {},
+    failed: {},
+  },
+};
 const defaultStorage = {
-  getLuminoData: () => defaultStore,
-  saveLuminoData: () => {},
+  getLuminoData: /* istanbul ignore next */ () => defaultStore,
+  saveLuminoData: /* istanbul ignore next */ () => {},
 };
 let storage = defaultStorage;
 
-const observableMiddleware = createEpicMiddleware();
-
-const setApiKeyFromStore = store => {
+const setApiKeyFromStore = ({ getState }) => {
   // We set the api key if teh redux store has one, if not, we fallback to the one from the developer
-  const api_key = store.getState().client.apiKey;
+  const api_key = getState().client.apiKey;
   if (api_key) client.defaults.headers = { "x-api-key": api_key };
 };
 
@@ -40,6 +46,8 @@ const initStore = async (storageImpl, luminoHandler) => {
     storage,
   };
   const sagaMiddleware = createSagaMiddleware();
+  const observableMiddleware = createEpicMiddleware();
+
   store = createStore(
     rootReducer,
     data,
@@ -72,6 +80,8 @@ const bindActions = (actions, dispatch) =>
 
 const getStore = () => store;
 
-const Store = { initStore, getStore, bindActions };
+const destroyStore = () => (store = null);
+
+const Store = { initStore, getStore, bindActions, destroyStore };
 
 export default Store;

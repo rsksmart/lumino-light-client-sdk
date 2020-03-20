@@ -8,6 +8,8 @@ import {
   requestTokenNameAndSymbol,
 } from "../functions/tokens";
 import { requestTokenNetworkFromTokenAddress } from "./tokens";
+import { Lumino } from "../..";
+import { CALLBACKS } from "../../utils/callbacks";
 
 /**
  * Open a channel.
@@ -17,57 +19,63 @@ import { requestTokenNetworkFromTokenAddress } from "./tokens";
  * @param {string} token_address -  The token address for the channel
  */
 export const openChannel = params => async (dispatch, getState, lh) => {
+  const { partner, tokenAddress } = params;
+
+  const clientAddress = getState().client.address;
+  let tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);
+  if (!tokenNetwork) {
+    tokenNetwork = await dispatch(
+      requestTokenNetworkFromTokenAddress(tokenAddress)
+    );
+  }
+
+  const txParams = {
+    ...params,
+    address: clientAddress,
+    tokenNetworkAddress: tokenNetwork,
+  };
+
+  const unsigned_tx = await createOpenTx(txParams);
+  const signed_tx = await resolver(unsigned_tx, lh);
+  let channel = {};
   try {
-    const { partner, tokenAddress } = params;
+    const {
+      name: token_name,
+      symbol: token_symbol,
+    } = await requestTokenNameAndSymbol(tokenAddress);
 
-    const clientAddress = getState().client.address;
-    let tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);
-    if (!tokenNetwork) {
-      tokenNetwork = await dispatch(
-        requestTokenNetworkFromTokenAddress(tokenAddress)
-      );
-    }
-
-    const txParams = {
-      ...params,
-      address: clientAddress,
-      tokenNetworkAddress: tokenNetwork,
+    const requestBody = {
+      partner_address: partner,
+      creator_address: clientAddress,
+      token_address: tokenAddress,
     };
 
-    const unsigned_tx = await createOpenTx(txParams);
-    const signed_tx = await resolver(unsigned_tx, lh);
-    try {
-      const requestBody = {
-        partner_address: partner,
-        creator_address: clientAddress,
-        token_address: tokenAddress,
-        signed_tx,
-      };
+    channel = {
+      ...requestBody,
+      token_name,
+      token_symbol,
+    };
 
-      const res = await client.put("light_channels", { ...requestBody });
+    requestBody.signed_tx = signed_tx;
 
-      const {
-        name: token_name,
-        symbol: token_symbol,
-      } = await requestTokenNameAndSymbol(tokenAddress);
+    Lumino.callbacks.trigger(CALLBACKS.REQUEST_OPEN_CHANNEL, channel);
+    const res = await client.put("light_channels", { ...requestBody });
 
-      dispatch({
-        type: OPEN_CHANNEL,
-        channelId: res.data.channel_identifier,
-        channel: {
-          ...res.data,
-          token_symbol,
-          token_name,
-          sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
-        },
-      });
+    dispatch({
+      type: OPEN_CHANNEL,
+      channelId: res.data.channel_identifier,
+      channel: {
+        ...res.data,
+        token_symbol,
+        token_name,
+        sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
+      },
+    });
 
-      const allData = getState();
-      await lh.storage.saveLuminoData(allData);
-    } catch (apiError) {
-      throw apiError;
-    }
-  } catch (resolverError) {
-    throw resolverError;
+    const allData = getState();
+    await lh.storage.saveLuminoData(allData);
+  } catch (error) {
+    Lumino.callbacks.trigger(CALLBACKS.FAILED_OPEN_CHANNEL, channel, error);
+    console.error(error);
   }
 };

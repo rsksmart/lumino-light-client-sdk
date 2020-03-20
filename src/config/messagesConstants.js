@@ -7,13 +7,16 @@ export const MessageType = {
   LOCKED_TRANSFER: "LockedTransfer",
   SECRET: "Secret",
   BALANCE_PROOF: "BalanceProof",
+  LOCK_EXPIRED: "LockExpired",
 };
 
 export const PAYMENT_SUCCESSFUL = "PaymentSuccessful";
+export const PAYMENT_EXPIRED = "PaymentExpired";
 export const LC_PROTOCOL_MESSAGE_TYPE = "LightClientProtocolMessageType";
 
 export const LIGHT_MESSAGE_TYPE = {
   PAYMENT_OK_FLOW: `${LC_PROTOCOL_MESSAGE_TYPE}.${PAYMENT_SUCCESSFUL}`,
+  PAYMENT_EXPIRED: `${LC_PROTOCOL_MESSAGE_TYPE}.${PAYMENT_EXPIRED}`,
 };
 
 export const MessageIdentifierKey = {
@@ -48,6 +51,7 @@ export const MessageNumPad = {
   [MessageType.LOCKED_TRANSFER]: 7,
   [MessageType.REVEAL_SECRET]: 11,
   [MessageType.DELIVERED]: 12,
+  [MessageType.LOCK_EXPIRED]: 13,
 };
 
 export const MessageTypeID = {

@@ -6,11 +6,11 @@ import {
   UPDATE_NON_CLOSING_BP,
   OPEN_CHANNEL_VOTE,
   DELETE_CHANNEL_FROM_SDK,
+  CLOSE_CHANNEL_VOTE,
 } from "../actions/types";
 import { ethers } from "ethers";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
-import { getNumberOfNotifiers } from "../functions/notifiers";
 
 const initialState = {};
 
@@ -54,6 +54,17 @@ const addVote = (channel, vote, voteType) => {
           },
         },
       };
+    case VOTE_TYPE.CLOSE_CHANNEL_VOTE:
+      return {
+        ...channel,
+        votes: {
+          ...channel.votes,
+          close: {
+            ...channel.votes.close,
+            [vote.notifier]: vote.shouldClose,
+          },
+        },
+      };
     default:
       return channel;
   }
@@ -62,15 +73,16 @@ const addVote = (channel, vote, voteType) => {
 const channel = (state = initialState, action) => {
   const { bigNumberify } = ethers.utils;
   switch (action.type) {
-    case OPEN_CHANNEL:
+    case OPEN_CHANNEL: {
       const nChannelKey = getChannelKey(action.channel);
       // We don't open if it is already there
       if (state[nChannelKey]) return state;
       const newChannels = createChannel(state, action.channel, nChannelKey);
       return newChannels;
+    }
 
     // Notifiers vote for new channel
-    case OPEN_CHANNEL_VOTE:
+    case OPEN_CHANNEL_VOTE: {
       const { notifier, shouldOpen } = action;
       const ovChannelKey = getChannelKey(action.channel);
       let ovChannel = state[ovChannelKey];
@@ -99,8 +111,9 @@ const channel = (state = initialState, action) => {
         ovChannel[ovChannelKey].sdk_status = SDK_CHANNEL_STATUS.CHANNEL_OPENED;
 
       return ovChannel;
+    }
 
-    case SET_CHANNEL_CLOSED:
+    case SET_CHANNEL_CLOSED: {
       const cChannelKey = getChannelKey(action.channel);
 
       const channelsModified = {
@@ -110,9 +123,10 @@ const channel = (state = initialState, action) => {
           ...action.channel,
         },
       };
-
       return channelsModified;
-    case NEW_DEPOSIT:
+    }
+
+    case NEW_DEPOSIT: {
       const dChannel = getChannelKey(action.channel);
 
       const chSentTokens = bigNumberify(state[dChannel].sentTokens || 0);
@@ -133,6 +147,7 @@ const channel = (state = initialState, action) => {
         },
       };
       return channelsDeposited;
+    }
     case CHANGE_CHANNEL_BALANCE: {
       const { payment } = action;
       const { isReceived, secretMessageId, messages } = payment;
@@ -165,7 +180,7 @@ const channel = (state = initialState, action) => {
         },
       };
     }
-    case UPDATE_NON_CLOSING_BP:
+    case UPDATE_NON_CLOSING_BP: {
       const ncbpChannel = getPaymentChannelKey(action);
       return {
         ...state,
@@ -174,7 +189,8 @@ const channel = (state = initialState, action) => {
           nonClosingBp: action.nonClosingBp,
         },
       };
-    case DELETE_CHANNEL_FROM_SDK:
+    }
+    case DELETE_CHANNEL_FROM_SDK: {
       const stateClone = { ...state };
       const dChannelKey = getChannelKey({
         channel_identifier: action.id,
@@ -183,6 +199,31 @@ const channel = (state = initialState, action) => {
 
       delete stateClone[dChannelKey];
       return stateClone;
+    }
+    case CLOSE_CHANNEL_VOTE: {
+      const { notifier, shouldClose } = action;
+      const channelKey = getChannelKey(action.channel);
+      const newState = { ...state };
+
+      // Add the corresponding vote, whether is positive or not
+      newState[channelKey] = addVote(
+        state[channelKey],
+        { notifier, shouldClose },
+        VOTE_TYPE.CLOSE_CHANNEL_VOTE
+      );
+
+      // Check for valid votes and quantity of notifiers
+      const openVotesQuantity = Object.values(
+        newState[channelKey].votes.close
+      ).filter(v => v).length;
+      const { numberOfNotifiers } = action;
+
+      // If we have the half + 1 votes of approval, we close the channel
+      if (openVotesQuantity >= Math.ceil(numberOfNotifiers / 2))
+        newState[channelKey].sdk_status = SDK_CHANNEL_STATUS.CHANNEL_CLOSED;
+
+      return newState;
+    }
     default:
       return state;
   }
