@@ -67,9 +67,18 @@ export const getPaymentMessageTypeValue = payment => {
 };
 
 export const getSenderAndReceiver = payment => {
-  const { isReceived } = payment;
+  const { isReceived, mediator } = payment;
   const { getAddress } = ethers.utils;
   const sender = isReceived ? payment.partner : payment.initiator;
   const receiver = isReceived ? payment.initiator : payment.partner;
-  return { sender: getAddress(sender), receiver: getAddress(receiver) };
+  if (!sender || !receiver) return { sender: null, receiver: null };
+  try {
+    return {
+      sender: getAddress(sender),
+      receiver: getAddress(receiver),
+      mediator,
+    };
+  } catch (error) {
+    return { sender: null, receiver: null };
+  }
 };
