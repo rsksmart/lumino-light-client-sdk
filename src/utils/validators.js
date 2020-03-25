@@ -67,6 +67,11 @@ export const isAddressFromPayment = (addFromSign, initiator, partner) => {
   );
 };
 
+export const isAddressFromMediator = (addFromSign, mediator) => {
+  const { getAddress } = ethers.utils;
+  return addFromSign === getAddress(mediator);
+};
+
 export const senderIsSigner = (addFromSign, sender) => {
   const { getAddress } = ethers.utils;
   return addFromSign === getAddress(sender);
