@@ -36,6 +36,7 @@ import {
   isAddressFromPayment,
   validateReceptionLT,
   senderIsSigner,
+  isAddressFromMediator,
 } from "./validators";
 import {
   CREATE_PAYMENT,
@@ -132,12 +133,24 @@ const managePaymentMessages = messages => {
         if (paymentPendingOrComplete) return null;
       }
       if (is_signed && type !== MessageType.LOCKED_TRANSFER) {
-        const signatureAddress = signatureRecover(msg[messageKey]);
-        const { initiator, partner } = payment;
-        if (!isAddressFromPayment(signatureAddress, initiator, partner))
-          return null;
-        if (getAddress(Lumino.getConfig().address) === signatureAddress)
-          return null;
+        const signAddress = signatureRecover(msg[messageKey]);
+        const { initiator, partner, isMediated, mediator } = payment;
+        const addressFromPayment = isAddressFromPayment(
+          signAddress,
+          initiator,
+          partner
+        );
+        if (isMediated) {
+          const addressFromMediator = isAddressFromMediator(
+            signAddress,
+            mediator
+          );
+          if (!addressFromPayment && !addressFromMediator) return null;
+        } else {
+          if (!addressFromPayment) return null;
+        }
+
+        if (getAddress(Lumino.getConfig().address) === signAddress) return null;
       }
       switch (type) {
         case MessageType.LOCKED_TRANSFER:
