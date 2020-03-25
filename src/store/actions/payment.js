@@ -7,6 +7,7 @@ import {
   PUT_LOCK_EXPIRED,
   SET_PAYMENT_FAILED,
   ADD_EXPIRED_PAYMENT_MESSAGE,
+  PAYMENT_CREATION_ERROR,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -61,19 +62,20 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const hashes = generateHashes();
     const { secrethash, hash: secret } = hashes;
     const channel = getLatestChannelByPartnerAndToken(partner, token_address);
-    // // Check for sufficient funds
-    // const actualBalance = bigNumberify(channel.offChainBalance);
-    // if (actualBalance.lt(amount)) {
-    //   console.error("Insufficient funds for payment");
-    //   // TODO: Add a callback for this
-    //   dispatch({
-    //     type: PAYMENT_CREATION_ERROR,
-    //     reason: "Insufficient funds for payment`",
-    //   });
-    //   return null;
-    // }
     // Check for sufficient funds
-    // const actualBalance = bigNumberify(channel.offChainBalance);
+    if (channel) {
+      const actualBalance = bigNumberify(channel.offChainBalance);
+      if (actualBalance.lt(amount)) {
+        console.error("Insufficient funds for payment");
+        // TODO: Add a callback for this
+        dispatch({
+          type: PAYMENT_CREATION_ERROR,
+          reason: "Insufficient funds for payment`",
+        });
+        return null;
+      }
+    }
+
     const requestBody = {
       creator_address: address,
       partner_address: partner,
@@ -144,6 +146,10 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       tokenNetworkAddress: dataToPut.message.token_network_address,
       chainId: dataToPut.message.chain_id,
     };
+    if (dataToPut.message.recipient !== dataToPut.message.target) {
+      paymentData.isMediated = true;
+      paymentData.mediator = getAddress(dataToPut.message.recipient);
+    }
 
     Lumino.callbacks.trigger(CALLBACKS.SENT_PAYMENT, paymentData);
     dispatch({
@@ -384,13 +390,13 @@ export const putRevealSecret = (
   message_identifier = getRandomBN(),
   order = 7
 ) => async (dispatch, getState, lh) => {
-  const { sender, receiver } = getSenderAndReceiver(payment);
-
+  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
+  const { isMediated } = payment;
   const body = {
     payment_id: payment.paymentId,
     message_order: order,
     sender,
-    receiver,
+    receiver: isMediated ? mediator : receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       type: MessageType.REVEAL_SECRET,
@@ -424,17 +430,17 @@ export const putBalanceProof = (message, payment) => async (
   getState,
   lh
 ) => {
-  const { sender, receiver } = getSenderAndReceiver(payment);
+  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
   const dataToSign = getDataToSignForBalanceProof(message);
   let signature = "";
 
   signature = await resolver(dataToSign, lh, true);
-
+  const { isMediated } = payment;
   const body = {
     payment_id: payment.paymentId,
     message_order: 11,
     sender,
-    receiver,
+    receiver: isMediated ? mediator : receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       ...message,
@@ -513,6 +519,7 @@ export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
 export const putLockExpired = data => async (dispatch, getState, lh) => {
   try {
     const { sender, receiver } = getSenderAndReceiver(data);
+    if (!sender || !receiver) return null;
     const body = {
       payment_id: data.paymentId,
       message_order: 1,
