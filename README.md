@@ -441,3 +441,11 @@ The SDK will take care of creating the channel and will execute the OpenChannel 
 In order to receive events, this iteration of the SDK and notifier work in a polling model, every one second the notifier is asked for events, in case that a new one has been detected, the SDK will act accordingly to them.
 
 After processing an event, it will not be fetched again since the SDK will ask for events after the last one processed, so no overfetching is performed.
+
+## Reproduce build
+
+Run:
+
+```
+npm run build
+```
