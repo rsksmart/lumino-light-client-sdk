@@ -3,9 +3,6 @@ import { messageManager } from "../../utils/messageManager";
 import {
   MESSAGE_POLLING,
   SET_PAYMENT_COMPLETE,
-  CHANGE_PAYMENT_POLLING_TIME,
-  MESSAGE_POLLING_STOP,
-  MESSAGE_POLLING_START,
   CREATE_PAYMENT,
   CHANGE_CHANNEL_BALANCE,
   RECEIVED_PAYMENT,
@@ -17,42 +14,30 @@ import {
   CLIENT_ONBOARDING_SUCCESS,
   OPEN_CHANNEL_VOTE,
   CLOSE_CHANNEL_VOTE,
+  SET_PAYMENT_FAILED,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
 import { findMaxMsgInternalId } from "../../utils/functions";
 import { manageNotificationData } from "../actions/notifier";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
+import { CALLBACKS } from "../../utils/callbacks";
 
 const getPendingPayments = state => state.payments.pending;
 
-const getPaymentPollingTime = state => state.client.paymentPollingTime;
+const getFailedPayment = state => state.payments.failed;
 
 const getNumberOfNotifiers = state =>
   Object.keys(state.notifier.notifiers).length;
 
 const getChannels = state => state.channelReducer;
 
-const stopPaymentPolling = () => ({ type: MESSAGE_POLLING_STOP });
-
-const startPaymentPolling = () => ({ type: MESSAGE_POLLING_START });
-
 const getCompletedPaymentById = state => state.payments.completed;
-
-const setPaymentPollingTimerTo = time => ({
-  type: CHANGE_PAYMENT_POLLING_TIME,
-  time,
-});
 
 const changeChannelBalance = payment => ({
   type: CHANGE_CHANNEL_BALANCE,
   payment,
 });
-
-function* restartPolling() {
-  yield put(stopPaymentPolling());
-  yield put(startPaymentPolling());
-}
 
 function* setCompleted(paymentId) {
   return yield put({ type: SET_PAYMENT_COMPLETE, paymentId });
@@ -70,19 +55,7 @@ export function* workMessagePolling({ data }) {
     const maxIdentifier = findMaxMsgInternalId(data);
 
     yield put({ type: SET_LATEST_INTERNAL_MSG_ID, id: maxIdentifier });
-    // const pendingAfterCompletion = yield select(getPendingPayments);
-    // const actualPaymentPollingTime = yield select(getPaymentPollingTime);
-    // if (!Object.keys(pendingAfterCompletion).length) {
-    //   if (actualPaymentPollingTime !== 10000) {
-    //     yield put(setPaymentPollingTimerTo(10000));
-    //     yield restartPolling();
-    //   }
-    // } else {
-    //   if (actualPaymentPollingTime !== 2000) {
-    //     yield put(setPaymentPollingTimerTo(2000));
-    //     yield restartPolling();
-    //   }
-    // }
+
     yield put(saveLuminoData());
   } catch (error) {
     console.error(error);
@@ -96,7 +69,7 @@ const getChannelKey = channelData => {
   return key;
 };
 
-function checkForOpenChannelInProcessing(data) {
+function* checkForOpenChannelInProcessing(data) {
   const {
     channelsBeforeProcessing: channelsBefore,
     channelsAfterProcessing: channelsAfter,
@@ -112,7 +85,7 @@ function checkForOpenChannelInProcessing(data) {
     if (channelBefore.sdk_status !== channelAfter.sdk_status) {
       // Is now open?
       if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_OPENED)
-        Lumino.callbacks.trigger.triggerOnOpenChannel(channelAfter);
+        yield Lumino.callbacks.trigger(CALLBACKS.OPEN_CHANNEL, channelAfter);
     }
   } else {
     // Channel did not exist
@@ -138,7 +111,7 @@ function checkForCloseChannelInProcessing(data) {
       // Is now closed?
 
       if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_CLOSED)
-        Lumino.callbacks.trigger.triggerOnChannelClose(channelAfter);
+        Lumino.callbacks.trigger(CALLBACKS.CLOSE_CHANNEL, channelAfter);
     }
   } else {
     // Channel did not exist
@@ -215,25 +188,45 @@ export function* workCreatePayment() {
 export function* workPaymentComplete({ paymentId }) {
   const completed = yield select(getCompletedPaymentById);
   yield put(changeChannelBalance(completed[paymentId]));
-  Lumino.callbacks.trigger.triggerOnCompletedPaymentCallback(
+  return Lumino.callbacks.trigger(
+    CALLBACKS.COMPLETED_PAYMENT,
     completed[paymentId]
   );
 }
 
-export function workReceivedPayment({ payment: d }) {
-  Lumino.callbacks.trigger.triggerOnReceivedPaymentCallback(d);
+export function* workReceivedPayment({ payment: d }) {
+  return yield Lumino.callbacks.trigger(CALLBACKS.RECEIVED_PAYMENT, d);
 }
 
-export function workDepositChannel({ channel }) {
-  Lumino.callbacks.trigger.triggerOnDepositChannel(channel);
+export function* workFailedPayment(data) {
+  const { paymentId, reason } = data;
+
+  const payments = yield select(getFailedPayment);
+  const payment = payments[paymentId];
+
+  return yield Lumino.callbacks.trigger(
+    CALLBACKS.FAILED_PAYMENT,
+    payment,
+    new Error(reason)
+  );
 }
 
-export function workRequestClientOnboarding({ address }) {
-  Lumino.callbacks.trigger.triggerOnRequestClientOnboarding(address);
+export function* workDepositChannel({ channel }) {
+  return yield Lumino.callbacks.trigger(CALLBACKS.DEPOSIT_CHANNEL, channel);
 }
 
-export function workClientOnboardingSuccess({ address }) {
-  Lumino.callbacks.trigger.triggerOnClientOnboardingSuccess(address);
+export function* workRequestClientOnboarding({ address }) {
+  return yield Lumino.callbacks.trigger(
+    CALLBACKS.REQUEST_CLIENT_ONBOARDING,
+    address
+  );
+}
+
+export function* workClientOnboardingSuccess({ address }) {
+  return yield Lumino.callbacks.trigger(
+    CALLBACKS.CLIENT_ONBOARDING_SUCCESS,
+    address
+  );
 }
 
 export default function* rootSaga() {
@@ -245,4 +238,5 @@ export default function* rootSaga() {
   yield takeEvery(NOTIFICATIONS_POLLING, workNotificationPolling);
   yield takeEvery(REQUEST_CLIENT_ONBOARDING, workRequestClientOnboarding);
   yield takeEvery(CLIENT_ONBOARDING_SUCCESS, workClientOnboardingSuccess);
+  yield takeEvery(SET_PAYMENT_FAILED, workFailedPayment);
 }
