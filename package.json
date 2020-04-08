@@ -1,5 +1,5 @@
 {
-  "name": "lumino-light-client-sdk",
+  "name": "@rsksmart/lumino-light-client-sdk",
   "version": "0.0.1",
   "description": "Lumino Light Client SDK for JS",
   "main": "./src/index.js",
