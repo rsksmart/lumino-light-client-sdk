@@ -1,6 +1,6 @@
 {
   "name": "@rsksmart/lumino-light-client-sdk",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Lumino Light Client SDK for JS",
   "main": "./dist/index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "start": "node index.js",
     "build": "npx gulp babel",
     "prettier": "prettier --print-width 80 --end-of-line lf --trailing-comma es5 --write 'src/**/*.js'",
-    "prepare": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "lumino",
