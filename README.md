@@ -293,7 +293,7 @@ Requests the close of a channel that is opened, the requestBody is the next:
 ```javascript
 const requestBody = {
 	partner_address: "0x123...",
-	channelId: Number
+	channel_identifier: Number
 	token_address: "0x987..."
 };
 ```
