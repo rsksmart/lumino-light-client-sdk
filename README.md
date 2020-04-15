@@ -12,16 +12,16 @@ The SDK gives the developer all the functions to work with a Lumino HUB and inte
 
 **Yarn**
 
-`yarn install lumino-light-client-sdk`
+`yarn install @rsksmart/lumino-light-client-sdk`
 
 **NPM**
 
-`npm install --save lumino-light-client-sdk`
+`npm install --save @rsksmart/lumino-light-client-sdk`
 
 ## Starting
 
 ```javascript
-import { Lumino } from "lumino-light-client-sdk";
+import { Lumino } from "@rsksmart/lumino-light-client-sdk";
 ```
 
 Lumino is our main interface to interact with the SDK.
@@ -61,7 +61,7 @@ In order to make the setup more easier, we provided a default handler,
 in the form of SigningHandler, which can be imported from the sdk
 
 ```javascript
-import {SigningHandler} from 'lumino-light-client-sdk"
+import { SigningHandler } from "@rsksmart/lumino-light-client-sdk";
 
 const signingHandler = SigningHandler();
 
@@ -95,7 +95,7 @@ saveLuminoData(data: Object) => void
 This method saves the data that the SDK has stored in memory, implementations can also be of any type, it must accept a parameter (**data**) which is a JS object containing the data of the SDK.
 
 ```javascript
-import {LocalStorageHandler} from 'lumino-light-client-sdk"
+import { LocalStorageHandler } from "@rsksmart/lumino-light-client-sdk";
 ```
 
 We also provide a default implementation of the handler in the SDK, this is for a web enviroment and can be imported from the SDK.
