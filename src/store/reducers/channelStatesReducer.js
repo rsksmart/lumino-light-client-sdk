@@ -5,12 +5,13 @@ const initialState = {};
 
 const channel = (state = initialState, action) => {
   switch (action.type) {
-    case OPEN_CHANNEL:
+    case OPEN_CHANNEL: {
       const nChannelId = action.channel.channel_identifier;
       const nTokenAdd = action.channel.token_address;
       const nChannel = `${nChannelId}-${nTokenAdd}`;
       const newChannels = { ...state, [nChannel]: CHANNEL_OPENED };
       return newChannels;
+    }
     default:
       return state;
   }

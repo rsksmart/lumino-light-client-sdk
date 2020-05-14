@@ -20,7 +20,7 @@ import {
   NOTIFICATIONS_POLLING,
 } from "../actions/types";
 
-const paymentsMonitoredEpic = action$ => {
+export const paymentsMonitoredEpic = action$ => {
   const stopPolling$ = action$.pipe(ofType(MESSAGE_POLLING_STOP));
   // TODO: Change conditionally the timer
   return action$.pipe(
@@ -47,7 +47,7 @@ const paymentsMonitoredEpic = action$ => {
   );
 };
 
-const notificationsMonitoredEpic = action$ => {
+export const notificationsMonitoredEpic = action$ => {
   const stopPolling$ = action$.pipe(ofType(STOP_NOTIFICATIONS_POLLING));
   // TODO: Change conditionally the timer within other networks
   return action$.pipe(

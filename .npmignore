@@ -30,9 +30,6 @@ build/Release
 # Dependency directory
 node_modules
 
-# Gulp build directory
-dist
-
 # Optional npm cache directory
 .npm
 

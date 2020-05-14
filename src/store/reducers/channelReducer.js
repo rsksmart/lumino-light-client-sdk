@@ -153,6 +153,7 @@ const channel = (state = initialState, action) => {
       const { isReceived, secretMessageId, messages } = payment;
       const ccbChannel = getPaymentChannelKey(payment);
       // We get the BP
+      if (!state[ccbChannel]) return state;
       const amount = messages[secretMessageId].message.transferred_amount;
       // We parse the amounts as BN
       const bigAmount = bigNumberify(String(amount));
