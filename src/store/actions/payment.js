@@ -11,6 +11,7 @@ import {
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
+import {isRnsDomain} from "../../utils/functions";
 import generateHashes from "../../utils/generateHashes";
 import {
   getDataToSignForLockedTransfer,
@@ -45,22 +46,43 @@ import {
 import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
 import { getRandomBN } from "../../utils/functions";
+import {
+  getRnsInstance
+} from "../functions/rns";
 
 /**
  * Create a payment.
  * @param {string} amount- Amount to pay
  * @param {string} address -  The address of the channel creator
- * @param {string} partner -  The partner address
+ * @param {string} partner -  The partner address or rns domain
  * @param {string} token_address -  The address of the lumino token
  */
 export const createPayment = params => async (dispatch, getState, lh) => {
+ 
   let paymentData = {};
   try {
     const { getAddress, bigNumberify } = ethers.utils;
-    const { partner, token_address, amount } = params;
+    const { token_address, amount } = params;
+    let {partner} = params;
     const { address } = getState().client;
     const hashes = generateHashes();
     const { secrethash, hash: secret } = hashes;
+
+    // Check if partner is a rns domain
+    if(isRnsDomain(partner)){
+      const rns = getRnsInstance();
+      partner = await rns.addr(partner);
+      console.log("Resolved address", partner);
+      if (partner === "0x0000000000000000000000000000000000000000"){
+        dispatch({
+          type: PAYMENT_CREATION_ERROR,
+          reason: "Selected RNS domain isnt registered`",
+        });
+        console.log("Sep")
+        return null;
+      }
+    }
+
     const channel = getLatestChannelByPartnerAndToken(partner, token_address);
     // Check for sufficient funds
     if (channel) {

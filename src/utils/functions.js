@@ -35,3 +35,10 @@ export const getRandomBN = () => {
   const randomBN = BigNumber.random(18).toString();
   return new BigNumber(randomBN.split(".")[1]).toString();
 };
+
+export const isRnsDomain = (domain) => {
+  if (domain){
+    return domain.includes('.');
+  }
+  return false;
+}
