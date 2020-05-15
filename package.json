@@ -1,13 +1,14 @@
 {
-  "name": "lumino-light-client-sdk",
-  "version": "0.0.1",
+  "name": "@rsksmart/lumino-light-client-sdk",
+  "version": "0.0.4",
   "description": "Lumino Light Client SDK for JS",
-  "main": "./src/index.js",
+  "main": "./dist/index.js",
   "scripts": {
     "test": "jest",
     "start": "node index.js",
-    "build": "gulp babel",
-    "prettier": "prettier --print-width 80 --end-of-line lf --trailing-comma es5 --write 'src/**/*.js'"
+    "build": "npx gulp babel",
+    "prettier": "prettier --print-width 80 --end-of-line lf --trailing-comma es5 --write 'src/**/*.js'",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "lumino",
@@ -27,7 +28,8 @@
     "redux-saga": "^1.1.3",
     "redux-thunk": "^2.3.0",
     "rxjs": "^6.5.3",
-    "web3": "1.2.4"
+    "web3": "1.2.4",
+    "@rsksmart/rns": "1.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.7.2",
@@ -52,6 +54,8 @@
     "prettier": "^1.18.2",
     "redux-mock-store": "^1.5.4",
     "regenerator-runtime": "^0.13.3",
-    "sinon": "^7.5.0"
+    "@types/jest": "^25.1.3",
+    "sinon": "^7.5.0",
+    "webpack": "^4.42.1"
   }
 }

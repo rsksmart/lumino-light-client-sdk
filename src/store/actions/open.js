@@ -3,6 +3,10 @@ import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { createOpenTx } from "../../scripts/open";
+import {isRnsDomain} from "../../utils/functions";
+import {
+  getRnsInstance
+} from "../functions/rns";
 import {
   getTokenNetworkByTokenAddress,
   requestTokenNameAndSymbol,
@@ -19,7 +23,21 @@ import { CALLBACKS } from "../../utils/callbacks";
  * @param {string} token_address -  The token address for the channel
  */
 export const openChannel = params => async (dispatch, getState, lh) => {
-  const { partner, tokenAddress } = params;
+  const { tokenAddress } = params;
+  let { partner } = params;
+
+  // Check if partner is a rns domain
+  if(isRnsDomain(partner)){
+    const rns = getRnsInstance();
+    partner = await rns.addr(partner);
+    console.log("Resolved address", partner);
+    if (partner === "0x0000000000000000000000000000000000000000"){
+      Lumino.callbacks.trigger(CALLBACKS.FAILED_OPEN_CHANNEL, channel, "RNS domain isnt registered");
+      console.error(error);
+    }else{
+      params.partner = partner;
+    }
+  }
 
   const clientAddress = getState().client.address;
   let tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);

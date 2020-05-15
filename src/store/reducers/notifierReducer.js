@@ -30,7 +30,7 @@ const patchNewTopic = (state, action) => {
 
 const notifierReducer = (state = initialState, action) => {
   switch (action.type) {
-    case NEW_NOTIFIER:
+    case NEW_NOTIFIER: {
       const newNotifier = {
         ...state,
         notifiers: {
@@ -43,7 +43,8 @@ const notifierReducer = (state = initialState, action) => {
         },
       };
       return newNotifier;
-    case SET_LAST_NOTIFICATION_ID:
+    }
+    case SET_LAST_NOTIFICATION_ID: {
       const { ids } = action;
       let stateClone = { ...state };
       Object.entries(ids).forEach(([notifier, id]) => {
@@ -59,13 +60,15 @@ const notifierReducer = (state = initialState, action) => {
         };
       });
       return stateClone;
+    }
     case SUBSCRIBED_TO_NEW_TOPIC:
       return patchNewTopic(state, action);
-    case REMOVE_NOTIFIER:
+    case REMOVE_NOTIFIER: {
       const { url } = action;
       let notifierWithRemotion = { ...state };
       delete notifierWithRemotion.notifiers[url];
       return notifierWithRemotion;
+    }
     default:
       return state;
   }

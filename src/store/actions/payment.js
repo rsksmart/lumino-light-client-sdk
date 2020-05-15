@@ -1,20 +1,17 @@
 import { ethers } from "ethers";
-import BigNumber from "bignumber.js";
 import {
   CREATE_PAYMENT,
   ADD_PENDING_PAYMENT_MESSAGE,
-  DELETE_ALL_PENDING_PAYMENTS,
-  MESSAGE_POLLING_START,
-  MESSAGE_POLLING_STOP,
   SET_PAYMENT_SECRET,
   UPDATE_NON_CLOSING_BP,
-  PAYMENT_CREATION_ERROR,
   PUT_LOCK_EXPIRED,
   SET_PAYMENT_FAILED,
   ADD_EXPIRED_PAYMENT_MESSAGE,
+  PAYMENT_CREATION_ERROR,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
+import {isRnsDomain} from "../../utils/functions";
 import generateHashes from "../../utils/generateHashes";
 import {
   getDataToSignForLockedTransfer,
@@ -48,25 +45,59 @@ import {
 } from "../functions/payments";
 import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
+import { getRandomBN } from "../../utils/functions";
+import {
+  getRnsInstance
+} from "../functions/rns";
 
 /**
  * Create a payment.
  * @param {string} amount- Amount to pay
  * @param {string} address -  The address of the channel creator
- * @param {string} partner -  The partner address
+ * @param {string} partner -  The partner address or rns domain
  * @param {string} token_address -  The address of the lumino token
  */
 export const createPayment = params => async (dispatch, getState, lh) => {
+ 
   let paymentData = {};
   try {
     const { getAddress, bigNumberify } = ethers.utils;
-    const { partner, token_address, amount } = params;
+    const { token_address, amount } = params;
+    let {partner} = params;
     const { address } = getState().client;
     const hashes = generateHashes();
     const { secrethash, hash: secret } = hashes;
+
+    // Check if partner is a rns domain
+    if(isRnsDomain(partner)){
+      const rns = getRnsInstance();
+      partner = await rns.addr(partner);
+      console.log("Resolved address", partner);
+      if (partner === "0x0000000000000000000000000000000000000000"){
+        dispatch({
+          type: PAYMENT_CREATION_ERROR,
+          reason: "Selected RNS domain isnt registered`",
+        });
+        console.log("Sep")
+        return null;
+      }
+    }
+
     const channel = getLatestChannelByPartnerAndToken(partner, token_address);
     // Check for sufficient funds
-    const actualBalance = bigNumberify(channel.offChainBalance);
+    if (channel) {
+      const actualBalance = bigNumberify(channel.offChainBalance);
+      if (actualBalance.lt(amount)) {
+        console.error("Insufficient funds for payment");
+        // TODO: Add a callback for this
+        dispatch({
+          type: PAYMENT_CREATION_ERROR,
+          reason: "Insufficient funds for payment`",
+        });
+        return null;
+      }
+    }
+
     const requestBody = {
       creator_address: address,
       partner_address: partner,
@@ -79,20 +110,9 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       partner,
       amount,
     };
-    if (actualBalance.lt(amount)) {
-      console.error("Insufficient funds for payment");
-
-      dispatch({
-        type: PAYMENT_CREATION_ERROR,
-        reason: "Insufficient funds for payment`",
-      });
-      Lumino.callbacks.trigger(
-        CALLBACKS.FAILED_CREATE_PAYMENT,
-        paymentData,
-        new Error("Insufficient funds")
-      );
-      return null;
-    }
+    // If we don't have enough balance
+    // if (actualBalance.lt(amount))
+    // throw new Error("Insufficient funds for payment");
 
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody);
@@ -108,14 +128,13 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       },
     };
     let signature;
-    const dataToSign = ethers.utils.arrayify(
-      getDataToSignForLockedTransfer(messageWithHash)
-    );
+    const dataToSign = getDataToSignForLockedTransfer(messageWithHash);
 
     signature = await resolver(dataToSign, lh, true);
 
     const channels = getChannelsState();
-    validateLockedTransfer(message, requestBody, channels);
+    const valid = validateLockedTransfer(message, requestBody, channels);
+    if (valid !== true) throw valid;
     const dataToPut = {
       payment_id: payment_id,
       message_order,
@@ -149,6 +168,10 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       tokenNetworkAddress: dataToPut.message.token_network_address,
       chainId: dataToPut.message.chain_id,
     };
+    if (dataToPut.message.recipient !== dataToPut.message.target) {
+      paymentData.isMediated = true;
+      paymentData.mediator = getAddress(dataToPut.message.recipient);
+    }
 
     Lumino.callbacks.trigger(CALLBACKS.SENT_PAYMENT, paymentData);
     dispatch({
@@ -169,25 +192,6 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     console.error(error);
   }
 };
-
-export const clearAllPendingPayments = () => async (dispatch, getState, lh) => {
-  dispatch(deleteAllPendingPayments());
-  const allData = getState();
-  return await lh.storage.saveLuminoData(allData);
-};
-
-export const mockPulling = () => async dispatch => {
-  dispatch({ type: MESSAGE_POLLING_START });
-};
-
-export const mockStopPulling = () => async dispatch => {
-  dispatch({ type: MESSAGE_POLLING_STOP });
-};
-
-export const deleteAllPendingPayments = () => dispatch =>
-  dispatch({
-    type: DELETE_ALL_PENDING_PAYMENTS,
-  });
 
 export const addPendingPaymentMessage = (
   paymentId,
@@ -227,11 +231,6 @@ export const addExpiredPaymentNormalMessage = (
     message,
     storeInMessages: true,
   });
-
-const getRandomBN = () => {
-  const randomBN = BigNumber.random(18).toString();
-  return new BigNumber(randomBN.split(".")[1]).toString();
-};
 
 const nonSuccessfulMessageAdd = data => dispatch => {
   const {
@@ -413,13 +412,13 @@ export const putRevealSecret = (
   message_identifier = getRandomBN(),
   order = 7
 ) => async (dispatch, getState, lh) => {
-  const { sender, receiver } = getSenderAndReceiver(payment);
-
+  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
+  const { isMediated } = payment;
   const body = {
     payment_id: payment.paymentId,
     message_order: order,
     sender,
-    receiver,
+    receiver: isMediated ? mediator : receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       type: MessageType.REVEAL_SECRET,
@@ -453,21 +452,20 @@ export const putBalanceProof = (message, payment) => async (
   getState,
   lh
 ) => {
-  const data = message;
-  const { sender, receiver } = getSenderAndReceiver(payment);
-  const dataToSign = getDataToSignForBalanceProof(data);
+  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
+  const dataToSign = getDataToSignForBalanceProof(message);
   let signature = "";
 
   signature = await resolver(dataToSign, lh, true);
-
+  const { isMediated } = payment;
   const body = {
     payment_id: payment.paymentId,
     message_order: 11,
     sender,
-    receiver,
+    receiver: isMediated ? mediator : receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
-      ...data,
+      ...message,
       signature,
     },
   };
@@ -543,6 +541,7 @@ export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
 export const putLockExpired = data => async (dispatch, getState, lh) => {
   try {
     const { sender, receiver } = getSenderAndReceiver(data);
+    if (!sender || !receiver) return null;
     const body = {
       payment_id: data.paymentId,
       message_order: 1,

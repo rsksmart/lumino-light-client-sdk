@@ -1,20 +1,19 @@
-import Store from "../index";
 import { swapObjValueForKey } from "../../utils/functions";
 import Lumino from "../../Lumino";
 import Web3 from "web3";
 import { tokenAbi } from "../../scripts/constants";
+import { getState } from "./state";
 
 /**
  * Returns the Token Networks and their corresponding Token Address
  */
-export const getKnownTokenNetworks = () =>
-  Store.getStore().getState().tokenNetworks;
+export const getKnownTokenNetworks = () => getState().tokenNetworks;
 
 /**
  * Returns the Token Addresses and their corresponding Token Network
  */
 export const getKnownTokenAddresses = () =>
-  swapObjValueForKey(Store.getStore().getState().tokenNetworks);
+  swapObjValueForKey(getState().tokenNetworks);
 
 /**
  * Returns the Token Address corresponding to a Token Network, or null
@@ -49,7 +48,7 @@ export const requestTokenNameAndSymbol = async tokenAddress => {
 };
 
 export const searchTokenDataInChannels = tokenAddress => {
-  const channels = Store.getStore().getState().channelReducer;
+  const channels = getState().channelReducer;
   const ch = Object.keys(channels).find(c => c.includes(tokenAddress));
   const { token_name: tokenName, token_symbol: tokenSymbol } = channels[ch];
   return { tokenName, tokenSymbol };
