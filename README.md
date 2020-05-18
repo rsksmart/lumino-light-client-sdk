@@ -116,6 +116,8 @@ This is an object with the next params
 | rskEndpoint | An endpoint to a RSK Node   |
 | hubEndpoint | An endpoint to a Lumino HUB |
 | address     | The Client address          |
+| registryAddress     | The RNS registry address          |
+
 
 ## Initializing
 
