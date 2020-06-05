@@ -1,3 +1,5 @@
+import BigNumber from "bignumber.js";
+
 const getGreater = (n1, n2) => (n1 > n2 ? n1 : n2);
 
 /**
@@ -14,7 +16,7 @@ const findMaxByKey = (arr, key) => {
 };
 
 export const findMaxMsgInternalId = arr =>
-  findMaxByKey(arr, "internal_msg_identifer");
+  findMaxByKey(arr, "internal_msg_identifier");
 
 export const findMaxBlockId = notifications =>
   findMaxByKey(notifications, "id");
@@ -28,3 +30,15 @@ export const findMaxChannelId = channels =>
  */
 export const swapObjValueForKey = data =>
   Object.keys(data).reduce((obj, key) => ((obj[data[key]] = key), obj), {});
+
+export const getRandomBN = () => {
+  const randomBN = BigNumber.random(18).toString();
+  return new BigNumber(randomBN.split(".")[1]).toString();
+};
+
+export const isRnsDomain = (domain) => {
+  if (domain){
+    return domain.includes('.');
+  }
+  return false;
+}

@@ -7,6 +7,7 @@ import clientReducer from "./clientReducer";
 import notifierReducer from "./notifierReducer";
 import tokensNetworkReducer from "./tokensNetworkReducer";
 import tokenNamesReducer from "./tokenNamesReducer";
+import rnsReducer from "./rnsReducer";
 
 const rootReducer = combineReducers({
   channelReducer: channel,
@@ -17,6 +18,8 @@ const rootReducer = combineReducers({
   notifier: notifierReducer,
   tokenNetworks: tokensNetworkReducer,
   tokenNames: tokenNamesReducer,
+  rnsReducer: rnsReducer,
+
 });
 
 export default rootReducer;

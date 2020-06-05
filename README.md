@@ -12,16 +12,16 @@ The SDK gives the developer all the functions to work with a Lumino HUB and inte
 
 **Yarn**
 
-`yarn install lumino-light-client-sdk`
+`yarn install @rsksmart/lumino-light-client-sdk`
 
 **NPM**
 
-`npm install --save lumino-light-client-sdk`
+`npm install --save @rsksmart/lumino-light-client-sdk`
 
 ## Starting
 
 ```javascript
-import { Lumino } from "lumino-light-client-sdk";
+import { Lumino } from "@rsksmart/lumino-light-client-sdk";
 ```
 
 Lumino is our main interface to interact with the SDK.
@@ -61,7 +61,7 @@ In order to make the setup more easier, we provided a default handler,
 in the form of SigningHandler, which can be imported from the sdk
 
 ```javascript
-import {SigningHandler} from 'lumino-light-client-sdk"
+import { SigningHandler } from "@rsksmart/lumino-light-client-sdk";
 
 const signingHandler = SigningHandler();
 
@@ -95,7 +95,7 @@ saveLuminoData(data: Object) => void
 This method saves the data that the SDK has stored in memory, implementations can also be of any type, it must accept a parameter (**data**) which is a JS object containing the data of the SDK.
 
 ```javascript
-import {LocalStorageHandler} from 'lumino-light-client-sdk"
+import { LocalStorageHandler } from "@rsksmart/lumino-light-client-sdk";
 ```
 
 We also provide a default implementation of the handler in the SDK, this is for a web enviroment and can be imported from the SDK.
@@ -116,6 +116,8 @@ This is an object with the next params
 | rskEndpoint | An endpoint to a RSK Node   |
 | hubEndpoint | An endpoint to a Lumino HUB |
 | address     | The Client address          |
+| registryAddress     | The RNS registry address          |
+
 
 ## Initializing
 
@@ -293,7 +295,7 @@ Requests the close of a channel that is opened, the requestBody is the next:
 ```javascript
 const requestBody = {
 	partner_address: "0x123...",
-	channelId: Number
+	channel_identifier: Number
 	token_address: "0x987..."
 };
 ```
@@ -441,3 +443,11 @@ The SDK will take care of creating the channel and will execute the OpenChannel 
 In order to receive events, this iteration of the SDK and notifier work in a polling model, every one second the notifier is asked for events, in case that a new one has been detected, the SDK will act accordingly to them.
 
 After processing an event, it will not be fetched again since the SDK will ask for events after the last one processed, so no overfetching is performed.
+
+## Reproduce build
+
+Run:
+
+```
+npm run build
+```
