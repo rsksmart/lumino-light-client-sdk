@@ -4,6 +4,7 @@ const EXPIRED_PAYMENT = "ExpiredPayment";
 const OPEN_CHANNEL = "OpenChannel";
 const REQUEST_CLIENT_ONBOARDING = "RequestClientOnboarding";
 const CLIENT_ONBOARDING_SUCCESS = "ClientOnboardingSuccess";
+const CLIENT_ONBOARDING_FAILURE = "ClientOnboardingFailure";
 const DEPOSIT_CHANNEL = "ChannelDeposit";
 const CLOSE_CHANNEL = "CloseChannel";
 const REQUEST_OPEN_CHANNEL = "RequestOpenChannel";
@@ -36,6 +37,7 @@ export const CALLBACKS = {
   FAILED_CLOSE_CHANNEL,
   FAILED_PAYMENT,
   FAILED_CREATE_PAYMENT,
+  CLIENT_ONBOARDING_FAILURE,
 };
 
 const Callbacks = () => {

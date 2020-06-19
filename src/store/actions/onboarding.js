@@ -5,11 +5,12 @@ import {
   MESSAGE_POLLING_START,
   REQUEST_CLIENT_ONBOARDING,
   CLIENT_ONBOARDING_SUCCESS,
+  CLIENT_ONBOARDING_FAILURE,
 } from "../actions/types";
 
 export const onboardingClient = () => async (dispatch, getState, lh) => {
+  const address = getState().client.address;
   try {
-    const address = getState().client.address;
     const urlOnboard = "light_clients/matrix/credentials";
     const onboardReq = await client.get(urlOnboard, { params: { address } });
     // We get the data
@@ -46,7 +47,7 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
       lh.storage.saveLuminoData(allData);
     }
   } catch (error) {
-    throw error;
+    dispatch({ type: CLIENT_ONBOARDING_FAILURE, address, error });
   }
 };
 
