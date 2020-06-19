@@ -2,7 +2,10 @@ import Store from "../store/index";
 import Actions from "../store/actions";
 import client from "../apiRest";
 import callbacks from "../utils/callbacks";
-import { SET_CLIENT_ADDRESS, SET_REGISTRY_ADDRESS } from "../store/actions/types";
+import {
+  SET_CLIENT_ADDRESS,
+  SET_REGISTRY_ADDRESS,
+} from "../store/actions/types";
 import notifier from "../notifierRest";
 import { NOTIFIER_BASE_URL } from "../config/notifierConstants";
 
@@ -36,8 +39,8 @@ const Lumino = () => {
       // Set RNS registry address
       store.dispatch({
         type: SET_REGISTRY_ADDRESS,
-        registryAddress: configParams.registryAddress
-      })
+        registryAddress: configParams.registryAddress,
+      });
       const changesHook = fn => store.subscribe(fn);
       const luminoInternalState = store.getState();
       const getLuminoInternalState = () => store.getState();
@@ -69,17 +72,17 @@ const Lumino = () => {
   };
 
   /**
- * Gets the options for the RNS object needed to use rnsjs library
- * @returns an object like {{networkId: (() => number) | number, contractAddresses: {registry: string}}}
- */
-  const getRNSOptions =()=> {
+   * Gets the options for the RNS object needed to use rnsjs library
+   * @returns an object like {{networkId: (() => number) | number, contractAddresses: {registry: string}}}
+   */
+  const getRNSOptions = () => {
     return {
       networkId: this.chainId,
       contractAddresses: {
         registry: rifConfig.rns.contracts.rns,
       },
     };
-  }
+  };
 
   /**
    * Destroys the lumino instance

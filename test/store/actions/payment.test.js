@@ -159,6 +159,100 @@ describe("test payment actions", () => {
     expect(actions[0]).toStrictEqual(expectedAction);
   });
 
+  test("should create a mediated payment LT successfully", async () => {
+    const store = mockStore(state);
+
+    // Values for payment
+    const mockedSignature = "0x123456";
+    const params = {
+      amount: "10000000000000",
+      partner: randomPartner,
+      token_address: randomAddress,
+    };
+    const recipient = "0x23017204664df590b8b7F583bce3d13bd6Db3b0e";
+    const message_content = {
+      message: {
+        nonce: 1,
+        channel_identifier: 1,
+        chain_id: 33,
+        target: randomPartner,
+        initiator: address,
+        recipient,
+        token: randomAddress,
+        lock: {
+          amount: "10000000000000",
+        },
+      },
+      message_order: 1,
+      payment_id: "987654321",
+    };
+
+    // Spies
+    const spyPack = jest.spyOn(packFunctions, "getDataToSignForLockedTransfer");
+    spyPack.mockReturnValue(ethers.constants.HashZero);
+    spyResolver.mockResolvedValue(mockedSignature);
+    spyHashes.mockReturnValue(constantHashes);
+    client.post.mockResolvedValue({ data: { message_content } });
+    spyGetState.mockImplementation(() => store.getState());
+
+    await store.dispatch(paymentFunctions.createPayment(params));
+    const paymentData = {
+      amount: message_content.message.lock.amount,
+      chainId: message_content.message.chain_id,
+      channelId: message_content.message.channel_identifier,
+      initiator: message_content.message.initiator,
+      isMediated: true,
+      mediator: recipient,
+      message_order: message_content.message_order,
+      messages: {
+        "1": {
+          message: {
+            chain_id: message_content.message.chain_id,
+            channel_identifier: message_content.message.channel_identifier,
+            initiator: message_content.message.initiator,
+            lock: {
+              amount: message_content.message.lock.amount,
+              secrethash: constantHashes.secrethash,
+            },
+            nonce: 1,
+            recipient,
+            signature: mockedSignature,
+            target: message_content.message.target,
+            token: message_content.message.token,
+          },
+          message_order: message_content.message_order,
+          message_type_value: "PaymentSuccessful",
+          payment_id: message_content.payment_id,
+          receiver: message_content.message.target,
+          sender: message_content.message.initiator,
+        },
+      },
+      partner: message_content.message.target,
+      paymentId: message_content.payment_id,
+      secret: constantHashes.hash,
+      secret_hash: constantHashes.secrethash,
+      token: message_content.message.token,
+      tokenName: undefined,
+      tokenSymbol: undefined,
+      tokenNetworkAddress: undefined,
+    };
+    expect(spyCallbacks).toHaveBeenCalledWith(
+      CALLBACKS.SENT_PAYMENT,
+      paymentData
+    );
+    const actions = store.getActions();
+
+    expect(actions.length).toBe(1);
+    const expectedAction = {
+      channelId: 1,
+      payment: paymentData,
+      paymentId: paymentData.paymentId,
+      token: paymentData.token,
+      type: CREATE_PAYMENT,
+    };
+    expect(actions[0]).toStrictEqual(expectedAction);
+  });
+
   test("should reject creation if insufficient funds", async () => {
     const store = mockStore(state);
 
