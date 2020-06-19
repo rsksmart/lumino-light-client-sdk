@@ -94,6 +94,5 @@ export const openChannel = params => async (dispatch, getState, lh) => {
     await lh.storage.saveLuminoData(allData);
   } catch (error) {
     Lumino.callbacks.trigger(CALLBACKS.FAILED_OPEN_CHANNEL, channel, error);
-    console.error(error);
   }
 };

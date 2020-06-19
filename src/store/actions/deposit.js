@@ -47,7 +47,5 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
     return await lh.storage.saveLuminoData(allData);
   } catch (error) {
     Lumino.callbacks.trigger(CALLBACKS.FAILED_DEPOSIT_CHANNEL, channel, error);
-
-    console.error(error);
   }
 };
