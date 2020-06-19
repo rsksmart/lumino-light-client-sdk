@@ -88,6 +88,7 @@ const Lumino = () => {
    * Destroys the lumino instance
    */
   const destroy = () => {
+    if (store) actions.stopAllPolling();
     actions = undefined;
     store = undefined;
     luminoFns = undefined;
