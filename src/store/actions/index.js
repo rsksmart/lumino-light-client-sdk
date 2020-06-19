@@ -6,6 +6,7 @@ import * as paymentActions from "./payment";
 import * as onboardingActions from "./onboarding";
 import * as notifierActions from "./notifier";
 import * as tokenActions from "./tokens";
+import * as pollingActions from "./polling";
 
 const Actions = {
   ...openActions,
@@ -16,6 +17,7 @@ const Actions = {
   ...onboardingActions,
   ...notifierActions,
   ...tokenActions,
+  ...pollingActions,
 };
 
 export default Actions;
