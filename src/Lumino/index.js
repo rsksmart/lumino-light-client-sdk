@@ -88,6 +88,7 @@ const Lumino = () => {
    * Destroys the lumino instance
    */
   const destroy = () => {
+    if (store) actions.stopAllPolling();
     actions = undefined;
     store = undefined;
     luminoFns = undefined;
@@ -101,7 +102,12 @@ const Lumino = () => {
     };
   };
 
-  return { callbacks, init, get, getConfig, destroy };
+  const reConfigure = async (luminoHandler, storage, configParams) => {
+    destroy();
+    return init(luminoHandler, storage, configParams);
+  };
+
+  return { callbacks, init, get, getConfig, destroy, reConfigure };
 };
 
 const instance = Lumino();
