@@ -11,7 +11,7 @@ import {
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
-import {isRnsDomain} from "../../utils/functions";
+import { isRnsDomain } from "../../utils/functions";
 import generateHashes from "../../utils/generateHashes";
 import {
   getDataToSignForLockedTransfer,
@@ -46,9 +46,7 @@ import {
 import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
 import { getRandomBN } from "../../utils/functions";
-import {
-  getRnsInstance
-} from "../functions/rns";
+import { getRnsInstance } from "../functions/rns";
 
 /**
  * Create a payment.
@@ -58,44 +56,40 @@ import {
  * @param {string} token_address -  The address of the lumino token
  */
 export const createPayment = params => async (dispatch, getState, lh) => {
- 
   let paymentData = {};
   try {
     const { getAddress, bigNumberify } = ethers.utils;
     const { token_address, amount } = params;
-    let {partner} = params;
+    let { partner } = params;
     const { address } = getState().client;
     const hashes = generateHashes();
     const { secrethash, hash: secret } = hashes;
 
     // Check if partner is a rns domain
-    if(isRnsDomain(partner)){
+    if (isRnsDomain(partner)) {
       const rns = getRnsInstance();
       partner = await rns.addr(partner);
-      console.log("Resolved address", partner);
-      if (partner === "0x0000000000000000000000000000000000000000"){
+      if (partner === "0x0000000000000000000000000000000000000000") {
         dispatch({
           type: PAYMENT_CREATION_ERROR,
           reason: "Selected RNS domain isnt registered`",
         });
-        console.log("Sep")
         return null;
       }
     }
+
+    paymentData = {
+      token: token_address,
+      partner,
+      amount,
+    };
 
     const channel = getLatestChannelByPartnerAndToken(partner, token_address);
     // Check for sufficient funds
     if (channel) {
       const actualBalance = bigNumberify(channel.offChainBalance);
-      if (actualBalance.lt(amount)) {
-        console.error("Insufficient funds for payment");
-        // TODO: Add a callback for this
-        dispatch({
-          type: PAYMENT_CREATION_ERROR,
-          reason: "Insufficient funds for payment`",
-        });
-        return null;
-      }
+      if (actualBalance.lt(amount))
+        throw new Error("Insufficient funds for payment");
     }
 
     const requestBody = {
@@ -105,14 +99,6 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       token_address,
       secrethash,
     };
-    paymentData = {
-      token: token_address,
-      partner,
-      amount,
-    };
-    // If we don't have enough balance
-    // if (actualBalance.lt(amount))
-    // throw new Error("Insufficient funds for payment");
 
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody);
@@ -168,9 +154,11 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       tokenNetworkAddress: dataToPut.message.token_network_address,
       chainId: dataToPut.message.chain_id,
     };
-    if (dataToPut.message.recipient !== dataToPut.message.target) {
+    // Recipient is present in mediated payments
+    const { recipient } = dataToPut.message;
+    if (recipient && recipient !== dataToPut.message.target) {
       paymentData.isMediated = true;
-      paymentData.mediator = getAddress(dataToPut.message.recipient);
+      paymentData.mediator = getAddress(recipient);
     }
 
     Lumino.callbacks.trigger(CALLBACKS.SENT_PAYMENT, paymentData);
