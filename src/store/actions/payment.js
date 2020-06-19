@@ -177,7 +177,6 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       paymentData,
       error
     );
-    console.error(error);
   }
 };
 
