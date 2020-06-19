@@ -1,6 +1,7 @@
 import Web3 from "web3";
 
 import { SigningHandler, Lumino } from "../../src";
+import { NOTIFIER_BASE_URL } from "../../src/config/notifierConstants";
 
 const rskEndpoint = "http://localhost:4444";
 const PRIV_KEY =
@@ -47,6 +48,29 @@ test("should initialize lumino", async () => {
   expect(lumino).toHaveProperty("actions");
   const lumino2 = Lumino.get();
   expect(lumino2).toHaveProperty("actions");
+});
+
+test("should reinitialize lumino", async () => {
+  const lumino = await Lumino.init(
+    signingHandler,
+    stubStorageHandler,
+    configParams
+  );
+
+  const defaultParams = {
+    rskEndpoint: "",
+    chainId: 0,
+    hubEndpoint: "http://localhost:5001/api/v1",
+    address: "",
+    apiKey: "",
+    notifierEndPoint: NOTIFIER_BASE_URL,
+  };
+
+  expect(lumino).toHaveProperty("actions");
+  const newParams = { ...defaultParams, ...configParams, testing: 123 };
+  await Lumino.reConfigure(signingHandler, stubStorageHandler, newParams);
+  const newConfig = Lumino.getConfig();
+  expect(newConfig).toStrictEqual(newParams);
 });
 
 test("should return internal state and not be empty", async () => {
