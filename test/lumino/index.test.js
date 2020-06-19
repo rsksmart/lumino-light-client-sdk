@@ -73,6 +73,17 @@ test("should reinitialize lumino", async () => {
   expect(newConfig).toStrictEqual(newParams);
 });
 
+test("store stops polling before destruction", async () => {
+  const lumino = await Lumino.init(
+    signingHandler,
+    stubStorageHandler,
+    configParams
+  );
+  const actionsSpy = jest.spyOn(lumino.actions, "stopAllPolling");
+  Lumino.destroy();
+  expect(actionsSpy).toBeCalled();
+});
+
 test("should return internal state and not be empty", async () => {
   expect(Lumino);
   const lumino = await Lumino.init(
