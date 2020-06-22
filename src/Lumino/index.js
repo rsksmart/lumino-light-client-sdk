@@ -92,10 +92,10 @@ const Lumino = () => {
    * Destroys the lumino instance
    */
   const destroy = () => {
-    if (store) actions.stopAllPolling();
-    actions = undefined;
-    store = undefined;
-    luminoFns = undefined;
+    if (store) Store.stopAllPollings(Actions);
+    actions = null;
+    store = null;
+    luminoFns = null;
     luminoConfig = {
       rskEndpoint: "",
       chainId: 0,
