@@ -7,6 +7,6 @@ export const stopNotifierPolling = () => dispatch =>
   dispatch({ type: STOP_NOTIFICATIONS_POLLING });
 
 export const stopAllPolling = () => dispatch => {
-  dispatch(stopHubPolling);
-  dispatch(stopNotifierPolling);
+  dispatch({ type: MESSAGE_POLLING_STOP });
+  dispatch({ type: STOP_NOTIFICATIONS_POLLING });
 };
