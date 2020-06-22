@@ -84,6 +84,16 @@ const getStore = () => store;
 
 const destroyStore = () => (store = null);
 
-const Store = { initStore, getStore, bindActions, destroyStore };
+const stopAllPollings = (actions) => {
+  store.dispatch(actions.stopAllPolling());
+};
+
+const Store = {
+  initStore,
+  getStore,
+  bindActions,
+  destroyStore,
+  stopAllPollings,
+};
 
 export default Store;
