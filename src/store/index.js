@@ -29,13 +29,15 @@ const defaultStorage = {
 };
 let storage = defaultStorage;
 
-const setApiKeyFromStore = ({ getState }) => {
-  // We set the api key if teh redux store has one, if not, we fallback to the one from the developer
-  const api_key = getState().client.apiKey;
+const setApiKeyFromStore = (store, configApiKey) => {
+  let api_key = configApiKey;
+  if (api_key) return (client.defaults.headers = { "x-api-key": api_key });
+  // We set the api key of the store if the developer does not provide one
+  api_key = store.getState().client.apiKey;
   if (api_key) client.defaults.headers = { "x-api-key": api_key };
 };
 
-const initStore = async (storageImpl, luminoHandler) => {
+const initStore = async (storageImpl, luminoHandler, configApiKey) => {
   if (storageImpl) storage = storageImpl;
   const dataFromStorage = await storage.getLuminoData();
   let data = {};
@@ -59,10 +61,10 @@ const initStore = async (storageImpl, luminoHandler) => {
       )
     )
   );
-  setApiKeyFromStore(store);
+  setApiKeyFromStore(store, configApiKey);
   observableMiddleware.run(epics);
   sagaMiddleware.run(rootSaga);
-  if (store.getState().client.apiKey)
+  if (client.defaults.headers["x-api-key"])
     store.dispatch({
       type: MESSAGE_POLLING_START,
     });
