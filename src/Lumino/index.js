@@ -29,7 +29,12 @@ const Lumino = () => {
    */
   const init = async (luminoHandler, storage, configParams) => {
     if (!store) {
-      store = await Store.initStore(storage, luminoHandler);
+      luminoConfig = { ...luminoConfig, ...configParams };
+      store = await Store.initStore(
+        storage,
+        luminoHandler,
+        luminoConfig.apiKey
+      );
       actions = Store.bindActions(Actions, store.dispatch);
       // Set address
       store.dispatch({
@@ -44,7 +49,6 @@ const Lumino = () => {
       const changesHook = fn => store.subscribe(fn);
       const luminoInternalState = store.getState();
       const getLuminoInternalState = () => store.getState();
-      luminoConfig = { ...luminoConfig, ...configParams };
       client.defaults.baseURL = luminoConfig.hubEndpoint;
       notifier.defaults.baseURL = luminoConfig.notifierEndPoint;
       actions = { ...actions };
