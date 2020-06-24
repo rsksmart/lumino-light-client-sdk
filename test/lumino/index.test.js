@@ -2,6 +2,7 @@ import Web3 from "web3";
 
 import { SigningHandler, Lumino } from "../../src";
 import { NOTIFIER_BASE_URL } from "../../src/config/notifierConstants";
+import Store from "../../src/store";
 
 const rskEndpoint = "http://localhost:4444";
 const PRIV_KEY =
@@ -74,12 +75,12 @@ test("should reinitialize lumino", async () => {
 });
 
 test("store stops polling before destruction", async () => {
-  const lumino = await Lumino.init(
+  await Lumino.init(
     signingHandler,
     stubStorageHandler,
     configParams
   );
-  const actionsSpy = jest.spyOn(lumino.actions, "stopAllPolling");
+  const actionsSpy = jest.spyOn(Store, "stopAllPollings");
   Lumino.destroy();
   expect(actionsSpy).toBeCalled();
 });
