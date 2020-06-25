@@ -33,8 +33,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
     console.log("Resolved address", partner);
     if (partner === "0x0000000000000000000000000000000000000000"){
       Lumino.callbacks.trigger(CALLBACKS.FAILED_OPEN_CHANNEL, channel, "RNS domain isnt registered");
-      console.error(error);
-    }else{
+    } else{
       params.partner = partner;
     }
   }
@@ -85,6 +84,8 @@ export const openChannel = params => async (dispatch, getState, lh) => {
       channel: {
         ...res.data,
         token_symbol,
+        hubAnswered: true,
+        openedByUser: true,
         token_name,
         sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
       },
