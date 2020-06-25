@@ -49,8 +49,8 @@ describe("test onboarding behaviour", () => {
 
 
     expect(client.defaults.headers["x-api-key"]).toBe(mockApiKey);
-    expect(actions.length).toBe(4);
-    expect(actions[2]).toStrictEqual({ type: MESSAGE_POLLING_START });
+    expect(actions.length).toBe(6);
+    expect(actions[4]).toStrictEqual({ type: MESSAGE_POLLING_START });
   });
 
   test("should trigger failure on non successfull onboarding", async () => {

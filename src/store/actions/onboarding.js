@@ -8,10 +8,13 @@ import {
 } from "../actions/types";
 import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
+import { stopAllPolling } from "./polling";
 
 export const onboardingClient = () => async (dispatch, getState, lh) => {
   const address = getState().client.address;
   try {
+    dispatch(stopAllPolling());
+    client.defaults.headers = {};
     const urlOnboard = "light_clients/matrix/credentials";
     const onboardReq = await client.get(urlOnboard, { params: { address } });
     // We get the data
