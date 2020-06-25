@@ -26,10 +26,11 @@ const getPaymentChannelKey = data => {
   return `${channelId}-${token}`;
 };
 
-const createChannel = (state, channel, key) => ({
+const createChannel = (state, channel, key, hubAnswered = false) => ({
   ...state,
   [key]: {
     ...channel,
+    hubAnswered,
     offChainBalance: "0",
     receivedTokens: "0",
     sentTokens: "0",
@@ -76,8 +77,13 @@ const channel = (state = initialState, action) => {
     case OPEN_CHANNEL: {
       const nChannelKey = getChannelKey(action.channel);
       // We don't open if it is already there
-      if (state[nChannelKey]) return state;
-      const newChannels = createChannel(state, action.channel, nChannelKey);
+      if (state[nChannelKey]) {
+        const channelWithResponse = {...state[nChannelKey],
+        hubAnswered: true
+        };
+        return {...state, nChannelKey: channelWithResponse};
+      }
+      const newChannels = createChannel(state, action.channel, nChannelKey, true);
       return newChannels;
     }
 
@@ -107,7 +113,17 @@ const channel = (state = initialState, action) => {
       const { numberOfNotifiers } = action;
 
       // If we have the half + 1 votes of approval, we open the channel
-      if (openVotesQuantity >= Math.ceil(numberOfNotifiers / 2))
+      // Also we need the hub to have answered the request and we opened the channel
+
+      const {openedByUser} = ovChannel[ovChannelKey];
+      // If user is the opener the hub mas have answered, if not we can open it with the votes alone.
+      const canBeOpened =
+        !openedByUser || (openedByUser && ovChannel[ovChannelKey].hubAnswered);
+
+      // Needed votes to be opened
+      const neededVotes = Math.ceil(numberOfNotifiers / 2); 
+
+      if ((openVotesQuantity >= neededVotes) && canBeOpened)
         ovChannel[ovChannelKey].sdk_status = SDK_CHANNEL_STATUS.CHANNEL_OPENED;
 
       return ovChannel;
