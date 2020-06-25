@@ -79,7 +79,8 @@ const channel = (state = initialState, action) => {
       // We don't open if it is already there
       if (state[nChannelKey]) {
         const channelWithResponse = {...state[nChannelKey],
-        hubAnswered: true
+        hubAnswered: true,
+        openedByUser: true
         };
         return {...state, [nChannelKey]: channelWithResponse};
       }
