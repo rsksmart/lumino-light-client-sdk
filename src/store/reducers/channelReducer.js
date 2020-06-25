@@ -81,7 +81,7 @@ const channel = (state = initialState, action) => {
         const channelWithResponse = {...state[nChannelKey],
         hubAnswered: true
         };
-        return {...state, nChannelKey: channelWithResponse};
+        return {...state, [nChannelKey]: channelWithResponse};
       }
       const newChannels = createChannel(state, action.channel, nChannelKey, true);
       return newChannels;
