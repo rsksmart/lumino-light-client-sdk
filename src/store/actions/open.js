@@ -3,10 +3,8 @@ import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { createOpenTx } from "../../scripts/open";
-import {isRnsDomain} from "../../utils/functions";
-import {
-  getRnsInstance
-} from "../functions/rns";
+import { isRnsDomain } from "../../utils/functions";
+import { getRnsInstance } from "../functions/rns";
 import {
   getTokenNetworkByTokenAddress,
   requestTokenNameAndSymbol,
@@ -14,6 +12,8 @@ import {
 import { requestTokenNetworkFromTokenAddress } from "./tokens";
 import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
+import { TIMEOUT_MAP, ONE_MINUTE_IN_MS } from "../../utils/timeoutValues";
+import Axios from "axios";
 
 /**
  * Open a channel.
@@ -27,13 +27,17 @@ export const openChannel = params => async (dispatch, getState, lh) => {
   let { partner } = params;
 
   // Check if partner is a rns domain
-  if(isRnsDomain(partner)){
+  if (isRnsDomain(partner)) {
     const rns = getRnsInstance();
     partner = await rns.addr(partner);
     console.log("Resolved address", partner);
-    if (partner === "0x0000000000000000000000000000000000000000"){
-      Lumino.callbacks.trigger(CALLBACKS.FAILED_OPEN_CHANNEL, channel, "RNS domain isnt registered");
-    } else{
+    if (partner === "0x0000000000000000000000000000000000000000") {
+      Lumino.callbacks.trigger(
+        CALLBACKS.FAILED_OPEN_CHANNEL,
+        channel,
+        "RNS domain isnt registered"
+      );
+    } else {
       params.partner = partner;
     }
   }
@@ -75,8 +79,31 @@ export const openChannel = params => async (dispatch, getState, lh) => {
 
     requestBody.signed_tx = signed_tx;
 
+    // Timeout setup
+    const { chainId } = Lumino.getConfig().chainId;
+    const currentTimeout = TIMEOUT_MAP[chainId] || TIMEOUT_MAP[31];
+    // Cancellation setup
+    const CancelToken = Axios.CancelToken;
+    const source = CancelToken.source();
+
+    const timeoutId = setTimeout(() => {
+      Lumino.callbacks.trigger(
+        CALLBACKS.TIMED_OUT_OPEN_CHANNEL,
+        channel,
+        new Error("The operation took too much time")
+      );
+      source.cancel();
+    }, currentTimeout + 50);
+
     Lumino.callbacks.trigger(CALLBACKS.REQUEST_OPEN_CHANNEL, channel);
-    const res = await client.put("light_channels", { ...requestBody });
+
+    const res = await client.put(
+      "light_channels",
+      { ...requestBody },
+      { cancelToken: source.token }
+    );
+
+    clearTimeout(timeoutId);
 
     dispatch({
       type: OPEN_CHANNEL,
