@@ -12,7 +12,7 @@ import {
 import { requestTokenNetworkFromTokenAddress } from "./tokens";
 import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
-import { TIMEOUT_MAP, ONE_MINUTE_IN_MS } from "../../utils/timeoutValues";
+import { TIMEOUT_MAP } from "../../utils/timeoutValues";
 import Axios from "axios";
 
 /**
@@ -93,7 +93,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
         new Error("The operation took too much time")
       );
       source.cancel();
-    }, currentTimeout + 50);
+    }, currentTimeout);
 
     Lumino.callbacks.trigger(CALLBACKS.REQUEST_OPEN_CHANNEL, channel);
 
