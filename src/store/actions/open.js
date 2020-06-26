@@ -81,7 +81,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
 
     // Timeout setup
     const { chainId } = Lumino.getConfig().chainId;
-    const currentTimeout = TIMEOUT_MAP[chainId] || TIMEOUT_MAP[31];
+    const currentTimeout = TIMEOUT_MAP[chainId] || TIMEOUT_MAP[30];
     // Cancellation setup
     const CancelToken = Axios.CancelToken;
     const source = CancelToken.source();
