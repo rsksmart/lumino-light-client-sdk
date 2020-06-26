@@ -5,7 +5,6 @@ export const ONE_MINUTE_IN_MS = 60000;
  */
 export const TIMEOUT_MAP = {
   33: ONE_MINUTE_IN_MS * 5,
-  32: ONE_MINUTE_IN_MS * 30,
   31: ONE_MINUTE_IN_MS * 30,
   30: ONE_MINUTE_IN_MS * 30,
 };
