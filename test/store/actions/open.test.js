@@ -18,6 +18,8 @@ const address = "0x920984391853d81CCeeC41AdB48a45D40594A0ec";
 const randomPartner = "0xB59ef6015d0e5d46AC9515dcd3f8b928Bb7F87d3";
 const randomAddress = "0xe3066B701f4a3eC8EcAA6D63ADc45180e5022bA3";
 
+jest.useFakeTimers();
+
 describe("test open channel action", () => {
   const spyOpen = jest.spyOn(openScripts, "createOpenTx");
   const spyResolver = jest.spyOn(signatureResolver, "default");
@@ -84,6 +86,8 @@ describe("test open channel action", () => {
     const expectedAction = {
       channel: {
         channel_identifier: 1,
+        hubAnswered: true,
+        openedByUser: true,
         sdk_status: "CHANNEL_AWAITING_NOTIFICATION",
         token_name: "LUMINO",
         token_symbol: "LUM",

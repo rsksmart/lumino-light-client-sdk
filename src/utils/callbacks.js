@@ -17,6 +17,7 @@ const FAILED_DEPOSIT_CHANNEL = "FailedDepositChannel";
 const FAILED_CLOSE_CHANNEL = "FailedCloseChannel";
 const FAILED_PAYMENT = "FailedPayment";
 const FAILED_CREATE_PAYMENT = "FailedCreatePayment";
+const TIMED_OUT_OPEN_CHANNEL = "TimedOutOpenChannel";
 
 export const CALLBACKS = {
   RECEIVED_PAYMENT,
@@ -38,6 +39,7 @@ export const CALLBACKS = {
   FAILED_PAYMENT,
   FAILED_CREATE_PAYMENT,
   CLIENT_ONBOARDING_FAILURE,
+  TIMED_OUT_OPEN_CHANNEL,
 };
 
 const Callbacks = () => {

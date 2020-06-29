@@ -330,11 +330,16 @@ const manageNewChannel = async (notification, notifier) => {
   );
   const selfAddress = getState().client.address;
 
+  // NOTE: The opener of the channel is the value[1] which is the first address
+
   let partner_address = getAddress(values[1].value);
   // We check it to make sure to get the correct partner
+  let openedByUser = true;
 
-  if (partner_address === getAddress(selfAddress))
+  if (partner_address === getAddress(selfAddress)) {
     partner_address = getAddress(values[2].value);
+    openedByUser = false;
+  }
 
   if (!existingChannel) {
     // We need the structure there to give it votes, if there isn't one, we create one
@@ -344,6 +349,7 @@ const manageNewChannel = async (notification, notifier) => {
 
     const channel = createChannelFromNotification({
       ...values,
+      openedByUser,
       channel_identifier,
       token_network_identifier,
       token_name,
@@ -389,6 +395,7 @@ const createChannelFromNotification = data => ({
   token_address: data.token_address,
   token_name: data.token_name,
   token_symbol: data.token_symbol,
+  openedByUser: data.openedByUser,
   balance: "0",
   state: "opened",
   total_deposit: "0",
