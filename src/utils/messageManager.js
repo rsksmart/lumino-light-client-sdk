@@ -29,6 +29,7 @@ import {
   recreatePaymentForFailure,
   putLockExpired,
   addExpiredPaymentMessage,
+  createPayment,
 } from "../store/actions/payment";
 import { saveLuminoData } from "../store/actions/storage";
 import {
@@ -98,6 +99,9 @@ const manageNonPaymentMessages = messages => {
       case MessageType.DELIVERED:
       case MessageType.PROCESSED: {
         return manageDeliveredAndProcessed(msg, payment, "message");
+      }
+      case MessageType.REFUND_TRANSFER: {
+        return manageRefundTransfer(msg, payment);
       }
       case MessageType.LOCKED_TRANSFER: {
         return messagesToProcessLast.push(msg);
@@ -211,6 +215,43 @@ const manageLockExpired = (msgData, payment) => {
   // The payment was sent to the LC
   dispatch(putDelivered(message, paymentAux, message_order + 1));
   return dispatch(putProcessed(message, paymentAux, 3));
+};
+
+const manageRefundTransfer = async (msgData, payment) => {
+  const store = Store.getStore();
+  const { dispatch } = store;
+  const { message, payment_id, message_order } = msgData;
+
+  const paymentAux = getPayment(payment_id);
+
+  if(paymentAux.failureReason) return null;
+  if (!paymentAux.failureReason)
+    dispatch(
+      setPaymentFailed(
+        payment_id,
+        PENDING_PAYMENT,
+        FAILURE_REASONS.REFUND_TRANSFER
+      )
+    );
+
+
+  // We ACK that we have received and proccessed this.
+  await dispatch(putDelivered(message, paymentAux, message_order + 1));
+  await dispatch(putProcessed(message, paymentAux, 3));
+
+  const {getAddress} = ethers.utils;
+
+  const previousSecretHash = payment.secret_hash;
+
+  const newPaymentParams = {
+    previousSecretHash,
+    amount: payment.amount,
+    address: getAddress(payment.initiator),
+    partner: getAddress(payment.partner),
+    token_address: payment.token,
+  };
+
+  return dispatch(createPayment(newPaymentParams));
 };
 
 const manageLockedTransfer = (message, payment, messageKey) => {
