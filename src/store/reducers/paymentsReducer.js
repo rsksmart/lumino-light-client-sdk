@@ -8,6 +8,8 @@ import {
   SET_PAYMENT_FAILED,
   PUT_LOCK_EXPIRED,
   ADD_EXPIRED_PAYMENT_MESSAGE,
+  STORE_REFUND_TRANSFER,
+  ADD_REFUNDED_PAYMENT_MESSAGE,
 } from "../actions/types";
 
 const initialState = {
@@ -104,6 +106,16 @@ const paymentsReducer = (state = initialState, action) => {
       delete newState[paymentState.toLowerCase()][paymentId];
       return newState;
     }
+    case STORE_REFUND_TRANSFER: {
+      const { refundTransfer } = action;
+      const newState = cloneState(state);
+      newState.failed[paymentId].refund = {
+        messages: { 1: refundTransfer },
+        message_order: 1,
+      };
+
+      return newState;
+    }
     case PUT_LOCK_EXPIRED: {
       const { lockExpired } = action;
       const newState = cloneState(state);
@@ -126,6 +138,20 @@ const paymentsReducer = (state = initialState, action) => {
         newState.failed[paymentId].expiration.messages[messageOrder] = message;
         newState.failed[paymentId].expiration.message_order = messageOrder;
       }
+      return newState;
+    }
+    case ADD_REFUNDED_PAYMENT_MESSAGE: {
+      const { messageOrder, message } = action;
+      const newState = cloneState(state);
+      if(!newState.failed[paymentId].refund) {
+        newState.failed[paymentId].refund = {
+          messages: {},
+          messageOrder: 0
+        };
+      }
+      newState.failed[paymentId].refund.messages[messageOrder] = message;
+      newState.failed[paymentId].refund.message_order = messageOrder;
+
       return newState;
     }
     default:
