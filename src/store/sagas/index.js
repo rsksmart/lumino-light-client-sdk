@@ -15,7 +15,6 @@ import {
   OPEN_CHANNEL_VOTE,
   CLOSE_CHANNEL_VOTE,
   SET_PAYMENT_FAILED,
-  CLIENT_ONBOARDING_FAILURE,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
