@@ -106,7 +106,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
 
     clearTimeout(timeoutId);
 
-    const numberOfNotifiers = getNumberOfNotifiers();
+    const numberOfNotifiers = Object.keys(getState().notifier.notifiers).length;
 
     dispatch({
       type: OPEN_CHANNEL,
