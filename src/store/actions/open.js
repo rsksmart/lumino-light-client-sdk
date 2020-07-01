@@ -14,6 +14,7 @@ import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
 import { TIMEOUT_MAP } from "../../utils/timeoutValues";
 import Axios from "axios";
+import { getNumberOfNotifiers } from "../functions/notifiers";
 
 /**
  * Open a channel.
@@ -105,9 +106,12 @@ export const openChannel = params => async (dispatch, getState, lh) => {
 
     clearTimeout(timeoutId);
 
+    const numberOfNotifiers = Object.keys(getState().notifier.notifiers).length;
+
     dispatch({
       type: OPEN_CHANNEL,
       channelId: res.data.channel_identifier,
+      numberOfNotifiers,
       channel: {
         ...res.data,
         token_symbol,

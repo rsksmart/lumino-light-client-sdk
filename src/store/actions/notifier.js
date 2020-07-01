@@ -330,14 +330,14 @@ const manageNewChannel = async (notification, notifier) => {
   );
   const selfAddress = getState().client.address;
 
-  // NOTE: The opener of the channel is the value[1] which is the first address
+  // NOTE: The opener of the channel is the value[2] which is the first address
 
-  let partner_address = getAddress(values[1].value);
+  let partner_address = getAddress(values[2].value);
   // We check it to make sure to get the correct partner
   let openedByUser = true;
 
   if (partner_address === getAddress(selfAddress)) {
-    partner_address = getAddress(values[2].value);
+    partner_address = getAddress(values[1].value);
     openedByUser = false;
   }
 

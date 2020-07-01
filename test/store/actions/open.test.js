@@ -36,6 +36,9 @@ describe("test open channel action", () => {
     client: {
       address,
     },
+    notifier: {
+      notifiers: {}
+    }
   };
 
   afterEach(() => {
@@ -93,6 +96,7 @@ describe("test open channel action", () => {
         token_symbol: "LUM",
       },
       channelId: 1,
+      numberOfNotifiers: 0,
       type: "OPEN_CHANNEL",
     };
     expect(actions[0]).toStrictEqual(expectedAction);
