@@ -9,6 +9,7 @@ import {
   FAILURE_REASONS,
   PENDING_PAYMENT,
   EXPIRED,
+  REFUND_TRANSFER,
 } from "../config/paymentConstants";
 import {
   getPendingPaymentById,
@@ -224,7 +225,7 @@ const manageRefundTransfer = async (msgData, payment) => {
 
   const paymentAux = getPayment(payment_id);
 
-  if(paymentAux.failureReason) return null;
+  if (paymentAux.failureReason) return null;
   if (!paymentAux.failureReason)
     dispatch(
       setPaymentFailed(
@@ -234,12 +235,11 @@ const manageRefundTransfer = async (msgData, payment) => {
       )
     );
 
-
   // We ACK that we have received and proccessed this.
   await dispatch(putDelivered(message, paymentAux, message_order + 1));
   await dispatch(putProcessed(message, paymentAux, 3));
 
-  const {getAddress} = ethers.utils;
+  const { getAddress } = ethers.utils;
 
   const previousSecretHash = payment.secret_hash;
 
@@ -339,6 +339,7 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
   const { message_order } = msg;
   let previousMessage = null;
   const isExpired = failureReason === EXPIRED;
+  const isRefunded = failureReason === REFUND_TRANSFER;
 
   // Message already processed?
   if (!isExpired && payment.messages[message_order]) return null;
@@ -350,6 +351,8 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
   if (failureReason) {
     if (isExpired)
       previousMessage = payment.expiration.messages[message_order - 1];
+    if (isRefunded)
+      previousMessage = payment.refund.messages[message_order - 1];
   }
 
   if (!previousMessage) {
