@@ -71,6 +71,24 @@ const addVote = (channel, vote, voteType) => {
   }
 };
 
+const checkIfChannelCanBeOpened = (channel, numberOfNotifiers) => {
+  // If we have the half + 1 votes of approval, we open the channel
+  // Also we need the hub to have answered the request and we opened the channel
+  const openVotesQuantity = Object.values(channel.votes.open).filter(v => v)
+    .length;
+
+  const { openedByUser, hubAnswered } = channel;
+  // If user is the opener the hub mas have answered, if not we can open it with the votes alone.
+  const canBeOpened = !openedByUser || (openedByUser && hubAnswered);
+
+  // Needed votes to be opened
+  const neededVotes = Math.ceil(numberOfNotifiers / 2);
+
+  if (openVotesQuantity >= neededVotes && canBeOpened)
+    channel.sdk_status = SDK_CHANNEL_STATUS.CHANNEL_OPENED;
+  return { ...channel };
+};
+
 const channel = (state = initialState, action) => {
   const { bigNumberify } = ethers.utils;
   switch (action.type) {
@@ -78,11 +96,17 @@ const channel = (state = initialState, action) => {
       const nChannelKey = getChannelKey(action.channel);
       // We don't open if it is already there
       if (state[nChannelKey]) {
-        const channelWithResponse = {
+        let channelWithResponse = {
           ...state[nChannelKey],
           hubAnswered: true,
           openedByUser: true,
         };
+        const { numberOfNotifiers } = action;
+        
+        channelWithResponse = checkIfChannelCanBeOpened(
+          channelWithResponse,
+          numberOfNotifiers
+        );
         return { ...state, [nChannelKey]: channelWithResponse };
       }
       const newChannels = createChannel(
@@ -113,25 +137,12 @@ const channel = (state = initialState, action) => {
         VOTE_TYPE.OPEN_CHANNEL_VOTE
       );
 
-      // Check for valid votes and quantity of notifiers
-      const openVotesQuantity = Object.values(
-        ovChannel[ovChannelKey].votes.open
-      ).filter(v => v).length;
       const { numberOfNotifiers } = action;
 
-      // If we have the half + 1 votes of approval, we open the channel
-      // Also we need the hub to have answered the request and we opened the channel
-
-      const { openedByUser } = ovChannel[ovChannelKey];
-      // If user is the opener the hub mas have answered, if not we can open it with the votes alone.
-      const canBeOpened =
-        !openedByUser || (openedByUser && ovChannel[ovChannelKey].hubAnswered);
-
-      // Needed votes to be opened
-      const neededVotes = Math.ceil(numberOfNotifiers / 2);
-
-      if (openVotesQuantity >= neededVotes && canBeOpened)
-        ovChannel[ovChannelKey].sdk_status = SDK_CHANNEL_STATUS.CHANNEL_OPENED;
+      ovChannel[ovChannelKey] = checkIfChannelCanBeOpened(
+        ovChannel[ovChannelKey],
+        numberOfNotifiers
+      );
 
       return ovChannel;
     }
