@@ -262,7 +262,10 @@ const channel = (state = initialState, action) => {
     case SET_CHANNEL_AWAITING_CLOSE: {
       const channelKey = getChannelKey(action.channel); 
       const newState = { ...state };
-      newState[channelKey].sdk_status = CHANNEL_WAITING_FOR_CLOSE;
+      newState[channelKey] = {
+        ...newState[channelKey],
+        sdk_status: CHANNEL_WAITING_FOR_CLOSE,
+      };
       return newState;
     }
     default:
