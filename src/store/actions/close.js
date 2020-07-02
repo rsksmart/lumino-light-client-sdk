@@ -37,10 +37,21 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
     const url = `light_channels/${tokenAddress}/${address}/${partner}`;
 
     // Set the channel as waiting for close
-    const actionToSetAwaitingClose = {type: SET_CHANNEL_AWAITING_CLOSE, channel};
+    const actionToSetAwaitingClose = {
+      type: SET_CHANNEL_AWAITING_CLOSE,
+      channel,
+    };
     dispatch(actionToSetAwaitingClose);
 
-    Lumino.callbacks.trigger(CALLBACKS.REQUEST_CLOSE_CHANNEL, channel);
+    const channelAwaitingClose = getChannelByIdAndToken(
+      channelIdentifier,
+      tokenAddress
+    );
+
+    Lumino.callbacks.trigger(
+      CALLBACKS.REQUEST_CLOSE_CHANNEL,
+      channelAwaitingClose
+    );
     const res = await client.patch(url, { ...requestBody });
 
     dispatch({
