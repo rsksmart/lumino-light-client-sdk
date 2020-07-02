@@ -14,6 +14,7 @@ const SENT_PAYMENT = "SentPayment";
 const SIGNING_FAIL = "SigningFail";
 const FAILED_OPEN_CHANNEL = "FailedOpenChannel";
 const FAILED_DEPOSIT_CHANNEL = "FailedDepositChannel";
+const DEPOSIT_CHANNEL_VALUE_TOO_LOW = "DepositChannelValueTooLow";
 const FAILED_CLOSE_CHANNEL = "FailedCloseChannel";
 const FAILED_PAYMENT = "FailedPayment";
 const FAILED_CREATE_PAYMENT = "FailedCreatePayment";
@@ -40,6 +41,7 @@ export const CALLBACKS = {
   FAILED_CREATE_PAYMENT,
   CLIENT_ONBOARDING_FAILURE,
   TIMED_OUT_OPEN_CHANNEL,
+  DEPOSIT_CHANNEL_VALUE_TOO_LOW,
 };
 
 const Callbacks = () => {
