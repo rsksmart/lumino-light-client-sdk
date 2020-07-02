@@ -1,4 +1,8 @@
-import { DELETE_CHANNEL_FROM_SDK, SET_CHANNEL_CLOSED } from "./types";
+import {
+  DELETE_CHANNEL_FROM_SDK,
+  SET_CHANNEL_CLOSED,
+  SET_CHANNEL_AWAITING_CLOSE,
+} from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 
@@ -31,6 +35,10 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
       state: "closed",
     };
     const url = `light_channels/${tokenAddress}/${address}/${partner}`;
+
+    // Set the channel as waiting for close
+    const actionToSetAwaitingClose = {type: SET_CHANNEL_AWAITING_CLOSE, channel};
+    dispatch(actionToSetAwaitingClose);
 
     Lumino.callbacks.trigger(CALLBACKS.REQUEST_CLOSE_CHANNEL, channel);
     const res = await client.patch(url, { ...requestBody });
