@@ -8,7 +8,6 @@ import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
 import BigNumber from "bignumber.js";
 
-
 /**
  * Create a deposit.
  * @param {string} unsigned_approval_tx - An unsigned approval TX
@@ -21,8 +20,7 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
   const { partner, channelId, tokenAddress } = params;
   let { amount } = params;
   const channel = getChannelByIdAndToken(channelId, tokenAddress);
-  amount = new BigNumber().plus(channel.total_deposit).toString();
-
+  amount = new BigNumber(amount).plus(channel.total_deposit).toString();
   try {
     const clientAddress = getState().client.address;
 
