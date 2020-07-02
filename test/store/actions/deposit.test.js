@@ -121,4 +121,47 @@ describe("test close deposit action", () => {
     };
     expect(actions[0]).toStrictEqual(expectedAction);
   });
+
+  test("should fail and trigger callback on error in deposit", async () => {
+    const store = mockStore(state);
+
+    // Spies
+    spyGetState.mockImplementation(() => store.getState());
+    spyDepositApprovalTX.mockImplementation(() => "0x123");
+    spyDepositTX.mockImplementation(() => "0x123456");
+    spyResolver.mockResolvedValue("0x123456");
+    const failedMock = new Error("Something has happened");
+    client.patch.mockRejectedValue(failedMock);
+
+    await store.dispatch(depositActions.createDeposit(params));
+
+    expect(spyCallbacks).toBeCalledTimes(2);
+    const actionData = {
+      partner_address: randomPartner,
+      creator_address: address,
+      token_address: randomAddress,
+      total_deposit: "10000",
+      offChainBalance: "1000",
+      amount: "1000001000",
+    };
+    expect(spyCallbacks).toHaveBeenNthCalledWith(
+      1,
+      CALLBACKS.REQUEST_DEPOSIT_CHANNEL,
+      actionData
+    );
+
+    const expectedFailure = {
+      creator_address: address,
+      offChainBalance: "1000",
+      partner_address: randomPartner,
+      token_address: randomAddress,
+      total_deposit: "10000",
+    };
+    expect(spyCallbacks).toHaveBeenNthCalledWith(
+      2,
+      CALLBACKS.FAILED_DEPOSIT_CHANNEL,
+      expectedFailure,
+      failedMock
+    );
+  });
 });
