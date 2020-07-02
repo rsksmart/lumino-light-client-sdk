@@ -6,7 +6,11 @@ import * as closeActions from "../../../src/store/actions/close";
 import configureMockStore from "redux-mock-store";
 import thunk from "redux-thunk";
 import * as stateFunctions from "../../../src/store/functions/state";
-import { DELETE_CHANNEL_FROM_SDK } from "../../../src/store/actions/types";
+import {
+  DELETE_CHANNEL_FROM_SDK,
+  SET_CHANNEL_AWAITING_CLOSE,
+  SET_CHANNEL_CLOSED,
+} from "../../../src/store/actions/types";
 
 // Mock store
 const lh = {
@@ -31,6 +35,7 @@ describe("test close channel action", () => {
         partner_address: randomPartner,
         creator_address: address,
         token_address: randomAddress,
+        channel_identifier: 1,
       },
     },
   };
@@ -63,21 +68,35 @@ describe("test close channel action", () => {
     await store.dispatch(closeActions.closeChannel(params));
 
     expect(spyCallbacks).toHaveBeenCalledWith(CALLBACKS.REQUEST_CLOSE_CHANNEL, {
+      channel_identifier: 1,
       partner_address: randomPartner,
       creator_address: address,
       token_address: randomAddress,
     });
+
     const actions = store.getActions();
 
-    expect(actions.length).toBe(1);
-    const expectedAction = {
+    expect(actions.length).toBe(2);
+
+    const expectedActionOne = {
+      channel: {
+        channel_identifier: 1,
+        partner_address: randomPartner,
+        creator_address: address,
+        token_address: randomAddress,
+      },
+      type: SET_CHANNEL_AWAITING_CLOSE,
+    };
+    const expectedActionTwo = {
       channel: {
         channel_identifier: 1,
         sdk_status: "CHANNEL_WAITING_FOR_CLOSE",
       },
-      type: "SET_CHANNEL_CLOSED",
+      type: SET_CHANNEL_CLOSED,
     };
-    expect(actions[0]).toStrictEqual(expectedAction);
+
+    expect(actions[0]).toStrictEqual(expectedActionOne);
+    expect(actions[1]).toStrictEqual(expectedActionTwo);
   });
 
   test("should trigger error callback on error (request to HUB)", async () => {
@@ -95,6 +114,7 @@ describe("test close channel action", () => {
 
     expect(spyCallbacks).toBeCalledTimes(2);
     const channelData = {
+      channel_identifier: 1,
       partner_address: randomPartner,
       creator_address: address,
       token_address: randomAddress,

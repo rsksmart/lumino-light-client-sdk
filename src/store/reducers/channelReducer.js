@@ -7,9 +7,10 @@ import {
   OPEN_CHANNEL_VOTE,
   DELETE_CHANNEL_FROM_SDK,
   CLOSE_CHANNEL_VOTE,
+  SET_CHANNEL_AWAITING_CLOSE,
 } from "../actions/types";
 import { ethers } from "ethers";
-import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
+import { SDK_CHANNEL_STATUS, CHANNEL_WAITING_FOR_CLOSE } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
 
 const initialState = {};
@@ -256,6 +257,12 @@ const channel = (state = initialState, action) => {
       if (openVotesQuantity >= Math.ceil(numberOfNotifiers / 2))
         newState[channelKey].sdk_status = SDK_CHANNEL_STATUS.CHANNEL_CLOSED;
 
+      return newState;
+    }
+    case SET_CHANNEL_AWAITING_CLOSE: {
+      const channelKey = getChannelKey(action.channel); 
+      const newState = { ...state };
+      newState[channelKey].sdk_status = CHANNEL_WAITING_FOR_CLOSE;
       return newState;
     }
     default:
