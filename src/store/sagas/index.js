@@ -15,6 +15,7 @@ import {
   OPEN_CHANNEL_VOTE,
   CLOSE_CHANNEL_VOTE,
   SET_PAYMENT_FAILED,
+  OPEN_CHANNEL,
 } from "../actions/types";
 import { saveLuminoData } from "../actions/storage";
 import { Lumino } from "../../index";
@@ -242,6 +243,7 @@ export default function* rootSaga() {
   yield takeEvery(CREATE_PAYMENT, workCreatePayment);
   yield takeEvery(SET_PAYMENT_COMPLETE, workPaymentComplete);
   yield takeEvery(RECEIVED_PAYMENT, workReceivedPayment);
+  yield takeEvery(OPEN_CHANNEL, workOpenChannel);
   yield takeEvery(NEW_DEPOSIT, workDepositChannel);
   yield takeEvery(NOTIFICATIONS_POLLING, workNotificationPolling);
   yield takeEvery(REQUEST_CLIENT_ONBOARDING, workRequestClientOnboarding);
