@@ -231,7 +231,11 @@ export function* workClientOnboardingSuccess({ address }) {
 }
 
 export function* workOpenChannel({ channel }) {
-  return yield Lumino.callbacks.trigger(CALLBACKS.OPEN_CHANNEL, channel);
+  const channels = yield select(getChannels);
+  const channelKey = getChannelKey(channel);
+  const channelFinal = channels[channelKey];
+  if (channelFinal.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_OPENED)
+    return yield Lumino.callbacks.trigger(CALLBACKS.OPEN_CHANNEL, channel);
 }
 
 export default function* rootSaga() {
