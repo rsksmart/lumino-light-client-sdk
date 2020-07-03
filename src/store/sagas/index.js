@@ -235,7 +235,7 @@ export function* workOpenChannel({ channel }) {
   const channelKey = getChannelKey(channel);
   const channelFinal = channels[channelKey];
   if (channelFinal.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_OPENED)
-    return yield Lumino.callbacks.trigger(CALLBACKS.OPEN_CHANNEL, channel);
+    return yield Lumino.callbacks.trigger(CALLBACKS.OPEN_CHANNEL, channelFinal);
 }
 
 export default function* rootSaga() {
