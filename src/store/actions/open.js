@@ -1,4 +1,4 @@
-import { OPEN_CHANNEL } from "./types";
+import { OPEN_CHANNEL, ADD_CHANNEL_WAITING_FOR_OPENING } from "./types";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -14,7 +14,7 @@ import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
 import { TIMEOUT_MAP } from "../../utils/timeoutValues";
 import Axios from "axios";
-import { getNumberOfNotifiers } from "../functions/notifiers";
+
 
 /**
  * Open a channel.
@@ -96,6 +96,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
       source.cancel();
     }, currentTimeout);
 
+    dispatch({type: ADD_CHANNEL_WAITING_FOR_OPENING, channel});
     Lumino.callbacks.trigger(CALLBACKS.REQUEST_OPEN_CHANNEL, channel);
 
     const res = await client.put(
