@@ -8,9 +8,14 @@ import {
   DELETE_CHANNEL_FROM_SDK,
   CLOSE_CHANNEL_VOTE,
   SET_CHANNEL_AWAITING_CLOSE,
+  ADD_CHANNEL_WAITING_FOR_OPENING,
 } from "../actions/types";
 import { ethers } from "ethers";
-import { SDK_CHANNEL_STATUS, CHANNEL_WAITING_FOR_CLOSE } from "../../config/channelStates";
+import {
+  SDK_CHANNEL_STATUS,
+  CHANNEL_WAITING_FOR_CLOSE,
+  CHANNEL_WAITING_OPENING,
+} from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
 
 const initialState = {};
@@ -20,6 +25,29 @@ const getChannelKey = channelData => {
   const tokenAddr = channelData.token_address;
   const key = `${id}-${tokenAddr}`;
   return key;
+};
+
+/**
+ * This function is used to retrieve a channel temporary key
+ * This only is used on channels pending to be opened
+ */
+const getTemporaryKey = channel => {
+  const { token_address, partner_address } = channel;
+  return `T-${partner_address}-${token_address}`;
+};
+
+const hasTemporaryChannel = (channel, state) => {
+  const key = getTemporaryKey(channel);
+  return !!state[key];
+};
+
+const removeTemporaryChannel = (channel, state) => {
+  if (hasTemporaryChannel(channel, state)) {
+    const key = getTemporaryKey(channel);
+    const cleanedState = { ...state };
+    delete cleanedState[key];
+    return cleanedState;
+  }
 };
 
 const getPaymentChannelKey = data => {
@@ -85,8 +113,10 @@ const checkIfChannelCanBeOpened = (channel, numberOfNotifiers) => {
   // Needed votes to be opened
   const neededVotes = Math.ceil(numberOfNotifiers / 2);
 
-  if (openVotesQuantity >= neededVotes && canBeOpened)
+  if (openVotesQuantity >= neededVotes && canBeOpened) {
     channel.sdk_status = SDK_CHANNEL_STATUS.CHANNEL_OPENED;
+    channel.canRemoveTemporalChannel = true;
+  }
   return { ...channel };
 };
 
@@ -103,12 +133,16 @@ const channel = (state = initialState, action) => {
           openedByUser: true,
         };
         const { numberOfNotifiers } = action;
-        
+
         channelWithResponse = checkIfChannelCanBeOpened(
           channelWithResponse,
           numberOfNotifiers
         );
-        return { ...state, [nChannelKey]: channelWithResponse };
+        let newState = { ...state };
+        if (channelWithResponse.canRemoveTemporalChannel)
+          newState = removeTemporaryChannel(channelWithResponse, state);
+
+        return { ...newState, [nChannelKey]: channelWithResponse };
       }
       const newChannels = createChannel(
         state,
@@ -144,6 +178,9 @@ const channel = (state = initialState, action) => {
         ovChannel[ovChannelKey],
         numberOfNotifiers
       );
+
+       if (ovChannel[ovChannelKey].canRemoveTemporalChannel)
+         ovChannel = removeTemporaryChannel(ovChannel[ovChannelKey], ovChannel);
 
       return ovChannel;
     }
@@ -260,12 +297,20 @@ const channel = (state = initialState, action) => {
       return newState;
     }
     case SET_CHANNEL_AWAITING_CLOSE: {
-      const channelKey = getChannelKey(action.channel); 
+      const channelKey = getChannelKey(action.channel);
       const newState = { ...state };
       newState[channelKey] = {
         ...newState[channelKey],
         sdk_status: CHANNEL_WAITING_FOR_CLOSE,
       };
+      return newState;
+    }
+
+    case ADD_CHANNEL_WAITING_FOR_OPENING: {
+      const { channel } = action;
+      const key = getTemporaryKey(channel);
+      const newState = { ...state };
+      newState[key] = { ...channel, sdk_status: CHANNEL_WAITING_OPENING };
       return newState;
     }
     default:
