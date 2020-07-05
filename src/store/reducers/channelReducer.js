@@ -179,8 +179,8 @@ const channel = (state = initialState, action) => {
         numberOfNotifiers
       );
 
-       if (ovChannel[ovChannelKey].canRemoveTemporalChannel)
-         ovChannel = removeTemporaryChannel(ovChannel[ovChannelKey], ovChannel);
+      if (ovChannel[ovChannelKey].canRemoveTemporalChannel)
+        ovChannel = removeTemporaryChannel(ovChannel[ovChannelKey], ovChannel);
 
       return ovChannel;
     }
@@ -310,7 +310,11 @@ const channel = (state = initialState, action) => {
       const { channel } = action;
       const key = getTemporaryKey(channel);
       const newState = { ...state };
-      newState[key] = { ...channel, sdk_status: CHANNEL_WAITING_OPENING, isTemporary: true };
+      newState[key] = {
+        ...channel,
+        sdk_status: CHANNEL_WAITING_OPENING,
+        isTemporary: true,
+      };
       return newState;
     }
     default:
