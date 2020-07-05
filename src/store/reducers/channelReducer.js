@@ -310,7 +310,7 @@ const channel = (state = initialState, action) => {
       const { channel } = action;
       const key = getTemporaryKey(channel);
       const newState = { ...state };
-      newState[key] = { ...channel, sdk_status: CHANNEL_WAITING_OPENING };
+      newState[key] = { ...channel, sdk_status: CHANNEL_WAITING_OPENING, isTemporary: true };
       return newState;
     }
     default:
