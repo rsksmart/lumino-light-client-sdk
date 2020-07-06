@@ -92,6 +92,7 @@ describe("test open channel action", () => {
         token_name: "LUMINO",
         token_symbol: "LUM",
         creator_address: address,
+        offChainBalance: "0",
         partner_address: randomPartner,
         token_address: randomAddress,
       },
