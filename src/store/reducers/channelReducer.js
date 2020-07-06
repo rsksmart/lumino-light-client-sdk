@@ -48,6 +48,7 @@ const removeTemporaryChannel = (channel, state) => {
     delete cleanedState[key];
     return cleanedState;
   }
+  return state;
 };
 
 const getPaymentChannelKey = data => {
