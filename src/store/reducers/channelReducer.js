@@ -55,9 +55,7 @@ const getPaymentChannelKey = data => {
   return `${channelId}-${token}`;
 };
 
-const createChannel = (state, channel, key, hubAnswered = false) => ({
-  ...state,
-  [key]: {
+const createChannel = (channel, hubAnswered = false) => ({
     ...channel,
     hubAnswered,
     offChainBalance: "0",
@@ -68,7 +66,7 @@ const createChannel = (state, channel, key, hubAnswered = false) => ({
       open: {},
       close: {},
     },
-  },
+
 });
 
 const addVote = (channel, vote, voteType) => {
@@ -144,45 +142,34 @@ const channel = (state = initialState, action) => {
 
         return { ...newState, [nChannelKey]: channelWithResponse };
       }
-      const newChannels = createChannel(
-        state,
+      const newChannel = createChannel(
         action.channel,
-        nChannelKey,
         true
       );
-      return newChannels;
+      return {...state, [nChannelKey]: newChannel};
     }
 
     // Notifiers vote for new channel
     case OPEN_CHANNEL_VOTE: {
       const { notifier, shouldOpen } = action;
-      const ovChannelKey = getChannelKey(action.channel);
-      let ovChannel = state[ovChannelKey];
+      const chKey = getChannelKey(action.channel);
+      let newState = {...state};
+      let ch = newState[chKey];
       // If the channel is not present, create it
-      if (!ovChannel) {
-        ovChannel = createChannel(state, action.channel, ovChannelKey);
-      } else {
-        ovChannel = state;
-      }
+      if (!ch) 
+        ch = createChannel(action.channel);
 
       // Add the corresponding vote, whether is positive or not
-      ovChannel[ovChannelKey] = addVote(
-        ovChannel[ovChannelKey],
-        { notifier, shouldOpen },
-        VOTE_TYPE.OPEN_CHANNEL_VOTE
-      );
+      ch = addVote(ch, { notifier, shouldOpen }, VOTE_TYPE.OPEN_CHANNEL_VOTE);
 
       const { numberOfNotifiers } = action;
 
-      ovChannel[ovChannelKey] = checkIfChannelCanBeOpened(
-        ovChannel[ovChannelKey],
-        numberOfNotifiers
-      );
+      ch = checkIfChannelCanBeOpened(ch, numberOfNotifiers);
 
-      if (ovChannel[ovChannelKey].canRemoveTemporalChannel)
-        ovChannel = removeTemporaryChannel(ovChannel[ovChannelKey], ovChannel);
+      if (ch.canRemoveTemporalChannel)
+        newState = removeTemporaryChannel(ch, newState);
 
-      return ovChannel;
+      return {...newState, [chKey]: ch};
     }
 
     case SET_CHANNEL_CLOSED: {
@@ -314,6 +301,7 @@ const channel = (state = initialState, action) => {
         ...channel,
         sdk_status: CHANNEL_WAITING_OPENING,
         isTemporary: true,
+        isOpening: true
       };
       return newState;
     }
