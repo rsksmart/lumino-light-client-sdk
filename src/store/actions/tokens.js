@@ -37,6 +37,7 @@ export const getTokenNameAndSymbol = tokenAddress => async (
   }
 
   const data = await requestTokenNameAndSymbol(tokenAddress);
+  if(!data) return {token_name: "???", token_symbol: "???"};
   const token_name = data.name;
   const token_symbol = data.symbol;
   dispatch({
