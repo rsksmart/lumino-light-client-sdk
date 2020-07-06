@@ -96,7 +96,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
       source.cancel();
     }, currentTimeout);
 
-    dispatch({type: ADD_CHANNEL_WAITING_FOR_OPENING, channel});
+    dispatch({type: ADD_CHANNEL_WAITING_FOR_OPENING, channel: {...channel, offChainBalance: "0"}});
     Lumino.callbacks.trigger(CALLBACKS.REQUEST_OPEN_CHANNEL, channel);
 
     const res = await client.put(
