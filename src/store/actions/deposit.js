@@ -42,6 +42,7 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
 
     const txParams = {
       ...params,
+      amount,
       address: clientAddress,
     };
     const unsignedApprovalTx = await createApprovalTx(txParams);
