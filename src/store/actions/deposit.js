@@ -7,6 +7,8 @@ import { getChannelByIdAndToken } from "../functions";
 import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
 import BigNumber from "bignumber.js";
+import { isRnsDomain } from "../../utils/functions";
+import { getRnsInstance } from "../functions/rns";
 
 /**
  * Create a deposit.
@@ -39,7 +41,23 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
 
   try {
     const clientAddress = getState().client.address;
+    let { partner } = params;
 
+    // Check if partner is a rns domain
+    if (isRnsDomain(partner)) {
+      const rns = getRnsInstance();
+      partner = await rns.addr(partner);
+      console.log("Resolved address", partner);
+      if (partner === "0x0000000000000000000000000000000000000000") {
+        Lumino.callbacks.trigger(
+          CALLBACKS.FAILED_DEPOSIT_CHANNEL,
+          channel,
+          "RNS domain isnt registered"
+        );
+      } else {
+        params.partner = partner;
+      }
+    }
     const txParams = {
       ...params,
       amount,
