@@ -27,14 +27,13 @@ import {
   validateLockedTransfer,
   signatureRecover,
 } from "../../utils/validators";
-import { getChannelsState } from "../functions";
 import {
   MessageType,
   PAYMENT_EXPIRED,
   PAYMENT_SUCCESSFUL,
 } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
-import { getLatestChannelByPartnerAndToken } from "../functions/channels";
+import { getLatestChannelByPartnerAndToken, getChannelByIdAndToken } from "../functions/channels";
 import {
   searchTokenDataInChannels,
   getTokenAddressByTokenNetwork,
@@ -117,9 +116,14 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     const dataToSign = getDataToSignForLockedTransfer(messageWithHash);
 
     signature = await resolver(dataToSign, lh, true);
-
-    const channels = getChannelsState();
-    const valid = validateLockedTransfer(message, requestBody, channels);
+    const chId = message.channel_identifier;
+    const tokenAddId = getAddress(message.token);
+    const channelFromStore = getChannelByIdAndToken(chId, tokenAddId);
+    const valid = validateLockedTransfer(
+      message,
+      requestBody,
+      channelFromStore
+    );
     if (valid !== true) throw valid;
     const dataToPut = {
       payment_id: payment_id,

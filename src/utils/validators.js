@@ -27,7 +27,7 @@ const throwChannelNotFoundOrNotOpened = partner =>
  * Validates that the parameters received in the LT from the hub are reasonable within what we provided to it.
  * It checks for: Partner, Amount, Token, Address and Signature
  */
-export const validateLockedTransfer = (message, requestBody, channels = {}) => {
+export const validateLockedTransfer = (message, requestBody, channel = {}) => {
   const { getAddress } = ethers.utils;
   const hasSamePartner =
     getAddress(message.target) === requestBody.partner_address;
@@ -38,10 +38,7 @@ export const validateLockedTransfer = (message, requestBody, channels = {}) => {
   const hasSameTokenAddress =
     getAddress(message.token) === requestBody.token_address;
   if (!hasSameTokenAddress) return throwGenericLockedTransfer("Token Address");
-  const channelId = `${message.channel_identifier}-${getAddress(
-    message.token
-  )}`;
-  const hasChannelAndIsOpened = channels[channelId] === CHANNEL_OPENED;
+  const hasChannelAndIsOpened = channel.sdk_status === CHANNEL_OPENED;
   if (!hasChannelAndIsOpened)
     return throwChannelNotFoundOrNotOpened(message.partner_address);
 
