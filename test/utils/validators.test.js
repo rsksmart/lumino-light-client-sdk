@@ -25,9 +25,13 @@ describe("Test validators and their good / bad cases", () => {
   };
 
   test("validateLockedTransfer should return true for a correct one", async () => {
-    const channelKey = `1-${randomAddress}`;
-    const channels = {
-      [channelKey]: CHANNEL_OPENED,
+    const channel = {
+      partner_address: randomPartner,
+      creator_address: address,
+      channel_identifier: 1,
+      token_address: randomAddress,
+      offChainBalance: "10000000000000",
+      sdk_status: CHANNEL_OPENED,
     };
     const LT = {
       target: randomPartner,
@@ -43,7 +47,7 @@ describe("Test validators and their good / bad cases", () => {
       amount: "10000000000000000000000",
       token_address: randomAddress,
     };
-    const result = validateLockedTransfer(LT, ourSentData, channels);
+    const result = validateLockedTransfer(LT, ourSentData, channel);
     expect(result).toBe(true);
   });
 
