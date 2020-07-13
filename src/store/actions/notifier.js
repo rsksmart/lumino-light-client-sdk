@@ -166,7 +166,7 @@ const requestForCloseChannel = async data => {
     const endpoint = "subscribeToCloseChannel";
     const resClose = await notifierOperations.post(endpoint, null, reqConfig);
 
-    return prepareSubscribeActions(resClose.response, url);
+    return prepareSubscribeActions(resClose, url);
   } catch (error) {
     if (error.response && error.response.data)
       return prepareSubscribeActions(error.response, url);
