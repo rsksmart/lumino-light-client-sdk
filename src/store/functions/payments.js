@@ -3,8 +3,9 @@ import { ethers } from "ethers";
 import {
   PAYMENT_SUCCESSFUL,
   PAYMENT_EXPIRED,
+  PAYMENT_REFUND,
 } from "../../config/messagesConstants";
-import { EXPIRED } from "../../config/paymentConstants";
+import { EXPIRED, REFUND_TRANSFER } from "../../config/paymentConstants";
 import { getState } from "./state";
 
 export const getPaymentIds = () => {
@@ -61,6 +62,8 @@ export const getPaymentMessageTypeValue = payment => {
   switch (payment.failureReason) {
     case EXPIRED:
       return PAYMENT_EXPIRED;
+    case REFUND_TRANSFER:
+      return PAYMENT_REFUND;
     default:
       return null;
   }

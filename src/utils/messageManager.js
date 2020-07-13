@@ -9,6 +9,7 @@ import {
   FAILURE_REASONS,
   PENDING_PAYMENT,
   EXPIRED,
+  REFUND_TRANSFER,
 } from "../config/paymentConstants";
 import {
   getPendingPaymentById,
@@ -29,6 +30,7 @@ import {
   recreatePaymentForFailure,
   putLockExpired,
   addExpiredPaymentMessage,
+  createPayment,
 } from "../store/actions/payment";
 import { saveLuminoData } from "../store/actions/storage";
 import {
@@ -98,6 +100,9 @@ const manageNonPaymentMessages = messages => {
       case MessageType.DELIVERED:
       case MessageType.PROCESSED: {
         return manageDeliveredAndProcessed(msg, payment, "message");
+      }
+      case MessageType.REFUND_TRANSFER: {
+        return manageRefundTransfer(msg, payment);
       }
       case MessageType.LOCKED_TRANSFER: {
         return messagesToProcessLast.push(msg);
@@ -213,6 +218,42 @@ const manageLockExpired = (msgData, payment) => {
   return dispatch(putProcessed(message, paymentAux, 3));
 };
 
+const manageRefundTransfer = async (msgData, payment) => {
+  const store = Store.getStore();
+  const { dispatch } = store;
+  const { message, payment_id, message_order } = msgData;
+
+  const paymentAux = getPayment(payment_id);
+
+  if (paymentAux.failureReason) return null;
+  if (!paymentAux.failureReason)
+    dispatch(
+      setPaymentFailed(
+        payment_id,
+        PENDING_PAYMENT,
+        FAILURE_REASONS.REFUND_TRANSFER
+      )
+    );
+
+  // We ACK that we have received and proccessed this.
+  await dispatch(putDelivered(message, paymentAux, message_order + 1));
+  await dispatch(putProcessed(message, paymentAux, 3));
+
+  const { getAddress } = ethers.utils;
+
+  const previousSecretHash = payment.secret_hash;
+
+  const newPaymentParams = {
+    previousSecretHash,
+    amount: payment.amount,
+    address: getAddress(payment.initiator),
+    partner: getAddress(payment.partner),
+    token_address: payment.token,
+  };
+
+  return dispatch(createPayment(newPaymentParams));
+};
+
 const manageLockedTransfer = (message, payment, messageKey) => {
   // We shouldn't have a payment, if the payment exists then the LT was processed
   if (payment && !payment.failureReason) return null;
@@ -298,6 +339,7 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
   const { message_order } = msg;
   let previousMessage = null;
   const isExpired = failureReason === EXPIRED;
+  const isRefunded = failureReason === REFUND_TRANSFER;
 
   // Message already processed?
   if (!isExpired && payment.messages[message_order]) return null;
@@ -309,6 +351,8 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
   if (failureReason) {
     if (isExpired)
       previousMessage = payment.expiration.messages[message_order - 1];
+    if (isRefunded)
+      previousMessage = payment.refund.messages[message_order - 1];
   }
 
   if (!previousMessage) {

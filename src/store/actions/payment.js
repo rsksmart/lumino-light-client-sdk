@@ -8,6 +8,7 @@ import {
   SET_PAYMENT_FAILED,
   ADD_EXPIRED_PAYMENT_MESSAGE,
   PAYMENT_CREATION_ERROR,
+  ADD_REFUNDED_PAYMENT_MESSAGE,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -31,6 +32,7 @@ import {
   MessageType,
   PAYMENT_EXPIRED,
   PAYMENT_SUCCESSFUL,
+  PAYMENT_REFUND,
 } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
 import { getLatestChannelByPartnerAndToken, getChannelByIdAndToken } from "../functions/channels";
@@ -58,7 +60,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
   let paymentData = {};
   try {
     const { getAddress, bigNumberify } = ethers.utils;
-    const { token_address, amount } = params;
+    const { token_address, amount, previousSecretHash } = params;
     let { partner } = params;
     const { address } = getState().client;
     const hashes = generateHashes();
@@ -98,6 +100,9 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       token_address,
       secrethash,
     };
+
+    // For refunded payments
+    if (previousSecretHash) requestBody.prev_secrethash = previousSecretHash;
 
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody);
@@ -210,6 +215,18 @@ export const addExpiredPaymentMessage = (
     storeInMessages,
   });
 
+export const addRefundPaymentMessage = (
+  paymentId,
+  messageOrder,
+  message
+) => dispatch =>
+  dispatch({
+    type: ADD_REFUNDED_PAYMENT_MESSAGE,
+    paymentId,
+    messageOrder,
+    message,
+  });
+
 export const addExpiredPaymentNormalMessage = (
   paymentId,
   messageOrder,
@@ -235,6 +252,19 @@ const nonSuccessfulMessageAdd = data => dispatch => {
     case PAYMENT_EXPIRED: {
       return dispatch(
         addExpiredPaymentMessage(
+          paymentId,
+          order,
+          {
+            message,
+            message_order: order,
+          },
+          storeInMessages
+        )
+      );
+    }
+    case PAYMENT_REFUND: {
+      return dispatch(
+        addRefundPaymentMessage(
           paymentId,
           order,
           {
