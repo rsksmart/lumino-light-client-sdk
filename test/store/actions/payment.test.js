@@ -57,6 +57,7 @@ describe("test payment actions", () => {
         channel_identifier: 1,
         token_address: randomAddress,
         offChainBalance: "10000000000000",
+        sdk_status: CHANNEL_OPENED
       },
     },
     channelStates: {

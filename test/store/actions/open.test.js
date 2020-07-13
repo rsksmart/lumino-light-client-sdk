@@ -6,6 +6,7 @@ import client from "../../../src/apiRest";
 import * as openActions from "../../../src/store/actions/open";
 import configureMockStore from "redux-mock-store";
 import thunk from "redux-thunk";
+import { ADD_CHANNEL_WAITING_FOR_OPENING } from "../../../src/store/actions/types";
 
 // Mock store
 const lh = {
@@ -35,6 +36,9 @@ describe("test open channel action", () => {
   const state = {
     client: {
       address,
+    },
+    notifier: {
+      notifiers: {},
     },
   };
 
@@ -82,8 +86,20 @@ describe("test open channel action", () => {
     });
     const actions = store.getActions();
 
-    expect(actions.length).toBe(1);
-    const expectedAction = {
+    expect(actions.length).toBe(2);
+    const expectedActionZero = {
+      channel: {
+        token_name: "LUMINO",
+        token_symbol: "LUM",
+        creator_address: address,
+        offChainBalance: "0",
+        partner_address: randomPartner,
+        token_address: randomAddress,
+      },
+      type: ADD_CHANNEL_WAITING_FOR_OPENING,
+    };
+
+    const expectedActionOne = {
       channel: {
         channel_identifier: 1,
         hubAnswered: true,
@@ -93,9 +109,11 @@ describe("test open channel action", () => {
         token_symbol: "LUM",
       },
       channelId: 1,
+      numberOfNotifiers: 0,
       type: "OPEN_CHANNEL",
     };
-    expect(actions[0]).toStrictEqual(expectedAction);
+    expect(actions[0]).toStrictEqual(expectedActionZero);
+    expect(actions[1]).toStrictEqual(expectedActionOne);
   });
 
   test("should trigger error callback on error (request to HUB)", async () => {

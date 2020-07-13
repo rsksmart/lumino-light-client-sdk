@@ -7,9 +7,15 @@ import {
   OPEN_CHANNEL_VOTE,
   DELETE_CHANNEL_FROM_SDK,
   CLOSE_CHANNEL_VOTE,
+  SET_CHANNEL_AWAITING_CLOSE,
+  ADD_CHANNEL_WAITING_FOR_OPENING,
 } from "../actions/types";
 import { ethers } from "ethers";
-import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
+import {
+  SDK_CHANNEL_STATUS,
+  CHANNEL_WAITING_FOR_CLOSE,
+  CHANNEL_WAITING_OPENING,
+} from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
 
 const initialState = {};
@@ -21,14 +27,36 @@ const getChannelKey = channelData => {
   return key;
 };
 
+/**
+ * This function is used to retrieve a channel temporary key
+ * This only is used on channels pending to be opened
+ */
+const getTemporaryKey = channel => {
+  const { token_address, partner_address } = channel;
+  return `T-${partner_address}-${token_address}`;
+};
+
+const hasTemporaryChannel = (channel, state) => {
+  const key = getTemporaryKey(channel);
+  return !!state[key];
+};
+
+const removeTemporaryChannel = (channel, state) => {
+  if (hasTemporaryChannel(channel, state)) {
+    const key = getTemporaryKey(channel);
+    const cleanedState = { ...state };
+    delete cleanedState[key];
+    return cleanedState;
+  }
+  return state;
+};
+
 const getPaymentChannelKey = data => {
   const { channelId, token } = data;
   return `${channelId}-${token}`;
 };
 
-const createChannel = (state, channel, key, hubAnswered = false) => ({
-  ...state,
-  [key]: {
+const createChannel = (channel, hubAnswered = false) => ({
     ...channel,
     hubAnswered,
     offChainBalance: "0",
@@ -39,7 +67,7 @@ const createChannel = (state, channel, key, hubAnswered = false) => ({
       open: {},
       close: {},
     },
-  },
+
 });
 
 const addVote = (channel, vote, voteType) => {
@@ -71,6 +99,26 @@ const addVote = (channel, vote, voteType) => {
   }
 };
 
+const checkIfChannelCanBeOpened = (channel, numberOfNotifiers) => {
+  // If we have the half + 1 votes of approval, we open the channel
+  // Also we need the hub to have answered the request and we opened the channel
+  const openVotesQuantity = Object.values(channel.votes.open).filter(v => v)
+    .length;
+
+  const { openedByUser, hubAnswered } = channel;
+  // If user is the opener the hub mas have answered, if not we can open it with the votes alone.
+  const canBeOpened = !openedByUser || (openedByUser && hubAnswered);
+
+  // Needed votes to be opened
+  const neededVotes = Math.ceil(numberOfNotifiers / 2);
+
+  if (openVotesQuantity >= neededVotes && canBeOpened) {
+    channel.sdk_status = SDK_CHANNEL_STATUS.CHANNEL_OPENED;
+    channel.canRemoveTemporalChannel = true;
+  }
+  return { ...channel };
+};
+
 const channel = (state = initialState, action) => {
   const { bigNumberify } = ethers.utils;
   switch (action.type) {
@@ -78,62 +126,51 @@ const channel = (state = initialState, action) => {
       const nChannelKey = getChannelKey(action.channel);
       // We don't open if it is already there
       if (state[nChannelKey]) {
-        const channelWithResponse = {
+        let channelWithResponse = {
           ...state[nChannelKey],
           hubAnswered: true,
           openedByUser: true,
         };
-        return { ...state, [nChannelKey]: channelWithResponse };
+        const { numberOfNotifiers } = action;
+
+        channelWithResponse = checkIfChannelCanBeOpened(
+          channelWithResponse,
+          numberOfNotifiers
+        );
+        let newState = { ...state };
+        if (channelWithResponse.canRemoveTemporalChannel)
+          newState = removeTemporaryChannel(channelWithResponse, state);
+
+        return { ...newState, [nChannelKey]: channelWithResponse };
       }
-      const newChannels = createChannel(
-        state,
+      const newChannel = createChannel(
         action.channel,
-        nChannelKey,
         true
       );
-      return newChannels;
+      return {...state, [nChannelKey]: newChannel};
     }
 
     // Notifiers vote for new channel
     case OPEN_CHANNEL_VOTE: {
       const { notifier, shouldOpen } = action;
-      const ovChannelKey = getChannelKey(action.channel);
-      let ovChannel = state[ovChannelKey];
+      const chKey = getChannelKey(action.channel);
+      let newState = {...state};
+      let ch = newState[chKey];
       // If the channel is not present, create it
-      if (!ovChannel) {
-        ovChannel = createChannel(state, action.channel, ovChannelKey);
-      } else {
-        ovChannel = state;
-      }
+      if (!ch) 
+        ch = createChannel(action.channel);
 
       // Add the corresponding vote, whether is positive or not
-      ovChannel[ovChannelKey] = addVote(
-        ovChannel[ovChannelKey],
-        { notifier, shouldOpen },
-        VOTE_TYPE.OPEN_CHANNEL_VOTE
-      );
+      ch = addVote(ch, { notifier, shouldOpen }, VOTE_TYPE.OPEN_CHANNEL_VOTE);
 
-      // Check for valid votes and quantity of notifiers
-      const openVotesQuantity = Object.values(
-        ovChannel[ovChannelKey].votes.open
-      ).filter(v => v).length;
       const { numberOfNotifiers } = action;
 
-      // If we have the half + 1 votes of approval, we open the channel
-      // Also we need the hub to have answered the request and we opened the channel
+      ch = checkIfChannelCanBeOpened(ch, numberOfNotifiers);
 
-      const { openedByUser } = ovChannel[ovChannelKey];
-      // If user is the opener the hub mas have answered, if not we can open it with the votes alone.
-      const canBeOpened =
-        !openedByUser || (openedByUser && ovChannel[ovChannelKey].hubAnswered);
+      if (ch.canRemoveTemporalChannel)
+        newState = removeTemporaryChannel(ch, newState);
 
-      // Needed votes to be opened
-      const neededVotes = Math.ceil(numberOfNotifiers / 2);
-
-      if (openVotesQuantity >= neededVotes && canBeOpened)
-        ovChannel[ovChannelKey].sdk_status = SDK_CHANNEL_STATUS.CHANNEL_OPENED;
-
-      return ovChannel;
+      return {...newState, [chKey]: ch};
     }
 
     case SET_CHANNEL_CLOSED: {
@@ -245,6 +282,28 @@ const channel = (state = initialState, action) => {
       if (openVotesQuantity >= Math.ceil(numberOfNotifiers / 2))
         newState[channelKey].sdk_status = SDK_CHANNEL_STATUS.CHANNEL_CLOSED;
 
+      return newState;
+    }
+    case SET_CHANNEL_AWAITING_CLOSE: {
+      const channelKey = getChannelKey(action.channel);
+      const newState = { ...state };
+      newState[channelKey] = {
+        ...newState[channelKey],
+        sdk_status: CHANNEL_WAITING_FOR_CLOSE,
+      };
+      return newState;
+    }
+
+    case ADD_CHANNEL_WAITING_FOR_OPENING: {
+      const { channel } = action;
+      const key = getTemporaryKey(channel);
+      const newState = { ...state };
+      newState[key] = {
+        ...channel,
+        sdk_status: CHANNEL_WAITING_OPENING,
+        isTemporary: true,
+        isOpening: true
+      };
       return newState;
     }
     default:
