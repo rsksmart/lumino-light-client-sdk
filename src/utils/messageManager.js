@@ -31,6 +31,7 @@ import {
   putLockExpired,
   addExpiredPaymentMessage,
   createPayment,
+  addRefundPaymentMessage,
 } from "../store/actions/payment";
 import { saveLuminoData } from "../store/actions/storage";
 import {
@@ -226,7 +227,7 @@ const manageRefundTransfer = async (msgData, payment) => {
   const paymentAux = getPayment(payment_id);
 
   if (paymentAux.failureReason) return null;
-  if (!paymentAux.failureReason)
+  if (!paymentAux.failureReason) {
     dispatch(
       setPaymentFailed(
         payment_id,
@@ -234,6 +235,8 @@ const manageRefundTransfer = async (msgData, payment) => {
         FAILURE_REASONS.REFUND_TRANSFER
       )
     );
+    dispatch(addRefundPaymentMessage(payment_id,message_order,message));
+  }
 
   // We ACK that we have received and proccessed this.
   await dispatch(putDelivered(message, paymentAux, message_order + 1));
@@ -380,18 +383,20 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
         message_order: msg.message_order,
       })
     );
-  if (failureReason)
-    dispatch(
-      addExpiredPaymentMessage(msg.payment_id, msg.message_order, {
+
+  if (failureReason) {
+    const failureMsgParams = [
+      msg.payment_id,
+      msg.message_order,
+      {
         message: msg[messageKey],
         message_order: msg.message_order,
-      })
-    );
+      },
+    ];
+    if (isExpired) dispatch(addExpiredPaymentMessage(...failureMsgParams));
+    if (isRefunded) dispatch(addRefundPaymentMessage(...failureMsgParams));
+  }
   if (msg[messageKey].type === MessageType.PROCESSED) {
-    if (failureReason && isExpired)
-      return dispatch(
-        putDelivered(msg[messageKey], payment, msg.message_order + 1)
-      );
     return dispatch(
       putDelivered(msg[messageKey], payment, msg.message_order + 1)
     );
