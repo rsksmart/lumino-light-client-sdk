@@ -19,25 +19,11 @@ import { getRnsInstance } from "../functions/rns";
  * @param {string} total_deposit -  The amount to deposit
  */
 export const createDeposit = params => async (dispatch, getState, lh) => {
-  const { partner, channelId, tokenAddress } = params;
+  const { channelId, tokenAddress } = params;
   let { amount } = params;
   const channel = getChannelByIdAndToken(channelId, tokenAddress);
-  const { offChainBalance, total_deposit } = channel;
-  amount = new BigNumber(amount).plus(offChainBalance).toString();
-  const currentTotalDeposit = new BigNumber(total_deposit);
-
-  // We check that the new deposit is enough, if not, we trigger a proper callback
-  if (currentTotalDeposit.isGreaterThanOrEqualTo(amount)) {
-    const valueDifference = currentTotalDeposit.minus(amount).toString();
-    const error = new Error(
-      `The current deposit is ${currentTotalDeposit.toString()} and the final amount is ${amount}, the amount must be greater than the deposit, difference ${valueDifference}`
-    );
-    return Lumino.callbacks.trigger(
-      CALLBACKS.DEPOSIT_CHANNEL_VALUE_TOO_LOW,
-      { currentDeposit: total_deposit, valueDifference, amount },
-      error
-    );
-  }
+  const { total_deposit } = channel;
+  amount = new BigNumber(amount).plus(total_deposit).toString();
 
   try {
     const clientAddress = getState().client.address;
@@ -75,7 +61,10 @@ export const createDeposit = params => async (dispatch, getState, lh) => {
       signed_close_tx: "",
     };
     const url = `light_channels/${tokenAddress}/${clientAddress}/${partner}`;
-    Lumino.callbacks.trigger(CALLBACKS.REQUEST_DEPOSIT_CHANNEL, {...channel, amount});
+    Lumino.callbacks.trigger(CALLBACKS.REQUEST_DEPOSIT_CHANNEL, {
+      ...channel,
+      amount,
+    });
     const res = await client.patch(url, { ...requestBody });
     dispatch({
       type: NEW_DEPOSIT,
