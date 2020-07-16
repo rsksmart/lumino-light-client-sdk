@@ -35,7 +35,10 @@ import {
   PAYMENT_REFUND,
 } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
-import { getLatestChannelByPartnerAndToken, getChannelByIdAndToken } from "../functions/channels";
+import {
+  getLatestChannelByPartnerAndToken,
+  getChannelByIdAndToken,
+} from "../functions/channels";
 import {
   searchTokenDataInChannels,
   getTokenAddressByTokenNetwork,
@@ -392,6 +395,7 @@ export const putSecretRequest = (msg, payment) => async (
   lh
 ) => {
   const { sender, receiver } = getSenderAndReceiver(payment);
+
   const body = {
     payment_id: payment.paymentId,
     message_order: 5,
@@ -562,6 +566,7 @@ export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
 export const putLockExpired = data => async (dispatch, getState, lh) => {
   try {
     const { sender, receiver } = getSenderAndReceiver(data);
+
     if (!sender || !receiver) return null;
     const body = {
       payment_id: data.paymentId,

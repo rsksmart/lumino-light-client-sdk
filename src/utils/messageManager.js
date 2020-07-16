@@ -57,7 +57,7 @@ import {
  *
  * @param {*} messages The messages to process
  */
-export const messageManager = messages => {
+export const messageManager = (messages = []) => {
   // We filter out only payment messages for this flow
 
   const paymentMessages = [];
@@ -151,7 +151,9 @@ const managePaymentMessages = messages => {
             signAddress,
             mediator
           );
-          if (!addressFromPayment && !addressFromMediator) return null;
+          if (!addressFromPayment && !addressFromMediator) {
+            return null;
+          }
         } else {
           if (!addressFromPayment) return null;
         }
@@ -235,7 +237,12 @@ const manageRefundTransfer = async (msgData, payment) => {
         FAILURE_REASONS.REFUND_TRANSFER
       )
     );
-    dispatch(addRefundPaymentMessage(payment_id,message_order,message));
+    dispatch(
+      addRefundPaymentMessage(payment_id, message_order, {
+        message,
+        message_order,
+      })
+    );
   }
 
   // We ACK that we have received and proccessed this.
@@ -393,6 +400,7 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
         message_order: msg.message_order,
       },
     ];
+
     if (isExpired) dispatch(addExpiredPaymentMessage(...failureMsgParams));
     if (isRefunded) dispatch(addRefundPaymentMessage(...failureMsgParams));
   }
@@ -415,10 +423,13 @@ const manageSecretRequest = (msg, payment, messageKey) => {
     // Message already processed
     return null;
   }
+
   const hasSameSecretHash = msg[messageKey].secrethash === payment.secret_hash;
   if (!hasSameSecretHash) return console.warn("Secret hash does not match");
+
   const hasSameAmount = `${msg[messageKey].amount}` === `${payment.amount}`;
   if (!hasSameAmount) return console.warn("Amount does not match");
+
   const store = Store.getStore();
   // This function add the message to the store in its proper order
   store.dispatch(
