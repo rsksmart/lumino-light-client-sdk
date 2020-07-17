@@ -69,12 +69,31 @@ export const getPaymentMessageTypeValue = payment => {
   }
 };
 
-export const getSenderAndReceiver = payment => {
-  const { isReceived, mediator } = payment;
+export const getSenderAndReceiver = (payment, msgOrder = 0) => {
+  const { isReceived, mediator, isMediated, failureReason } = payment;
   const { getAddress } = ethers.utils;
   const sender = isReceived ? payment.partner : payment.initiator;
-  const receiver = isReceived ? payment.initiator : payment.partner;
+  let receiver = isReceived ? payment.initiator : payment.partner;
   if (!sender || !receiver) return { sender: null, receiver: null };
+
+  // Some custom logic must be processed in mediated payments
+
+  if (isMediated) {
+    // Non failed cases
+    if (!failureReason && msgOrder) {
+      const customReceiverOnOrder = {
+        11: mediator,
+        7: mediator,
+      };
+      if (customReceiverOnOrder[msgOrder])
+        receiver = customReceiverOnOrder[msgOrder];
+    }
+    // Failed cases
+    if (failureReason) {
+      const isRefunded = failureReason === REFUND_TRANSFER;
+      if (isRefunded) receiver = mediator;
+    }
+  }
   try {
     return {
       sender: getAddress(sender),
