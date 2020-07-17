@@ -437,13 +437,12 @@ export const putRevealSecret = (
   message_identifier = getRandomBN(),
   order = 7
 ) => async (dispatch, getState, lh) => {
-  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
-  const { isMediated } = payment;
+  const { sender, receiver } = getSenderAndReceiver(payment, order);
   const body = {
     payment_id: payment.paymentId,
     message_order: order,
     sender,
-    receiver: isMediated ? mediator : receiver,
+    receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       type: MessageType.REVEAL_SECRET,
@@ -477,17 +476,16 @@ export const putBalanceProof = (message, payment) => async (
   getState,
   lh
 ) => {
-  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
+  const { sender, receiver } = getSenderAndReceiver(payment, 11);
   const dataToSign = getDataToSignForBalanceProof(message);
   let signature = "";
 
   signature = await resolver(dataToSign, lh, true);
-  const { isMediated } = payment;
   const body = {
     payment_id: payment.paymentId,
     message_order: 11,
     sender,
-    receiver: isMediated ? mediator : receiver,
+    receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       ...message,
