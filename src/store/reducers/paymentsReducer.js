@@ -147,7 +147,7 @@ const paymentsReducer = (state = initialState, action) => {
       if(!newState.failed[paymentId].refund) {
         newState.failed[paymentId].refund = {
           messages: {},
-          messageOrder: 0
+          message_order: 0
         };
       }
       newState.failed[paymentId].refund.messages[messageOrder] = message;
