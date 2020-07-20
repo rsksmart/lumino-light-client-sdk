@@ -100,10 +100,11 @@ const paymentsReducer = (state = initialState, action) => {
     }
     case SET_PAYMENT_FAILED: {
       const { reason, paymentState } = action;
+      const paymentStateL = paymentState.toLowerCase();
       const newState = cloneState(state);
-      newState.failed[paymentId] = state[paymentState.toLowerCase()][paymentId];
+      newState.failed[paymentId] = state[paymentStateL][paymentId];
       newState.failed[paymentId].failureReason = reason;
-      delete newState[paymentState.toLowerCase()][paymentId];
+      delete newState[paymentStateL][paymentId];
       return newState;
     }
     case STORE_REFUND_TRANSFER: {
@@ -146,7 +147,7 @@ const paymentsReducer = (state = initialState, action) => {
       if(!newState.failed[paymentId].refund) {
         newState.failed[paymentId].refund = {
           messages: {},
-          messageOrder: 0
+          message_order: 0
         };
       }
       newState.failed[paymentId].refund.messages[messageOrder] = message;

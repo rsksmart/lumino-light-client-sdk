@@ -35,7 +35,10 @@ import {
   PAYMENT_REFUND,
 } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
-import { getLatestChannelByPartnerAndToken, getChannelByIdAndToken } from "../functions/channels";
+import {
+  getLatestChannelByPartnerAndToken,
+  getChannelByIdAndToken,
+} from "../functions/channels";
 import {
   searchTokenDataInChannels,
   getTokenAddressByTokenNetwork,
@@ -392,6 +395,7 @@ export const putSecretRequest = (msg, payment) => async (
   lh
 ) => {
   const { sender, receiver } = getSenderAndReceiver(payment);
+
   const body = {
     payment_id: payment.paymentId,
     message_order: 5,
@@ -433,13 +437,12 @@ export const putRevealSecret = (
   message_identifier = getRandomBN(),
   order = 7
 ) => async (dispatch, getState, lh) => {
-  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
-  const { isMediated } = payment;
+  const { sender, receiver } = getSenderAndReceiver(payment, order);
   const body = {
     payment_id: payment.paymentId,
     message_order: order,
     sender,
-    receiver: isMediated ? mediator : receiver,
+    receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       type: MessageType.REVEAL_SECRET,
@@ -473,17 +476,16 @@ export const putBalanceProof = (message, payment) => async (
   getState,
   lh
 ) => {
-  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
+  const { sender, receiver } = getSenderAndReceiver(payment, 11);
   const dataToSign = getDataToSignForBalanceProof(message);
   let signature = "";
 
   signature = await resolver(dataToSign, lh, true);
-  const { isMediated } = payment;
   const body = {
     payment_id: payment.paymentId,
     message_order: 11,
     sender,
-    receiver: isMediated ? mediator : receiver,
+    receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       ...message,
@@ -562,6 +564,7 @@ export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
 export const putLockExpired = data => async (dispatch, getState, lh) => {
   try {
     const { sender, receiver } = getSenderAndReceiver(data);
+
     if (!sender || !receiver) return null;
     const body = {
       payment_id: data.paymentId,

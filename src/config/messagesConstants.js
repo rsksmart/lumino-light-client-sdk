@@ -47,7 +47,7 @@ export const MessageKeyForOrder = {
 
 export const MessageNumPad = {
   [MessageType.PROCESSED]: 0,
-  UPDATE_BALANCE_PROOF: 2,
+  UPDATE_BALANCE_PROOF: 4,
   [MessageType.SECRET_REQUEST]: 3,
   [MessageType.BALANCE_PROOF]: 4,
   [MessageType.LOCKED_TRANSFER]: 7,
