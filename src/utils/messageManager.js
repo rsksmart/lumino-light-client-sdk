@@ -10,6 +10,7 @@ import {
   PENDING_PAYMENT,
   EXPIRED,
   REFUND_TRANSFER,
+  FAILED_PAYMENT,
 } from "../config/paymentConstants";
 import {
   getPendingPaymentById,
@@ -197,11 +198,8 @@ const manageLockExpired = (msgData, payment) => {
 
   const paymentAux = getPayment(payment_id);
   if (paymentAux.expiration && paymentAux.expiration.messages[1]) return null;
-  if (!paymentAux.failureReason)
-    dispatch(
-      setPaymentFailed(payment_id, PENDING_PAYMENT, FAILURE_REASONS.EXPIRED)
-    );
-
+  const paymentState = paymentAux.failureReason ? FAILED_PAYMENT : PENDING_PAYMENT;
+  dispatch(setPaymentFailed(payment_id, paymentState, FAILURE_REASONS.EXPIRED));
   const dataForPut = {
     ...paymentAux,
     signature: message.signature,
