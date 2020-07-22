@@ -89,10 +89,7 @@ export const getSenderAndReceiver = (payment, msgOrder = 0) => {
         receiver = customReceiverOnOrder[msgOrder];
     }
     // Failed cases
-    if (failureReason) {
-      const isRefunded = failureReason === REFUND_TRANSFER;
-      if (isRefunded) receiver = mediator;
-    }
+    if (failureReason) receiver = mediator;
   }
   try {
     return {
