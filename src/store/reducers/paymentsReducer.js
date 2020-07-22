@@ -11,6 +11,7 @@ import {
   STORE_REFUND_TRANSFER,
   ADD_REFUNDED_PAYMENT_MESSAGE,
 } from "../actions/types";
+import { PENDING_PAYMENT } from "../../config/paymentConstants";
 
 const initialState = {
   pending: {},
@@ -104,7 +105,10 @@ const paymentsReducer = (state = initialState, action) => {
       const newState = cloneState(state);
       newState.failed[paymentId] = state[paymentStateL][paymentId];
       newState.failed[paymentId].failureReason = reason;
-      delete newState[paymentStateL][paymentId];
+      // Only remove payment from pending state
+      // Refund => Expired states must not delete it
+      if (paymentState === PENDING_PAYMENT)
+        delete newState[paymentStateL][paymentId];
       return newState;
     }
     case STORE_REFUND_TRANSFER: {
@@ -144,10 +148,10 @@ const paymentsReducer = (state = initialState, action) => {
     case ADD_REFUNDED_PAYMENT_MESSAGE: {
       const { messageOrder, message } = action;
       const newState = cloneState(state);
-      if(!newState.failed[paymentId].refund) {
+      if (!newState.failed[paymentId].refund) {
         newState.failed[paymentId].refund = {
           messages: {},
-          message_order: 0
+          message_order: 0,
         };
       }
       newState.failed[paymentId].refund.messages[messageOrder] = message;
