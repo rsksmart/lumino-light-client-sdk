@@ -7,6 +7,8 @@ import * as openActions from "../../../src/store/actions/open";
 import configureMockStore from "redux-mock-store";
 import thunk from "redux-thunk";
 import { ADD_CHANNEL_WAITING_FOR_OPENING } from "../../../src/store/actions/types";
+import { CHANNEL_OPENED } from "../../../src/config/channelStates";
+import { chkSum } from "../../../src/utils/functions";
 
 // Mock store
 const lh = {
@@ -15,9 +17,9 @@ const lh = {
 const middlewares = [thunk.withExtraArgument(lh)];
 const mockStore = configureMockStore(middlewares);
 
-const address = "0x920984391853d81CCeeC41AdB48a45D40594A0ec";
-const randomPartner = "0xB59ef6015d0e5d46AC9515dcd3f8b928Bb7F87d3";
-const randomAddress = "0xe3066B701f4a3eC8EcAA6D63ADc45180e5022bA3";
+const address = chkSum("0x920984391853d81CCeeC41AdB48a45D40594A0ec");
+const randomPartner = chkSum("0xB59ef6015d0e5d46AC9515dcd3f8b928Bb7F87d3");
+const randomAddress = chkSum("0xe3066B701f4a3eC8EcAA6D63ADc45180e5022bA3");
 
 jest.useFakeTimers();
 
@@ -40,6 +42,7 @@ describe("test open channel action", () => {
     notifier: {
       notifiers: {},
     },
+    channelReducer: {},
   };
 
   afterEach(() => {
@@ -159,6 +162,59 @@ describe("test open channel action", () => {
       CALLBACKS.FAILED_OPEN_CHANNEL,
       channelData,
       "Generic Error"
+    );
+  });
+
+  test("should trigger error callback on opening channel with yourself", async () => {
+    const store = mockStore(state);
+
+    await store.dispatch(
+      openActions.openChannel({
+        partner: address,
+        tokenAddress: randomAddress,
+      })
+    );
+
+    expect(spyCallbacks).toBeCalledTimes(1);
+    const expectedError = new Error("Can't create channel with yourself");
+    const expectedChannel = {
+      partner: address,
+    };
+    expect(spyCallbacks).toHaveBeenNthCalledWith(
+      1,
+      CALLBACKS.FAILED_OPEN_CHANNEL,
+      expectedChannel,
+      expectedError
+    );
+  });
+
+  test("should trigger error callback on opening channel with partner when non closed channel exists", async () => {
+    const fakeChannel = { sdk_status: CHANNEL_OPENED, partner_address: randomPartner, token_address: randomAddress };
+    const fakeChannelKey = `200-${randomAddress}`;
+    const store = mockStore({
+      ...state,
+      channelReducer: { [fakeChannelKey]: fakeChannel },
+    });
+
+    await store.dispatch(
+      openActions.openChannel({
+        partner: randomPartner,
+        tokenAddress: randomAddress,
+      })
+    );
+
+    expect(spyCallbacks).toBeCalledTimes(1);
+    const expectedError = new Error(
+      "A non closed channel exists with partner already on that token"
+    );
+    const expectedChannel = {
+      partner: randomPartner,
+    };
+    expect(spyCallbacks).toHaveBeenNthCalledWith(
+      1,
+      CALLBACKS.FAILED_OPEN_CHANNEL,
+      expectedChannel,
+      expectedError
     );
   });
 });
