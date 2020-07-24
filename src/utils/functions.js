@@ -1,6 +1,14 @@
 import BigNumber from "bignumber.js";
+import { ethers } from "ethers";
+import { NON_CLOSED_STATES } from "../config/channelStates";
 
 const getGreater = (n1, n2) => (n1 > n2 ? n1 : n2);
+
+/**
+ * Checksums an address
+ * @param {*} addr The address to be checksummed
+ */
+export const chkSum = addr => ethers.utils.getAddress(addr);
 
 /**
  * This methods performs a simple loop through an array and return the highest numeric value
@@ -24,6 +32,22 @@ export const findMaxBlockId = notifications =>
 export const findMaxChannelId = channels =>
   findMaxByKey(channels, "channel_identifier");
 
+export const findNonClosedChannelWithPartner = (channels, partnerAddress, tokenAddress) => {
+  const partnerCksummed = chkSum(partnerAddress);
+  const tknChecksummed = chkSum(tokenAddress);
+  const channel = Object.values(channels)
+    .filter(channel => {
+      // First we get the possible channels with the partner
+      const pAddr = chkSum(channel.partner_address);
+      const tknAddr = chkSum(channel.token_address);
+      if (partnerCksummed === pAddr && tknChecksummed === tknAddr) return true;
+      return false;
+    })
+    // We then filter for the non closed states
+    .find(({ sdk_status }) => NON_CLOSED_STATES[sdk_status]);
+  return channel;
+};
+
 /**
  * This method takes an object with any number of keys and swaps the key for the value
  * @param {Object} data
@@ -36,9 +60,9 @@ export const getRandomBN = () => {
   return new BigNumber(randomBN.split(".")[1]).toString();
 };
 
-export const isRnsDomain = (domain) => {
-  if (domain){
-    return domain.includes('.');
+export const isRnsDomain = domain => {
+  if (domain) {
+    return domain.includes(".");
   }
   return false;
-}
+};

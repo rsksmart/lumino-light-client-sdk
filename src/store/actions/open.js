@@ -3,7 +3,10 @@ import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
 import { createOpenTx } from "../../scripts/open";
-import { isRnsDomain } from "../../utils/functions";
+import {
+  isRnsDomain,
+  findNonClosedChannelWithPartner,
+} from "../../utils/functions";
 import { getRnsInstance } from "../functions/rns";
 import {
   getTokenNetworkByTokenAddress,
@@ -48,10 +51,20 @@ export const openChannel = params => async (dispatch, getState, lh) => {
     partner: getAddress(partner),
   };
   const clientAddress = getAddress(getState().client.address);
+  const channels = getState().channelReducer;
+  const nonClosedChannelWithPartner = findNonClosedChannelWithPartner(
+    channels,
+    channel.partner,
+    tokenAddress
+  );
 
   try {
     if (getAddress(partner) === clientAddress)
       throw new Error("Can't create channel with yourself");
+    if (nonClosedChannelWithPartner)
+      throw new Error(
+        "A non closed channel exists with partner already on that token"
+      );
 
     let tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);
     if (!tokenNetwork) {
