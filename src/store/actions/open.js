@@ -14,7 +14,7 @@ import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
 import { TIMEOUT_MAP } from "../../utils/timeoutValues";
 import Axios from "axios";
-
+import { ethers } from "ethers";
 
 /**
  * Open a channel.
@@ -26,6 +26,7 @@ import Axios from "axios";
 export const openChannel = params => async (dispatch, getState, lh) => {
   const { tokenAddress } = params;
   let { partner } = params;
+  const { getAddress } = ethers.utils;
 
   // Check if partner is a rns domain
   if (isRnsDomain(partner)) {
@@ -43,24 +44,30 @@ export const openChannel = params => async (dispatch, getState, lh) => {
     }
   }
 
-  const clientAddress = getState().client.address;
-  let tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);
-  if (!tokenNetwork) {
-    tokenNetwork = await dispatch(
-      requestTokenNetworkFromTokenAddress(tokenAddress)
-    );
-  }
-
-  const txParams = {
-    ...params,
-    address: clientAddress,
-    tokenNetworkAddress: tokenNetwork,
+  let channel = {
+    partner: getAddress(partner),
   };
+  const clientAddress = getAddress(getState().client.address);
 
-  const unsigned_tx = await createOpenTx(txParams);
-  const signed_tx = await resolver(unsigned_tx, lh);
-  let channel = {};
   try {
+    if (getAddress(partner) === clientAddress)
+      throw new Error("Can't create channel with yourself");
+
+    let tokenNetwork = getTokenNetworkByTokenAddress(tokenAddress);
+    if (!tokenNetwork) {
+      tokenNetwork = await dispatch(
+        requestTokenNetworkFromTokenAddress(tokenAddress)
+      );
+    }
+
+    const txParams = {
+      ...params,
+      address: clientAddress,
+      tokenNetworkAddress: tokenNetwork,
+    };
+
+    const unsigned_tx = await createOpenTx(txParams);
+    const signed_tx = await resolver(unsigned_tx, lh);
     const {
       name: token_name,
       symbol: token_symbol,
@@ -96,7 +103,10 @@ export const openChannel = params => async (dispatch, getState, lh) => {
       source.cancel();
     }, currentTimeout);
 
-    dispatch({type: ADD_CHANNEL_WAITING_FOR_OPENING, channel: {...channel, offChainBalance: "0"}});
+    dispatch({
+      type: ADD_CHANNEL_WAITING_FOR_OPENING,
+      channel: { ...channel, offChainBalance: "0" },
+    });
     Lumino.callbacks.trigger(CALLBACKS.REQUEST_OPEN_CHANNEL, channel);
 
     const res = await client.put(
