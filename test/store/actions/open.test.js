@@ -161,4 +161,27 @@ describe("test open channel action", () => {
       "Generic Error"
     );
   });
+
+  test("should trigger error callback on opening channel with yourself", async () => {
+    const store = mockStore(state);
+
+    await store.dispatch(
+      openActions.openChannel({
+        partner: address,
+        tokenAddress: randomAddress,
+      })
+    );
+
+    expect(spyCallbacks).toBeCalledTimes(1);
+    const expectedError = new Error("Can't create channel with yourself");
+    const expectedChannel = {
+      partner: address,
+    };
+    expect(spyCallbacks).toHaveBeenNthCalledWith(
+      1,
+      CALLBACKS.FAILED_OPEN_CHANNEL,
+      expectedChannel,
+      expectedError
+    );
+  });
 });
