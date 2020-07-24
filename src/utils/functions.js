@@ -32,14 +32,15 @@ export const findMaxBlockId = notifications =>
 export const findMaxChannelId = channels =>
   findMaxByKey(channels, "channel_identifier");
 
-export const findNonClosedChannelWithPartner = (channels, partnerAddress) => {
+export const findNonClosedChannelWithPartner = (channels, partnerAddress, tokenAddress) => {
   const partnerCksummed = chkSum(partnerAddress);
-
+  const tknChecksummed = chkSum(tokenAddress);
   const channel = Object.values(channels)
     .filter(channel => {
       // First we get the possible channels with the partner
       const pAddr = chkSum(channel.partner_address);
-      if (partnerCksummed === pAddr) return true;
+      const tknAddr = chkSum(channel.token_address);
+      if (partnerCksummed === pAddr && tknChecksummed === tknAddr) return true;
       return false;
     })
     // We then filter for the non closed states
