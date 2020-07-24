@@ -54,7 +54,8 @@ export const openChannel = params => async (dispatch, getState, lh) => {
   const channels = getState().channelReducer;
   const nonClosedChannelWithPartner = findNonClosedChannelWithPartner(
     channels,
-    channel.partner
+    channel.partner,
+    tokenAddress
   );
 
   try {

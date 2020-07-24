@@ -189,7 +189,7 @@ describe("test open channel action", () => {
   });
 
   test("should trigger error callback on opening channel with partner when non closed channel exists", async () => {
-    const fakeChannel = { sdk_status: CHANNEL_OPENED, partner_address: randomPartner };
+    const fakeChannel = { sdk_status: CHANNEL_OPENED, partner_address: randomPartner, token_address: randomAddress };
     const fakeChannelKey = `200-${randomAddress}`;
     const store = mockStore({
       ...state,
