@@ -70,26 +70,32 @@ export const getPaymentMessageTypeValue = payment => {
 };
 
 export const getSenderAndReceiver = (payment, msgOrder = 0) => {
-  const { isReceived, mediator, isMediated, failureReason } = payment;
+  const { isReceived, mediator, isMediated, initiator, partner, failureReason } = payment;
   const { getAddress } = ethers.utils;
-  const sender = isReceived ? payment.partner : payment.initiator;
-  let receiver = isReceived ? payment.initiator : payment.partner;
+  // NOTE: Partner = the person that the payment was destined for
+  // NOTE: initiator = the person that created the payment
+  // We determine the sender (always the LC) and the receiver (the person who should get the msg)
+  const sender = isReceived ? partner : initiator;
+  let receiver = isReceived ? initiator : partner;
   if (!sender || !receiver) return { sender: null, receiver: null };
 
   // Some custom logic must be processed in mediated payments
 
   if (isMediated) {
-    // Non failed cases
-    if (!failureReason && msgOrder) {
+    receiver = mediator;
+    if (msgOrder && !failureReason) {
+      // In reception cases 5 and 8 are sent to the "target"
+      // In sending cases 6 and 7 are sent to the "target"
+      // All other cases go to the mediator
       const customReceiverOnOrder = {
-        11: mediator,
-        7: mediator,
+        5: isReceived ? initiator : mediator,
+        6: isReceived ? mediator : partner,
+        7: isReceived ? mediator : partner,
+        8: isReceived ? initiator : mediator,
       };
       if (customReceiverOnOrder[msgOrder])
         receiver = customReceiverOnOrder[msgOrder];
     }
-    // Failed cases
-    if (failureReason) receiver = mediator;
   }
   try {
     return {
