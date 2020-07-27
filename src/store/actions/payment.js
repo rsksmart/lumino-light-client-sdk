@@ -289,7 +289,7 @@ export const putDelivered = (
 ) => async (dispatch, getState, lh) => {
   // We determine the type for failures or success flows
   const message_type_value = getPaymentMessageTypeValue(payment);
-  const { sender, receiver } = getSenderAndReceiver(payment);
+  const { sender, receiver } = getSenderAndReceiver(payment, order);
   const { getAddress } = ethers.utils;
   const { paymentId } = payment;
 
@@ -394,7 +394,7 @@ export const putSecretRequest = (msg, payment) => async (
   getState,
   lh
 ) => {
-  const { sender, receiver } = getSenderAndReceiver(payment);
+  const { sender, receiver } = getSenderAndReceiver(payment, 5);
 
   const body = {
     payment_id: payment.paymentId,
