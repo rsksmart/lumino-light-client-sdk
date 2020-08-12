@@ -24,8 +24,9 @@ The SDK gives the developer all the functions to work with a Lumino HUB and inte
 import { Lumino } from "@rsksmart/lumino-light-client-sdk";
 ```
 
-Lumino is our main interface to interact with the SDK.
-Lumino must be initialized before being used, with the function
+Lumino is our main interface to interact with the SDK.<br/>
+This interface returns a singleton instance of the SDK.<br/>
+Lumino must be initialized before being used, with the following function
 
 ```javascript
 Lumino.init(signignHandler, storageHandler, config);
@@ -47,13 +48,13 @@ This is an object with the next two methods
 sign(data: Transaction) => signature: String
 ```
 
-Method that signs an Ethereum transaction (for example web3 signTransaction)
+Method that signs an Ethereum transaction (for example a web3 signTransaction)
 
 ```javascript
 offChainSign(data: Uint8Array) => signature: String
 ```
 
-Method that signs any kind of message, not just transactions
+Method that signs any kind of message, not just transactions.
 
 **NOTE:** We conducted our tests of the SDK with the ether.js Wallet implementation, which perfectly supports the data, we encourage using ethers.js or other method that is capable of signing the data.
 
@@ -68,7 +69,7 @@ const signingHandler = SigningHandler();
 signingHandler.init(web3, PrivateKey);
 ```
 
-The signingHandler accepts a web3 instance pointing to a provider, and a PrivateKey, with this, the handler could be passed to Lumino and it will work.
+The signingHandler accepts a web3 instance pointing to a provider, and a PrivateKey, this handler can be passed to Lumino and it will work.
 
 **Providing your own handler**
 
@@ -116,7 +117,7 @@ This is an object with the next params
 | rskEndpoint | An endpoint to a RSK Node   |
 | hubEndpoint | An endpoint to a Lumino HUB |
 | address     | The Client address          |
-| registryAddress     | The RNS registry address          |
+| registryAddress     | The RNS registry address |
 
 
 ## Initializing
@@ -124,10 +125,10 @@ This is an object with the next params
 With all the aforementioned values, Lumino can be initialized with the params in this order with the next ASYNC method.
 
 ```javascript
-await Lumino.init(signingHandler, localStorageHandler,ConfigParams) => LuminoInstance
+Lumino.init(signingHandler, localStorageHandler,ConfigParams) => Promise<LuminoInstance>
 ```
 
-This method returns an instance of lumino, so we can just assign it to a const and use it later.
+This method returns a singleton, which can be stored for usage.
 
 ```javascript
 const lumino = await Lumino.init(luminoHandler, storageImplementation);
@@ -135,15 +136,16 @@ const lumino = await Lumino.init(luminoHandler, storageImplementation);
 
 # How it Works
 
-When we have a instance of Lumino we have to understand how it works and what are the steps to accomplish it
+Lumino has a predefined path on how it works and how the users should experience using the technology, these points illustrate how it should go.
 
 1.  Onboard the Client with the Hub in order to interact with it (Onboarding)
-2.  Open a channel with a partner to send and receive payments with them (Open Channel)
-3.  Deposit some tokens to make a payment (Deposit)
-4.  Make a Payment (Payments)
-5.  Close the channels to settle all the funds and get new onChain balance from the payments (Close Channel)
+2.  Register the user with a RIF Notifier, and subscribe to topics
+3.  Open a channel with a partner to send and receive payments with them (Open Channel)
+4.  Deposit some tokens to make a payment (Deposit)
+5.  Make a Payment (Payments)
+6.  Close the channels to settle all the funds and get new onChain balance from the payments (Close Channel)
 
-Even though Lumino may be simple at a first most of the logic behind it is abstracted, allowing the developer not to worry about strange and difficult logical decisions and focus on the User Experience.
+Most of the payments logic and checks are abstracted and checked inside the SDK, so you can focus on writing code for the UX.
 
 For this we have also a series of Success Callbacks, so when an operation is completed, the developer can provide actual feedback to the user (Callbacks)
 
