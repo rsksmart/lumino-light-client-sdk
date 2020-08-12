@@ -12,7 +12,7 @@ The SDK gives the developer all the functions to work with a Lumino HUB and inte
 
 **Yarn**
 
-`yarn install @rsksmart/lumino-light-client-sdk`
+`yarn add @rsksmart/lumino-light-client-sdk`
 
 **NPM**
 
