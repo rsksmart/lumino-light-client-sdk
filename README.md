@@ -281,27 +281,22 @@ closeChannel(requestBody: Object) => Promise<void>
 
 # Payments
 
-This is the core of the SDK, the ability to make offChain payments that are fast and easy for low fees.
-Due to the offchain nature of this opreation, it will not take as much time as the other ones.
-In order to invoke the method and allow the SDK to process a payment the next method is used:
+The most important part of the SDK, fast payments with low fees.
+Due to the offchain nature of this operation, it will not take as much time as the other ones.
 
 ```javascript
-await createPayment(requestBody: Object) => void
+createPayment(requestBody: Object) => Promise<void>
 ```
 
-This create a payment in a channel with balance, wheter it was from a deposit or from received payments, the body is the next:
+### Request Body values
 
-```javascript
-const requestBody = {
-  partner: partner_address: "0x123...",
-  amount: 1000000000000,
-  token_address: "0x987...",
-};
-```
+|     Name      |   Type   | Required | Description                                        |
+| :-----------: | :------: | :------: | -------------------------------------------------- |
+|    partner    | `String` |    ✔️    | Partner that we want to send the payment to        |
+| token_address | `String` |    ✔️    | The token address of the token that we want to pay |
+|    amount     | `String` |    ✔️    | The amount of tokens (in wei)                      |
 
-The amount should be in wei, and should be equal or less than the balance of the channel, if a payment is requested with insufficent funds, the SDK will log an error and interrupt the process.
-
-## Callbacks
+# Callbacks
 
 Lumino provides a simple interfaces for callbacks, which are the ones that we trigger on certain actions and pass data regarding the action.
 Thanks to this the developer can provide actual feedback to its users.
