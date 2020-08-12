@@ -138,30 +138,30 @@ const lumino = await Lumino.init(luminoHandler, storageImplementation);
 
 Lumino has a predefined path on how it works and how the users should experience using the technology, these points illustrate how it should go.
 
-1.  Onboard the Client with the Hub in order to interact with it (Onboarding)
-2.  Register the user with a RIF Notifier, and subscribe to topics
-3.  Open a channel with a partner to send and receive payments with them (Open Channel)
-4.  Deposit some tokens to make a payment (Deposit)
-5.  Make a Payment (Payments)
-6.  Close the channels to settle all the funds and get new onChain balance from the payments (Close Channel)
+1.  Onboard the Client with the Hub in order to interact with it [(Onboarding)](#onboarding)
+2.  Register the user with a RIF Notifier, and subscribe to topics [(RIF Notifier)](#onboarding)
+3.  Open a channel with a partner to send and receive payments with them [(Open Channel)](#onboarding)
+4.  Deposit some tokens to make a payment [(Deposit)](#onboarding)
+5.  Make a Payment [(Payments)](#onboarding)
+6.  Close the channels to settle all the funds and get new onChain balance from the payments [(Close Channel)](#onboarding)
 
 Most of the payments logic and checks are abstracted and checked inside the SDK, so you can focus on writing code for the UX.
 
 For this we have also a series of Success Callbacks, so when an operation is completed, the developer can provide actual feedback to the user (Callbacks)
 
-# Lumino
+# Lumino instance
 
 After Lumino has been initialized, new methods are exposed to be used
 
 ```javascript
-get() => luminoInstance
+Lumino.get() => luminoInstance
 ```
 
 Returns the intialized lumino instance, if lumino was not initialized before it will throw an error
 
 The instance methods are the following
 
-# lumino
+# Lumino internals
 
 ```javascript
 getLuminoInternalState() => luminoInternalState: Object
@@ -169,13 +169,8 @@ getLuminoInternalState() => luminoInternalState: Object
 
 Retrieves the internal state of SDK and returns it
 
-Example:
+<br/>
 
-```javascript
-lumino.getLuminoInternalState();
-```
-
----
 
 ```javascript
 luminoInternalState;
@@ -183,17 +178,20 @@ luminoInternalState;
 
 This is the lumino internal state, it can be accessed directly in order to be inspected or make comparisons.
 
-## Onboarding
+# Onboarding
 
 Before any kind of operation can be processed, the SDK must be onboarded, for this we abstracted a method in the actions of Lumino
 
+<br/>
+
+
 ```javascript
-await Lumino.actions.onboardingClient() => void
+lumino.actions.onboardingClient() => Promise<void>
 ```
 
 **Async** method that request to the hub to start the process of onboarding, it resolves and stores an Api Key in the SDK data.
 
----
+<br/>
 
 ```javascript
 Lumino.actions.getApiKey() => apiKey: String
@@ -201,27 +199,21 @@ Lumino.actions.getApiKey() => apiKey: String
 
 Method that returns the Apikey stored by the onboarding process, or an empty string if no onboarding was performed.
 
----
+<br/>
+
 
 ```javascript
 Lumino.actions.setApiKey(apiKey: String) => void
 ```
 
-This method forces a new api key on the SDK, it will set it and then store it, so caution is advised when using it.
+This method forces a new api key on the SDK, it will set it and then store it, it is not recommended to use it without caution
 
-Example of an onboarding
-
-```javascript
-const lumino = Lumino.init(...)
-await lumino.actions.onboardingClient();
-
-// Get api key to show,store in another place, etc
-const apiKey = lumino.actions.getApiKey();
-```
 
 # Actions
 
 Lumino has actions for many operations, all of them are usually under .actions, here we explain some of them, their use, parameters and return values.
+
+<br/>
 
 ```javascript
 getChannels() => channels: Object
@@ -230,16 +222,14 @@ getChannels() => channels: Object
 Returns a list of all lumino channels held in the internal state, regardless of their state.
 The channels are identified by their channel identifier number and the token address where they were opened.
 
-Example of channel key: `1-0x1234abc`
 
----
 
-**ON CHAIN Operations**
+# On Chain Operations
 
 The next functions are considered **ON CHAIN** operations and will have a cost of RBTC, all of them are async functions and will take time depending on the type of Network (Regtest,Testnet,Mainnet).
 
 ```javascript
-await openChannel(requestBody: Object) => void
+openChannel(requestBody: Object) => Promise<void>
 ```
 
 Opens a new channel with an address, the request body is the next:
