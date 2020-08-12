@@ -18,27 +18,21 @@ The SDK gives the developer all the functions to work with a Lumino HUB and inte
 
 `npm install --save @rsksmart/lumino-light-client-sdk`
 
-## Starting
-
-```javascript
-import { Lumino } from "@rsksmart/lumino-light-client-sdk";
-```
-
-Lumino is our main interface to interact with the SDK.<br/>
-This interface returns a singleton instance of the SDK.<br/>
-Lumino must be initialized before being used, with the following function
-
-```javascript
-Lumino.init(signignHandler, storageHandler, config);
-```
+<br/>
 
 ## Initialization
 
 ```javascript
+import { Lumino } from "@rsksmart/lumino-light-client-sdk";
+
 Lumino.init(signignHandler, storageHandler, config);
 ```
 
+Lumino is our main interface to interact with the SDK.<br/>
+This interface returns a singleton instance of the SDK.<br/>
 In order to initialize Lumino, the method accepts the next params
+
+<br/>
 
 ## SigningHandler
 
@@ -50,6 +44,8 @@ sign(data: Transaction) => signature: String
 
 Method that signs an Ethereum transaction (for example a web3 signTransaction)
 
+<br/>
+
 ```javascript
 offChainSign(data: Uint8Array) => signature: String
 ```
@@ -60,6 +56,8 @@ Method that signs any kind of message, not just transactions.
 
 In order to make the setup more easier, we provided a default handler,
 in the form of SigningHandler, which can be imported from the sdk
+
+<br/>
 
 ```javascript
 import { SigningHandler } from "@rsksmart/lumino-light-client-sdk";
@@ -75,6 +73,8 @@ The signingHandler accepts a web3 instance pointing to a provider, and a Private
 
 We support custom implementations, as long as an object with both of the prior methods are passed and can perform a correct signature, we encourage new implementations and research on the matter.
 
+<br/>
+
 ## LocalStorageHandler
 
 Lumino in order to work must keep in persistance some data, if not the SDK would lose all of its data after the application is closed.
@@ -87,7 +87,7 @@ getLuminoData() => data: Object
 
 This method returns the data that has been stored by the SDK, it could be any implementation (localStorage, AsyncStorage...), it supports async operations.
 
----
+<br/>
 
 ```javascript
 saveLuminoData(data: Object) => void
@@ -95,17 +95,19 @@ saveLuminoData(data: Object) => void
 
 This method saves the data that the SDK has stored in memory, implementations can also be of any type, it must accept a parameter (**data**) which is a JS object containing the data of the SDK.
 
+<br/>
+
 ```javascript
 import { LocalStorageHandler } from "@rsksmart/lumino-light-client-sdk";
 ```
 
 We also provide a default implementation of the handler in the SDK, this is for a web enviroment and can be imported from the SDK.
 
----
-
 **Providing your own handler**
 
 As in the Signing, we also support your own custom implementations, as long as the object of the handler has the required methods.
+
+<br/>
 
 ## ConfigParams
 
@@ -119,7 +121,9 @@ This is an object with the next params
 | address         | The Client address          |
 | registryAddress | The RNS registry address    |
 
-## Initializing
+<br/>
+
+## Getting access to an instance
 
 With all the aforementioned values, Lumino can be initialized with the params in this order with the next ASYNC method.
 
@@ -127,13 +131,11 @@ With all the aforementioned values, Lumino can be initialized with the params in
 Lumino.init(signingHandler, localStorageHandler,ConfigParams) => Promise<LuminoInstance>
 ```
 
-This method returns a singleton, which can be stored for usage.
+This method returns a singleton instance of lumino, which can be used to access all lumino features and functions
 
-```javascript
-const lumino = await Lumino.init(luminoHandler, storageImplementation);
-```
+<br />
 
-# Index on how does it work
+# How to use
 
 Lumino has a predefined path on how it works and how the users should experience using the technology, these points illustrate how it should go.
 
@@ -154,12 +156,28 @@ For this we have also a series of Success Callbacks, so when an operation is com
 After Lumino has been initialized, new methods are exposed to be used
 
 ```javascript
-Lumino.get() => luminoInstance
+Lumino.get() => LuminoInstance
 ```
 
 Returns the intialized lumino instance, if lumino was not initialized before it will throw an error
 
-The instance methods are the following
+</br>
+
+```javascript
+Lumino.destroy() => void
+```
+
+Destroys the singleton isntance of Lumino and stops all polling, recommended to use when SDK won't be needed anymore
+
+</br>
+
+```javascript
+Lumino.reConfigure(configParams) => Promise<LuminoInstance>
+```
+
+This method will destroy the current isntance and reinitialize it with the provided [config params](#ConfigParams)
+
+<br/>
 
 # Onboarding
 
@@ -188,6 +206,8 @@ Lumino.actions.setApiKey(apiKey: String) => void
 ```
 
 This method forces a new api key on the SDK, it will set it and then store it, it is not recommended to use it without caution
+
+<br/>
 
 # Actions
 
