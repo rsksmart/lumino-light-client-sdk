@@ -228,12 +228,12 @@ openChannel(requestBody: Object) => Promise<void>
 ### Request Body values
 
 | Name            | Type              | Required | Description                                            |
-| --------------- | ----------------- | -------- | ------------------------------------------------------ |
-| partner_address | String            | ✔️       | Partner to open the channel with                       |
-| token_address   | String            | ✔️       | The token address in which the channell will be opened |
-| settleTimeout   | Number            |          | Blocks for timeout to settle the channel               |
-| gasPrice        | Number `|` String |          | The gas price to use in the transaction                |
-| gasLimit        | Number `|` String |          | The gas limit to use in the transaction                |
+| :---------------: | :-----------------: | :--------: | ------------------------------------------------------ |
+| partner_address | `String`            | ✔️       | Partner to open the channel with                       |
+| token_address   | `String`            | ✔️       | The token address in which the channell will be opened |
+| settleTimeout   | `Number`            |          | Blocks for timeout to settle the channel               |
+| gasPrice        | `Number|String` |          | The gas price to use in the transaction                |
+| gasLimit        | `Number|String`|          | The gas limit to use in the transaction                |
 
 ---
 
