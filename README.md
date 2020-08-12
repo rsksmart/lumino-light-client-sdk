@@ -111,14 +111,13 @@ As in the Signing, we also support your own custom implementations, as long as t
 
 This is an object with the next params
 
-| Name        | Description                 |
-| ----------- | --------------------------- |
-| chainId     | The chainId to use          |
-| rskEndpoint | An endpoint to a RSK Node   |
-| hubEndpoint | An endpoint to a Lumino HUB |
-| address     | The Client address          |
-| registryAddress     | The RNS registry address |
-
+| Name            | Description                 |
+| --------------- | --------------------------- |
+| chainId         | The chainId to use          |
+| rskEndpoint     | An endpoint to a RSK Node   |
+| hubEndpoint     | An endpoint to a Lumino HUB |
+| address         | The Client address          |
+| registryAddress | The RNS registry address    |
 
 ## Initializing
 
@@ -171,7 +170,6 @@ Retrieves the internal state of SDK and returns it
 
 <br/>
 
-
 ```javascript
 luminoInternalState;
 ```
@@ -183,7 +181,6 @@ This is the lumino internal state, it can be accessed directly in order to be in
 Before any kind of operation can be processed, the SDK must be onboarded, for this we abstracted a method in the actions of Lumino
 
 <br/>
-
 
 ```javascript
 lumino.actions.onboardingClient() => Promise<void>
@@ -201,13 +198,11 @@ Method that returns the Apikey stored by the onboarding process, or an empty str
 
 <br/>
 
-
 ```javascript
 Lumino.actions.setApiKey(apiKey: String) => void
 ```
 
 This method forces a new api key on the SDK, it will set it and then store it, it is not recommended to use it without caution
-
 
 # Actions
 
@@ -222,8 +217,6 @@ getChannels() => channels: Object
 Returns a list of all lumino channels held in the internal state, regardless of their state.
 The channels are identified by their channel identifier number and the token address where they were opened.
 
-
-
 # On Chain Operations
 
 The next functions are considered **ON CHAIN** operations and will have a cost of RBTC, all of them are async functions and will take time depending on the type of Network (Regtest,Testnet,Mainnet).
@@ -232,27 +225,20 @@ The next functions are considered **ON CHAIN** operations and will have a cost o
 openChannel(requestBody: Object) => Promise<void>
 ```
 
-Opens a new channel with an address, the request body is the next:
+### Request Body values
 
-```javascript
-const requestBody = {
-  partner_address: "0x123...",
-  token_address: "0x987...",
-};
-```
-
-Optional params
-
-| Name          | Description                              |
-| ------------- | ---------------------------------------- |
-| settleTimeout | Blocks for timeout to settle the channel |
-| gasPrice      | The gas price to use in the transaction  |
-| gasLimit      | The gas limit to use in the transaction  |
+| Name            | Type              | Required | Description                                            |
+| --------------- | ----------------- | -------- | ------------------------------------------------------ |
+| partner_address | String            | ✔️       | Partner to open the channel with                       |
+| token_address   | String            | ✔️       | The token address in which the channell will be opened |
+| settleTimeout   | Number            |          | Blocks for timeout to settle the channel               |
+| gasPrice        | Number `|` String |          | The gas price to use in the transaction                |
+| gasLimit        | Number `|` String |          | The gas limit to use in the transaction                |
 
 ---
 
 ```javascript
-await createDeposit(requestBody: Object) => void
+createDeposit(requestBody: Object) => Promise<void>
 ```
 
 Deposits balance in a channel, the request body is the next:
