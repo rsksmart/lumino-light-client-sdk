@@ -221,73 +221,65 @@ The channels are identified by their channel identifier number and the token add
 
 The next functions are considered **ON CHAIN** operations and will have a cost of RBTC, all of them are async functions and will take time depending on the type of Network (Regtest,Testnet,Mainnet).
 
+## Open Channel
+
+Requests to open a channel with a partner in a given token address
+
 ```javascript
 openChannel(requestBody: Object) => Promise<void>
 ```
 
 ### Request Body values
 
-|      Name       |        Type        | Required | Description                                            |
-| :-------------: | :----------------: | :------: | ------------------------------------------------------ |
-| partner_address |      `String`      |    ✔️    | Partner to open the channel with                       |
-|  token_address  |      `String`      |    ✔️    | The token address in which the channell will be opened |
-|  settleTimeout  |      `Number`      |          | Blocks for timeout to settle the channel               |
-|    gasPrice     | `Number or String` |          | The gas price to use in the transaction                |
-|    gasLimit     | `Number or String` |          | The gas limit to use in the transaction                |
+|      Name       |   Type   | Required | Description                                            |
+| :-------------: | :------: | :------: | ------------------------------------------------------ |
+| partner_address | `String` |    ✔️    | Partner to open the channel with                       |
+|  token_address  | `String` |    ✔️    | The token address in which the channell will be opened |
+|  settleTimeout  | `Number` |          | Blocks for timeout to settle the channel               |
+|    gasPrice     | `String` |          | The gas price to use in the transaction                |
+|    gasLimit     | `String` |          | The gas limit to use in the transaction                |
 
 ---
+
+## Deposit
+
+Requests to deposit a certain amount of tokens in an opened channel
 
 ```javascript
 createDeposit(requestBody: Object) => Promise<void>
 ```
 
-Deposits balance in a channel, the request body is the next:
+### Request Body values
+
+|       Name       |   Type   | Required | Description                                      |
+| :--------------: | :------: | :------: | ------------------------------------------------ |
+| partner_address  | `String` |    ✔️    | Partner of the channel                           |
+|  token_address   | `String` |    ✔️    | The token address of the channel                 |
+|  total_deposit   | `String` |    ✔️    | The deposit to add (in wei)                      |
+|    channelId     | `Number` |    ✔️    | The id of the channel                            |
+|     gasPrice     | `String` |          | The gas price to use in the transaction          |
+| gasLimitApproval | `String` |          | The gas limit to use in the approval transaction |
+| gasLimitDeposit  | `String` |          | The gas limit to use in the deposit transaction  |
+
+## Close Channel
+
+Requests the closing of a channel that is in an opened state
 
 ```javascript
-const requestBody = {
-  partner_address: "0x123...",
-  total_deposit: Number,
-  channelId: Number,
-  token_address: "0x987...",
-};
+closeChannel(requestBody: Object) => Promise<void>
 ```
 
-The amount of the deposit should be expressed in wei.
+### Request Body values
 
-Optional params
+|      Name       |   Type   | Required | Description                             |
+| :-------------: | :------: | :------: | --------------------------------------- |
+| partner_address | `String` |    ✔️    | Partner of the channel                  |
+|  token_address  | `String` |    ✔️    | The token address of the channel        |
+|    channelId    | `Number` |    ✔️    | The id of the channel                   |
+|    gasPrice     | `String` |          | The gas price to use in the transaction |
+|    gasLimit     | `String` |          | The gas limit to use in the transaction |
 
-| Name             | Description                                      |
-| ---------------- | ------------------------------------------------ |
-| gasPrice         | The gas price to use in the transaction          |
-| gasLimitApproval | The gas limit to use in the approval transaction |
-| gasLimitDeposit  | The gas limit to use in the deposit transaction  |
-
----
-
-```javascript
-await closeChannel(requestBody: Object) => void
-```
-
-Requests the close of a channel that is opened, the requestBody is the next:
-
-```javascript
-const requestBody = {
-	partner_address: "0x123...",
-	channel_identifier: Number
-	token_address: "0x987..."
-};
-```
-
-Optional params
-
-| Name     | Description                             |
-| -------- | --------------------------------------- |
-| gasPrice | The gas price to use in the transaction |
-| gasLimit | The gas limit to use in the transaction |
-
----
-
-## Payments
+# Payments
 
 This is the core of the SDK, the ability to make offChain payments that are fast and easy for low fees.
 Due to the offchain nature of this opreation, it will not take as much time as the other ones.
