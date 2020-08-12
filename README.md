@@ -149,7 +149,7 @@ Lumino has a predefined path on how it works and how the users should experience
 
 Most of the payments logic and checks are abstracted and checked inside the SDK, so you can focus on writing code for the UX.
 
-For this we have also a series of Success Callbacks, so when an operation is completed, the developer can provide actual feedback to the user (Callbacks)
+<br/>
 
 # Lumino instance
 
@@ -172,10 +172,10 @@ Destroys the singleton isntance of Lumino and stops all polling, recommended to 
 </br>
 
 ```javascript
-Lumino.reConfigure(configParams) => Promise<LuminoInstance>
+Lumino.reConfigure(signignHandler, storageHandler, config) => Promise<LuminoInstance>
 ```
 
-This method will destroy the current isntance and reinitialize it with the provided [config params](#ConfigParams)
+This method will destroy the current isntance and reinitialize it with the provided new values, the details are the same from [initialization](#initialization)
 
 <br/>
 
@@ -213,14 +213,16 @@ This method forces a new api key on the SDK, it will set it and then store it, i
 
 Lumino has actions for many operations, all of them are usually under .actions, here we explain some of them, their use, parameters and return values.
 
-<br/>
-
 ```javascript
 getChannels() => channels: Object
 ```
 
 Returns a list of all lumino channels held in the internal state, regardless of their state.
+<br/>
+
 The channels are identified by their channel identifier number and the token address where they were opened.
+
+<br/>
 
 # On Chain Operations
 
@@ -234,6 +236,8 @@ Requests to open a channel with a partner in a given token address
 openChannel(requestBody: Object) => Promise<void>
 ```
 
+<br/>
+
 ### Request Body values
 
 |      Name       |   Type   | Required | Description                                            |
@@ -246,6 +250,8 @@ openChannel(requestBody: Object) => Promise<void>
 
 ---
 
+<br/>
+
 ## Deposit
 
 Requests to deposit a certain amount of tokens in an opened channel
@@ -253,6 +259,8 @@ Requests to deposit a certain amount of tokens in an opened channel
 ```javascript
 createDeposit(requestBody: Object) => Promise<void>
 ```
+
+<br/>
 
 ### Request Body values
 
@@ -266,6 +274,8 @@ createDeposit(requestBody: Object) => Promise<void>
 | gasLimitApproval | `String` |          | The gas limit to use in the approval transaction |
 | gasLimitDeposit  | `String` |          | The gas limit to use in the deposit transaction  |
 
+<br/>
+
 ## Close Channel
 
 Requests the closing of a channel that is in an opened state
@@ -273,6 +283,8 @@ Requests the closing of a channel that is in an opened state
 ```javascript
 closeChannel(requestBody: Object) => Promise<void>
 ```
+
+<br/>
 
 ### Request Body values
 
@@ -284,6 +296,8 @@ closeChannel(requestBody: Object) => Promise<void>
 |    gasPrice     | `String` |          | The gas price to use in the transaction |
 |    gasLimit     | `String` |          | The gas limit to use in the transaction |
 
+<br/>
+
 # Payments
 
 The most important part of the SDK, fast payments with low fees.
@@ -293,6 +307,8 @@ Due to the offchain nature of this operation, it will not take as much time as t
 createPayment(requestBody: Object) => Promise<void>
 ```
 
+<br/>
+
 ### Request Body values
 
 |     Name      |   Type   | Required | Description                                        |
@@ -300,6 +316,8 @@ createPayment(requestBody: Object) => Promise<void>
 |    partner    | `String` |    ✔️    | Partner that we want to send the payment to        |
 | token_address | `String` |    ✔️    | The token address of the token that we want to pay |
 |    amount     | `String` |    ✔️    | The amount of tokens (in wei)                      |
+
+<br/>
 
 # Callbacks
 
