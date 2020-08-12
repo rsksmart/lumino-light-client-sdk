@@ -66,7 +66,7 @@ const Callbacks = () => {
     return () => {};
   };
 
-  return { set, trigger };
+  return { set, trigger, names: CALLBACKS };
 };
 
 export const callbacks = Callbacks();
