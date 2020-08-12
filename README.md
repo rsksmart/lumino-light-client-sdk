@@ -348,6 +348,15 @@ It is up to the developer to take action or not, in the next table, the callback
 
 </br>
 
+To set a callback the process is very easy:
+
+```javascript
+const callbackConst = Lumino.callbacks.names.CALLBACKS.REQUEST_OPEN_CHANNEL
+Lumino.callbacks.set(callbackConst, (data) => {/* do something...*/})
+```
+</br>
+The constants are under the name key in the callback section.
+
 ## Failure callbacks
 
 </br>
@@ -366,9 +375,17 @@ It is up to the developer to take action or not, in the next table, the callback
 
 </br>
 
-|* This callback has only 1 parameter
+\* This callback has only 1 parameter
 
 The failure callbacks provide 2 parameters, the data related to the operation and a JS error, the JS error has some info about the issue,. </br>The data related to the error has the last successful state of the operation (for example the channel data before a deposit)
+
+To set an error callback the process is the same as a non failure one, with a little difference:
+
+```javascript
+const callbackConst = Lumino.callbacks.names.CALLBACKS.CLIENT_ONBOARDING_FAILURE
+Lumino.callbacks.set(callbackConst, (data, error) => {/* do something...*/})
+```
+
 
 ## Examples
 
@@ -378,12 +395,11 @@ The callbacks are recommended to use for displaying UX events, refreshing certai
 
 # RIF Notifier
 
-The Light client is not aware of everything that happens outside of the action it performs.
-For example, when a partner opens a channel, it is not made aware of that event, the same as when a channel is closed by a partner.
+The Light client is not aware of everything that happens in the blockchain and when events are really processed.
 
-To tackle this problem, the Lumino ecosystem has a Notifier, which objective is to provide the information about events regarding what operations happen on the blockchain.
+To tackle this problem, the RIF ecosystem has a Notifier, whose objective is to provide the information about events regarding what operations happen on the blockchain.
 
-Those events are filtered by topics, which are abstracted by the SDK so the developer doesn't have to write logic for managing them.
+Those events are filtered by topics, which are abstracted by the SDK in order to avoid writing complex logic.
 
 ## How to use it
 
