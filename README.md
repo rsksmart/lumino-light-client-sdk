@@ -321,71 +321,62 @@ createPayment(requestBody: Object) => Promise<void>
 
 # Callbacks
 
-Lumino provides a simple interfaces for callbacks, which are the ones that we trigger on certain actions and pass data regarding the action.
-Thanks to this the developer can provide actual feedback to its users.
+When an event is processed, a failure in an operation is detected, the SDK will trigger certain callbacks.
+</br>
 
-Callbacks are set on the **Lumino** instance like this:
+It is up to the developer to take action or not, in the next table, the callbacks of the SDK are displayed.
 
-```javascript
-Lumino.callbacks.set.setNameOfCallback;
-```
+</br>
 
-The callbacks.set method sets a function that may or may not receive the data regarding the event, the next table illustrates the callbacks, when they are fired and the data they provide (Which is always a single object or nothing)
+## Request and success callbacks
 
-| Name                          | Fired when                                         | Data (Object)                         |
-| ----------------------------- | -------------------------------------------------- | ------------------------------------- |
-| setOnCompletedPaymentCallback | Received or sent payment is successfully completed | The payment data                      |
-| setOnReceivedPaymentCallback  | Payment is received                                | The payment data                      |
-| setOnOpenChannelCallback      | Channel is Opened by the client or a partner       | The channel data                      |
-| setOnChannelDepositCallback   | channel deposit is successful                      | The channel data                      |
-| setOnRequestClientOnboarding  | Onboarding process is initiated                    | Address that requested the onboarding |
-| setOnClientOnboardingSuccess  | Onboarding process is successful                   | Address that requested the onboarding |
+</br>
 
-Examples
+| Constant name             | Activated when                                           | Passed Params                             |
+| ------------------------- | -------------------------------------------------------- | ----------------------------------------- |
+| REQUEST_OPEN_CHANNEL      | The SDK requested the HUB to open a channel              | Data about the channel                    |
+| REQUEST_DEPOSIT_CHANNEL   | The SDK requested the HUB to make a deposit in a channel | Data about the channel                    |
+| REQUEST_CLOSE_CHANNEL     | The SDK requested the HUB to close a channel             | Data about the channel                    |
+| REQUEST_CLIENT_ONBOARDING | The SDK requested an onboarding to a HUB                 | The address that requested the onboarding |
+| CLIENT_ONBOARDING_SUCCESS | The HUB onboarding was successful                        | The address that requested the onboarding |
+| OPEN_CHANNEL              | A channel has successfuly opened                         | The channel                               |
+| DEPOSIT_CHANNEL           | A deposit in a channel was successful                    | The channel                               |
+| CLOSE_CHANNEL             | A channel was closed successfuly                         | The channel                               |
+| RECEIVED_PAYMENT          | A payment is received and will be processed              | The payment                               |
+| COMPLETED_PAYMENT         | A received or sent payment has completed processing      | The payment                               |
+| SENT_PAYMENT              | A created payment started its process successfuly        | The payment                               |
 
-```javascript
-// Inform that we receive a payment
-Lumino.callbacks.set.setOnReceivedPaymentCallback(payment => {
-  showInfo("Received a payment, now processing it...");
-});
+</br>
 
-// A payment was completed
-Lumino.callbacks.set.setOnCompletedPaymentCallback(payment => {
-  const { amount, partner: p, isReceived } = payment;
-  let message = `Successfully sent ${amount} to ${p}!`;
-  // We distignuish between received and sent payments with this prop
-  if (isReceived) message = `Successfully received ${amount} from ${p}!`;
-  showSuccess(message);
-});
+## Failure callbacks
 
-// A channel was opened
-Lumino.callbacks.set.setOnOpenChannelCallback(channel => {
-  const { channel_identifier: id } = channel;
-  const message = `Opened new channel ${id}`;
-  showSuccess(message);
-});
+</br>
 
-// A deposit on a channel was susccessfull
-Lumino.callbacks.set.setOnChannelDepositCallback(channel => {
-  const { channel_identifier: id } = channel;
-  const message = `New deposit on channel ${id}`;
-  showSuccess(message);
-});
+| Constant name             | Activated when                                              | Passed Params                             |
+| ------------------------- | ----------------------------------------------------------- | ----------------------------------------- |
+| EXPIRED_PAYMENT           | A received or sent payment has expired                      | The payment                               |
+| SIGNING_FAIL              | Signing a message or transaction failed                     | The error \*                              |
+| FAILED_OPEN_CHANNEL       | Trying to open a channel resulted in a failure              | Data about the channel                    |
+| FAILED_DEPOSIT_CHANNEL    | Trying to make a deposit in a channel resulted in a failure | Data about the channel                    |
+| FAILED_CLOSE_CHANNEL      | Trying to close a channel resulted in a failure             | Data about the channel                    |
+| FAILED_PAYMENT            | A payment failed during its processing                      | The payment                               |
+| FAILED_CREATE_PAYMENT     | A payment could not be created                              | Data about the payment                    |
+| CLIENT_ONBOARDING_FAILURE | The onboarding process has failed                           | The address that requested the onboarding |
+| TIMED_OUT_OPEN_CHANNEL    | Trying to open a channel took too much time                 |            Data about the channel                                |
 
-// An onboarding process has started
-Lumino.callbacks.set.setOnRequestClientOnboarding(address => {
-  showInfo(`Requested Client onboarding with address ${address}`);
-});
+</br>
 
-// An onboarding process was successfull
-Lumino.callbacks.set.setOnClientOnboardingSuccess(address => {
-  showSuccess(`Client onboarding with address ${address} was successful!`);
-});
-```
+|* This callback has only 1 parameter
 
-The functions can be of any kind, in these examples we just used a toast to show the info, but the developer is free to use whatever they want
+The failure callbacks provide 2 parameters, the data related to the operation and a JS error, the JS error has some info about the issue,. </br>The data related to the error has the last successful state of the operation (for example the channel data before a deposit)
 
-## Notifier
+## Examples
+
+Follow this [link](examples/callbacks.js) for some examples and usages
+
+The callbacks are recommended to use for displaying UX events, refreshing certains states and provide the best experience when creating a dApp
+
+# RIF Notifier
 
 The Light client is not aware of everything that happens outside of the action it performs.
 For example, when a partner opens a channel, it is not made aware of that event, the same as when a channel is closed by a partner.
