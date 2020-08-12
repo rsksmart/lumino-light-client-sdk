@@ -351,9 +351,12 @@ It is up to the developer to take action or not, in the next table, the callback
 To set a callback the process is very easy:
 
 ```javascript
-const callbackConst = Lumino.callbacks.names.CALLBACKS.REQUEST_OPEN_CHANNEL
-Lumino.callbacks.set(callbackConst, (data) => {/* do something...*/})
+const callbackConst = Lumino.callbacks.names.CALLBACKS.REQUEST_OPEN_CHANNEL;
+Lumino.callbacks.set(callbackConst, data => {
+  /* do something...*/
+});
 ```
+
 </br>
 The constants are under the name key in the callback section.
 
@@ -371,7 +374,7 @@ The constants are under the name key in the callback section.
 | FAILED_PAYMENT            | A payment failed during its processing                      | The payment                               |
 | FAILED_CREATE_PAYMENT     | A payment could not be created                              | Data about the payment                    |
 | CLIENT_ONBOARDING_FAILURE | The onboarding process has failed                           | The address that requested the onboarding |
-| TIMED_OUT_OPEN_CHANNEL    | Trying to open a channel took too much time                 |            Data about the channel                                |
+| TIMED_OUT_OPEN_CHANNEL    | Trying to open a channel took too much time                 | Data about the channel                    |
 
 </br>
 
@@ -382,10 +385,12 @@ The failure callbacks provide 2 parameters, the data related to the operation an
 To set an error callback the process is the same as a non failure one, with a little difference:
 
 ```javascript
-const callbackConst = Lumino.callbacks.names.CALLBACKS.CLIENT_ONBOARDING_FAILURE
-Lumino.callbacks.set(callbackConst, (data, error) => {/* do something...*/})
+const callbackConst =
+  Lumino.callbacks.names.CALLBACKS.CLIENT_ONBOARDING_FAILURE;
+Lumino.callbacks.set(callbackConst, (data, error) => {
+  /* do something...*/
+});
 ```
-
 
 ## Examples
 
@@ -401,47 +406,55 @@ To tackle this problem, the RIF ecosystem has a Notifier, whose objective is to 
 
 Those events are filtered by topics, which are abstracted by the SDK in order to avoid writing complex logic.
 
-## How to use it
+</br>
 
-The notifier is abstracted in simple methods that just need to be summoned, they accept no params since they just use the data from the config of the SDK
+## How to use the notifier
 
-These methods live under the actions and are all async
+The notifier is abstracted in simple methods that just need to be summoned, they are made in order to make very simple the RIF notifier integration.
 
-**Registering with the notifier**
+</br>
 
-```javascript
-notifierRegistration() => void
-```
-
-Registers the LC in the notifier that was passed in the config of `Lumino.init` it must be executed **only once per SDK configuration**, since the data of the registration is stored.
-
-Example
+## Registering with the notifier
 
 ```javascript
-await lumino.actions.notifierRegistration();
+notifierRegistration(notifierURL: String) => Promise<void>
 ```
 
----
+Registers the LC in the notifier that was passed in the config of `Lumino.init` you only need to call it once per initialization, since its data is stored.
 
-**Listening to Open Channel events**
+</br>
+
+## Listening to Open Channel events
 
 ```javascript
-subscribeToOpenChannel() => void
+subscribeToOpenChannel(notifierURL: String) => Promise<void>
 ```
 
-This method subscribes the Light client to all the events of open channel where a partner creates a channel with them.
+This method subscribes the LC to all the events of open channel where a partner creates a channel with them.
 
-The SDK will take care of creating the channel and will execute the OpenChannel callback on success.
+</br>
 
-## Notifier on the background
+## Listening to Close Channel events
 
-In order to receive events, this iteration of the SDK and notifier work in a polling model, every one second the notifier is asked for events, in case that a new one has been detected, the SDK will act accordingly to them.
+```javascript
+subscribeToUserClosesChannelOnToken(notifierURL: String, tokenNetworkAddress: String) => Promise<void>
+```
 
-After processing an event, it will not be fetched again since the SDK will ask for events after the last one processed, so no overfetching is performed.
+With this method, whenever the user closes a channel in an specific Token Network, the SDK will get these related events
+</br>
+NOTE: The token network address is available in the channel structure.
 
-## Reproduce build
+</br>
 
-Run:
+```javascript
+subscribeToPartnerClosesSpecificChannel(notifierURL: String, channelId: Number, tokenNetworkAddress: String) => Promise<void>
+```
+
+With this method if the partner closes an X channel in the Y token network, the SDK will pull from the notifier the related events.
+
+# Reproduce build
+
+Run the next command:
 
 ```
 npm run build
