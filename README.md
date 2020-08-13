@@ -236,6 +236,10 @@ Requests to open a channel with a partner in a given token address
 openChannel(requestBody: Object) => Promise<void>
 ```
 
+### Caveats
+
+- When opening a channel, the original request must be awaited for, if the request is lost, the channel will no te be opened
+- After the REQUEST_OPEN_CHANNEL has been fired, a temporary channel is created, that temporary channel is not meant to be used for operations, only for showing an intermediate state
 <br/>
 
 ### Request Body values
@@ -259,7 +263,9 @@ Requests to deposit a certain amount of tokens in an opened channel
 ```javascript
 createDeposit(requestBody: Object) => Promise<void>
 ```
+### Caveats
 
+- When depositing a channel, the original request must be awaited for, if the request is lost, the deposit may succeed, but the SDK will not update the balance
 <br/>
 
 ### Request Body values
