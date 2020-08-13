@@ -1,41 +1,37 @@
 import { Lumino } from "@rsksmart/lumino-light-client-sdk";
 
+/*
+These code snippets are just some examples of the callbacks of the SDK
+These are not all the methods, but some examples on how to provide callbacks
+*/
+
+const cbs = { ...Lumino.callbacks.names };
 
 // Fired when a payment reception is starting
 // Good place to show that a payment has been received and is being processed
-Lumino.callbacks.set.setOnReceivedPaymentCallback(payment => {
-  showInfo("Received a payment, now processing it...");
+Lumino.callbacks.set(cbs.RECEIVED_PAYMENT, payment => {
+  console.log("Processing incoming payment ", payment);
 });
 
 // A payment was completed
-Lumino.callbacks.set.setOnCompletedPaymentCallback(payment => {
-  const { amount,c partner: p, isReceived } = payment;
-  let message = `Successfully sent ${amount} to ${p}!`;
-  // We distignuish between received and sent payments with this prop
-  if (isReceived) message = `Successfully received ${amount} from ${p}!`;
-  showSuccess(message);
+Lumino.callbacks.set(cbs.COMPLETED_PAYMENT, payment => {
+  const { amount, partner, isReceived } = payment;
+  console.log(amount, partner, isReceived);
 });
 
 // A channel was opened
-Lumino.callbacks.set.setOnOpenChannelCallback(channel => {
-  const { channel_identifier: id } = channel;
-  const message = `Opened new channel ${id}`;
-  showSuccess(message);
-});
-
-// A deposit on a channel was susccessfull
-Lumino.callbacks.set.setOnChannelDepositCallback(channel => {
-  const { channel_identifier: id } = channel;
-  const message = `New deposit on channel ${id}`;
-  showSuccess(message);
+Lumino.callbacks.set(cbs.OPEN_CHANNEL, channel => {
+  const { channel_identifier } = channel;
+  console.log("New channel with id: ", channel_identifier);
 });
 
 // An onboarding process has started
-Lumino.callbacks.set.setOnRequestClientOnboarding(address => {
-  showInfo(`Requested Client onboarding with address ${address}`);
+Lumino.callbacks.set(cbs.REQUEST_CLIENT_ONBOARDING, address => {
+  console.log("Requested onboarding with address: ", address);
 });
 
-// An onboarding process was successfull
-Lumino.callbacks.set.setOnClientOnboardingSuccess(address => {
-  showSuccess(`Client onboarding with address ${address} was successful!`);
+// A deposit failed
+Lumino.callbacks.set(cbs.FAILED_DEPOSIT_CHANNEL, (channel, error) => {
+  console.log("Depositing on the channel has failed ", channel);
+  console.error("Reason: ", error );
 });
