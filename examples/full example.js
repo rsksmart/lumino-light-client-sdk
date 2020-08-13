@@ -15,7 +15,8 @@
  * 5 - Reload the channels on the UI
  * 6 - Make a deposit
  * 7 - Reload the channels on the UI
- * 
+ * 8 - Make a payment
+ * 9 - Close the channel
  */
 
 import {
@@ -128,6 +129,71 @@ const subscribeToPartnerClosesChannel = async (
     channelId,
     tokenNetwork
   );
+};
+
+// Create a new payment, this will be handled automatically
+// The amount must be in wei
+const makeAPayment = (luminoInstance, amount, tokenAddress, partner) => {
+  const data = {
+    partner,
+    tokenAddress,
+    amount,
+  };
+  luminoInstance.actions.createPayment(data);
+};
+
+// Open a new channel
+const openAChannel = async (
+  luminoInstance,
+  partner,
+  settleTimeout,
+  tokenAddress
+) => {
+  const params = {
+    partner,
+    settleTimeout,
+    tokenAddress,
+  };
+  await luminoInstance.actions.openChannel(params);
+};
+
+// Deposit x amount (in wei) in a channel
+const depositOnAChannel = async (
+  luminoInstance,
+  tokenAddress,
+  tokenNetworkAddress,
+  amount,
+  channelId,
+  partner
+) => {
+  const paramsDeposit = {
+    tokenAddress,
+    tokenNetworkAddress,
+    amount,
+    channelId,
+    partner,
+  };
+  await luminoInstance.actions.createDeposit(paramsDeposit);
+};
+
+// Close a channel
+const closeAChannel = async (
+  luminoInstance,
+  partner,
+  tokenNetworkAddress,
+  tokenAddress,
+  address,
+  channelIdentifier
+) => {
+  const data = {
+    partner,
+    tokenAddress,
+    address,
+    tokenNetworkAddress,
+    channelIdentifier,
+  };
+
+  await luminoInstance.actions.closeChannel(data);
 };
 
 const prepareCallbacks = luminoInstance => {
