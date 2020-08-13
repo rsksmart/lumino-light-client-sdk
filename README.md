@@ -20,6 +20,13 @@ The SDK gives the developer all the functions to work with a Lumino HUB and inte
 
 <br/>
 
+# Examples
+
+Some examples on how to integrate and use the SDK are available [here](examples/fullExample.js)
+
+</br>The documentation is worthwile reading though and we encourage you to use the examples as a guideline
+</br>
+
 ## Initialization
 
 ```javascript
@@ -240,7 +247,7 @@ openChannel(requestBody: Object) => Promise<void>
 
 - When opening a channel, the original request must be awaited for, if the request is lost, the channel will no te be opened
 - After the REQUEST_OPEN_CHANNEL has been fired, a temporary channel is created, that temporary channel is not meant to be used for operations, only for showing an intermediate state
-<br/>
+  <br/>
 
 ### Request Body values
 
@@ -263,10 +270,11 @@ Requests to deposit a certain amount of tokens in an opened channel
 ```javascript
 createDeposit(requestBody: Object) => Promise<void>
 ```
+
 ### Caveats
 
 - When depositing a channel, the original request must be awaited for, if the request is lost, the deposit may succeed, but the SDK will not update the balance
-<br/>
+  <br/>
 
 ### Request Body values
 
