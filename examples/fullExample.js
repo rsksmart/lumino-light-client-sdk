@@ -4,13 +4,13 @@
  * Always refer to the docs or open issues in case that something may be missing or improperly written
  */
 
-// These examples use 3 notifiers, but 2 may suffice your needs
+// These examples use 3 notifiers, but you can set up any odd quantity of them 
 
 /**
  * A proper way of ordering this would be
  * 1 - Init the SDK
  * 2 - Prepare the notifiers
- * 3 - Set the callbacks when opening a channel, so we subscribe to the events when they close
+ * 3 - Set the callbacks when opening a channel, so we subscribe to the events when the channels closes
  * 4 - Open a channel
  * 5 - Reload the channels on the UI
  * 6 - Make a deposit
