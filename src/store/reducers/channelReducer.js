@@ -57,17 +57,16 @@ const getPaymentChannelKey = data => {
 };
 
 const createChannel = (channel, hubAnswered = false) => ({
-    ...channel,
-    hubAnswered,
-    offChainBalance: "0",
-    receivedTokens: "0",
-    sentTokens: "0",
-    sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
-    votes: {
-      open: {},
-      close: {},
-    },
-
+  ...channel,
+  hubAnswered,
+  offChainBalance: "0",
+  receivedTokens: "0",
+  sentTokens: "0",
+  sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
+  votes: {
+    open: {},
+    close: {},
+  },
 });
 
 const addVote = (channel, vote, voteType) => {
@@ -143,22 +142,18 @@ const channel = (state = initialState, action) => {
 
         return { ...newState, [nChannelKey]: channelWithResponse };
       }
-      const newChannel = createChannel(
-        action.channel,
-        true
-      );
-      return {...state, [nChannelKey]: newChannel};
+      const newChannel = createChannel(action.channel, true);
+      return { ...state, [nChannelKey]: newChannel };
     }
 
     // Notifiers vote for new channel
     case OPEN_CHANNEL_VOTE: {
       const { notifier, shouldOpen } = action;
       const chKey = getChannelKey(action.channel);
-      let newState = {...state};
+      let newState = { ...state };
       let ch = newState[chKey];
       // If the channel is not present, create it
-      if (!ch) 
-        ch = createChannel(action.channel);
+      if (!ch) ch = createChannel(action.channel);
 
       // Add the corresponding vote, whether is positive or not
       ch = addVote(ch, { notifier, shouldOpen }, VOTE_TYPE.OPEN_CHANNEL_VOTE);
@@ -170,7 +165,7 @@ const channel = (state = initialState, action) => {
       if (ch.canRemoveTemporalChannel)
         newState = removeTemporaryChannel(ch, newState);
 
-      return {...newState, [chKey]: ch};
+      return { ...newState, [chKey]: ch };
     }
 
     case SET_CHANNEL_CLOSED: {
@@ -302,7 +297,7 @@ const channel = (state = initialState, action) => {
         ...channel,
         sdk_status: CHANNEL_WAITING_OPENING,
         isTemporary: true,
-        isOpening: true
+        isOpening: true,
       };
       return newState;
     }
