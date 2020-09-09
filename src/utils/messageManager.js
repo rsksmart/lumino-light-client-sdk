@@ -9,6 +9,8 @@ import {
   FAILURE_REASONS,
   PENDING_PAYMENT,
   EXPIRED,
+  REFUND_TRANSFER,
+  FAILED_PAYMENT,
 } from "../config/paymentConstants";
 import {
   getPendingPaymentById,
@@ -29,6 +31,8 @@ import {
   recreatePaymentForFailure,
   putLockExpired,
   addExpiredPaymentMessage,
+  createPayment,
+  addRefundPaymentMessage,
 } from "../store/actions/payment";
 import { saveLuminoData } from "../store/actions/storage";
 import {
@@ -49,12 +53,13 @@ import {
   getPaymentByIdAndState,
   isPaymentCompleteOrPending,
 } from "../store/functions/payments";
+import { chkSum } from "../utils/functions";
 
 /**
  *
  * @param {*} messages The messages to process
  */
-export const messageManager = messages => {
+export const messageManager = (messages = []) => {
   // We filter out only payment messages for this flow
 
   const paymentMessages = [];
@@ -98,6 +103,9 @@ const manageNonPaymentMessages = messages => {
       case MessageType.DELIVERED:
       case MessageType.PROCESSED: {
         return manageDeliveredAndProcessed(msg, payment, "message");
+      }
+      case MessageType.REFUND_TRANSFER: {
+        return manageRefundTransfer(msg, payment);
       }
       case MessageType.LOCKED_TRANSFER: {
         return messagesToProcessLast.push(msg);
@@ -145,7 +153,9 @@ const managePaymentMessages = messages => {
             signAddress,
             mediator
           );
-          if (!addressFromPayment && !addressFromMediator) return null;
+          if (!addressFromPayment && !addressFromMediator) {
+            return null;
+          }
         } else {
           if (!addressFromPayment) return null;
         }
@@ -189,11 +199,9 @@ const manageLockExpired = (msgData, payment) => {
 
   const paymentAux = getPayment(payment_id);
   if (paymentAux.expiration && paymentAux.expiration.messages[1]) return null;
-  if (!paymentAux.failureReason)
-    dispatch(
-      setPaymentFailed(payment_id, PENDING_PAYMENT, FAILURE_REASONS.EXPIRED)
-    );
-
+  const isFailed = !!paymentAux.failureReason;
+  const paymentState = isFailed ? FAILED_PAYMENT : PENDING_PAYMENT;
+  dispatch(setPaymentFailed(payment_id, paymentState, FAILURE_REASONS.EXPIRED));
   const dataForPut = {
     ...paymentAux,
     signature: message.signature,
@@ -213,8 +221,52 @@ const manageLockExpired = (msgData, payment) => {
   return dispatch(putProcessed(message, paymentAux, 3));
 };
 
+const manageRefundTransfer = async (msgData, payment) => {
+  const store = Store.getStore();
+  const { dispatch } = store;
+  const { message, payment_id, message_order } = msgData;
+
+  const paymentAux = getPayment(payment_id);
+
+  if (paymentAux.failureReason) return null;
+  if (!paymentAux.failureReason) {
+    dispatch(
+      setPaymentFailed(
+        payment_id,
+        PENDING_PAYMENT,
+        FAILURE_REASONS.REFUND_TRANSFER
+      )
+    );
+    dispatch(
+      addRefundPaymentMessage(payment_id, message_order, {
+        message,
+        message_order,
+      })
+    );
+  }
+
+  // We ACK that we have received and proccessed this.
+  await dispatch(putDelivered(message, paymentAux, message_order + 1));
+  await dispatch(putProcessed(message, paymentAux, 3));
+
+  const { getAddress } = ethers.utils;
+
+  const previousSecretHash = payment.secret_hash;
+
+  const newPaymentParams = {
+    previousSecretHash,
+    amount: payment.amount,
+    address: getAddress(payment.initiator),
+    partner: getAddress(payment.partner),
+    token_address: payment.token,
+  };
+
+  return dispatch(createPayment(newPaymentParams));
+};
+
 const manageLockedTransfer = (message, payment, messageKey) => {
   // We shouldn't have a payment, if the payment exists then the LT was processed
+
   if (payment && !payment.failureReason) return null;
   // For these cases, we just acknowledge the LT and stop processing
   const store = Store.getStore();
@@ -230,24 +282,32 @@ const manageLockedTransfer = (message, payment, messageKey) => {
   // Validate signature
   const signatureAddress = signatureRecover(msg);
   const { initiator } = msg;
-  if (!senderIsSigner(signatureAddress, initiator)) return null;
-  const { getAddress } = ethers.utils;
-  // Check for our LT
-  if (getAddress(Lumino.getConfig().address) === getAddress(msg.initiator))
-    return null;
-  if (paymentExistsInAnyState(msg.message_identifier)) return null;
-  // If all ok validate the rest of params
+
   const channel = getChannelByIdAndToken(
     msg.channel_identifier,
-    getAddress(msg.token)
+    chkSum(msg.token)
   );
+
+  // We get the proper partner, and in case of them not being the initiator
+  // We are on a mediated reception situation
+  const partnerInChannel = chkSum(channel.partner_address);
+  const isMediated = partnerInChannel !== chkSum(msg.initiator);
+  const senderAddr = isMediated ? partnerInChannel : initiator;
+  if (!senderIsSigner(signatureAddress, senderAddr)) return null;
+
+  // Check for our LT
+  if (chkSum(Lumino.getConfig().address) === chkSum(msg.initiator)) return null;
+  if (paymentExistsInAnyState(msg.message_identifier)) return null;
+  // If all ok validate the rest of params
+
   const isValidLt = validateReceptionLT(msg, channel);
   if (isValidLt !== true) return console.warn(isValidLt);
   // This function add the message to the store in its proper order
 
   const { tokenName, tokenSymbol } = searchTokenDataInChannels(
-    getAddress(msg.token)
+    chkSum(msg.token)
   );
+
   const actionObj = {
     type: CREATE_PAYMENT,
     payment: {
@@ -255,12 +315,14 @@ const manageLockedTransfer = (message, payment, messageKey) => {
         1: {
           payment_id: msg.message_identifier,
           message_order: 1,
-          receiver: ethers.utils.getAddress(msg.target),
-          sender: ethers.utils.getAddress(msg.initiator),
+          receiver: chkSum(msg.target),
+          sender: chkSum(msg.initiator),
           message: { ...msg, message_order: 1 },
         },
       },
       isReceived: true,
+      isMediated,
+      mediator: isMediated ? partnerInChannel : null,
       message_order: 1,
       tokenName,
       tokenSymbol,
@@ -273,11 +335,11 @@ const manageLockedTransfer = (message, payment, messageKey) => {
       channelId: msg.channel_identifier,
       tokenNetworkAddress: msg.token_network_address,
       chainId: msg.chain_id,
-      token: getAddress(msg.token),
+      token: chkSum(msg.token),
     },
     paymentId: `${msg.payment_identifier}`,
     channelId: msg.channel_identifier,
-    token: getAddress(msg.token),
+    token: chkSum(msg.token),
   };
   store.dispatch(actionObj);
   store.dispatch({ type: RECEIVED_PAYMENT, payment: actionObj });
@@ -298,6 +360,7 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
   const { message_order } = msg;
   let previousMessage = null;
   const isExpired = failureReason === EXPIRED;
+  const isRefunded = failureReason === REFUND_TRANSFER;
 
   // Message already processed?
   if (!isExpired && payment.messages[message_order]) return null;
@@ -309,6 +372,8 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
   if (failureReason) {
     if (isExpired)
       previousMessage = payment.expiration.messages[message_order - 1];
+    if (isRefunded)
+      previousMessage = payment.refund.messages[message_order - 1];
   }
 
   if (!previousMessage) {
@@ -336,18 +401,21 @@ const manageDeliveredAndProcessed = (msg, payment, messageKey) => {
         message_order: msg.message_order,
       })
     );
-  if (failureReason)
-    dispatch(
-      addExpiredPaymentMessage(msg.payment_id, msg.message_order, {
+
+  if (failureReason) {
+    const failureMsgParams = [
+      msg.payment_id,
+      msg.message_order,
+      {
         message: msg[messageKey],
         message_order: msg.message_order,
-      })
-    );
+      },
+    ];
+
+    if (isExpired) dispatch(addExpiredPaymentMessage(...failureMsgParams));
+    if (isRefunded) dispatch(addRefundPaymentMessage(...failureMsgParams));
+  }
   if (msg[messageKey].type === MessageType.PROCESSED) {
-    if (failureReason && isExpired)
-      return dispatch(
-        putDelivered(msg[messageKey], payment, msg.message_order + 1)
-      );
     return dispatch(
       putDelivered(msg[messageKey], payment, msg.message_order + 1)
     );
@@ -366,10 +434,13 @@ const manageSecretRequest = (msg, payment, messageKey) => {
     // Message already processed
     return null;
   }
+
   const hasSameSecretHash = msg[messageKey].secrethash === payment.secret_hash;
   if (!hasSameSecretHash) return console.warn("Secret hash does not match");
+
   const hasSameAmount = `${msg[messageKey].amount}` === `${payment.amount}`;
   if (!hasSameAmount) return console.warn("Amount does not match");
+
   const store = Store.getStore();
   // This function add the message to the store in its proper order
   store.dispatch(
