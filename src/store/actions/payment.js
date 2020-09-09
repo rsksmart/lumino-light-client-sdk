@@ -105,7 +105,12 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     };
 
     // For refunded payments
-    if (previousSecretHash) requestBody.prev_secrethash = previousSecretHash;
+    if (previousSecretHash) {
+      requestBody.prev_secrethash = previousSecretHash;
+      requestBody.additional_metadata = {
+        previous_hash: previousSecretHash,
+      };
+    }
 
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody);
