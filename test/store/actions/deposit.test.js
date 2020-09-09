@@ -26,6 +26,7 @@ describe("test close deposit action", () => {
   const spyResolver = jest.spyOn(signatureResolver, "default");
   const spyCallbacks = jest.spyOn(callbacks, "trigger");
   const spyGetState = jest.spyOn(stateFunctions, "getState");
+
   const channelKey = `1-${randomAddress}`;
   const state = {
     client: {

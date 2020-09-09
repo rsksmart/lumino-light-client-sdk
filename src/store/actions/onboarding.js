@@ -52,7 +52,11 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
 
     throw new Error("HUB Response did not have an api_key");
   } catch (error) {
-    Lumino.callbacks.trigger(CALLBACKS.CLIENT_ONBOARDING_FAILURE, address, error);
+    Lumino.callbacks.trigger(
+      CALLBACKS.CLIENT_ONBOARDING_FAILURE,
+      address,
+      error
+    );
   }
 };
 

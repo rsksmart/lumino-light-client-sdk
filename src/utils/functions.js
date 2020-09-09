@@ -32,7 +32,11 @@ export const findMaxBlockId = notifications =>
 export const findMaxChannelId = channels =>
   findMaxByKey(channels, "channel_identifier");
 
-export const findNonClosedChannelWithPartner = (channels, partnerAddress, tokenAddress) => {
+export const findNonClosedChannelWithPartner = (
+  channels,
+  partnerAddress,
+  tokenAddress
+) => {
   const partnerCksummed = chkSum(partnerAddress);
   const tknChecksummed = chkSum(tokenAddress);
   const channel = Object.values(channels)
