@@ -33,7 +33,10 @@ import {
   PAYMENT_SUCCESSFUL,
 } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
-import { getLatestChannelByPartnerAndToken, getChannelByIdAndToken } from "../functions/channels";
+import {
+  getLatestChannelByPartnerAndToken,
+  getChannelByIdAndToken,
+} from "../functions/channels";
 import {
   searchTokenDataInChannels,
   getTokenAddressByTokenNetwork,

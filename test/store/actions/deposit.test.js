@@ -26,6 +26,7 @@ describe("test close deposit action", () => {
   const spyResolver = jest.spyOn(signatureResolver, "default");
   const spyCallbacks = jest.spyOn(callbacks, "trigger");
   const spyGetState = jest.spyOn(stateFunctions, "getState");
+
   const channelKey = `1-${randomAddress}`;
   const state = {
     client: {
@@ -58,31 +59,6 @@ describe("test close deposit action", () => {
     spyGetState.mockReset();
   });
 
-  test("should call callback when amount to deposit is not enough", async () => {
-    const store = mockStore(state);
-
-    // Spies
-    spyGetState.mockImplementation(() => store.getState());
-
-    const paramsFailDeposit = { ...params, amount: "9000" };
-
-    await store.dispatch(depositActions.createDeposit(paramsFailDeposit));
-
-    const expectedFirstArg = {
-      currentDeposit: "10000",
-      valueDifference: "0",
-      amount: "10000",
-    };
-    const expectSecondArg = new Error(
-      `The current deposit is ${expectedFirstArg.currentDeposit} and the final amount is ${expectedFirstArg.amount}, the amount must be greater than the deposit, difference ${expectedFirstArg.valueDifference}`
-    );
-    expect(spyCallbacks).toHaveBeenCalledWith(
-      CALLBACKS.DEPOSIT_CHANNEL_VALUE_TOO_LOW,
-      expectedFirstArg,
-      expectSecondArg
-    );
-  });
-
   test("should perform a proper deposit", async () => {
     const store = mockStore(state);
 
@@ -105,7 +81,7 @@ describe("test close deposit action", () => {
       token_address: randomAddress,
       total_deposit: "10000",
       offChainBalance: "1000",
-      amount: "1000001000",
+      amount: "1000010000",
     };
     expect(spyCallbacks).toHaveBeenNthCalledWith(
       1,
@@ -142,7 +118,7 @@ describe("test close deposit action", () => {
       token_address: randomAddress,
       total_deposit: "10000",
       offChainBalance: "1000",
-      amount: "1000001000",
+      amount: "1000010000",
     };
     expect(spyCallbacks).toHaveBeenNthCalledWith(
       1,

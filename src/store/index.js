@@ -84,7 +84,7 @@ const getStore = () => store;
 
 const destroyStore = () => (store = null);
 
-const stopAllPollings = (actions) => {
+const stopAllPollings = actions => {
   store.dispatch(actions.stopAllPolling());
 };
 
