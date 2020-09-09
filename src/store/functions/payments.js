@@ -70,7 +70,14 @@ export const getPaymentMessageTypeValue = payment => {
 };
 
 export const getSenderAndReceiver = (payment, msgOrder = 0) => {
-  const { isReceived, mediator, isMediated, initiator, partner, failureReason } = payment;
+  const {
+    isReceived,
+    mediator,
+    isMediated,
+    initiator,
+    partner,
+    failureReason,
+  } = payment;
   const { getAddress } = ethers.utils;
   // NOTE: Partner = the person that the payment was destined for
   // NOTE: initiator = the person that created the payment
