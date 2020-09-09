@@ -19,7 +19,6 @@ const rootReducer = combineReducers({
   tokenNetworks: tokensNetworkReducer,
   tokenNames: tokenNamesReducer,
   rnsReducer: rnsReducer,
-
 });
 
 export default rootReducer;

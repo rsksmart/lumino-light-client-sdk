@@ -8,6 +8,7 @@ import {
 } from "../store/actions/types";
 import notifier from "../notifierRest";
 import { NOTIFIER_BASE_URL } from "../config/notifierConstants";
+import { AddressZero } from "ethers/constants";
 
 const Lumino = () => {
   let actions;
@@ -20,6 +21,7 @@ const Lumino = () => {
     address: "",
     apiKey: "",
     notifierEndPoint: NOTIFIER_BASE_URL,
+    registryAddress: AddressZero,
   };
 
   /**
@@ -81,9 +83,9 @@ const Lumino = () => {
    */
   const getRNSOptions = () => {
     return {
-      networkId: this.chainId,
+      networkId: luminoConfig.chainId,
       contractAddresses: {
-        registry: rifConfig.rns.contracts.rns,
+        registry: luminoConfig.registryAddress,
       },
     };
   };
@@ -111,7 +113,15 @@ const Lumino = () => {
     return init(luminoHandler, storage, configParams);
   };
 
-  return { callbacks, init, get, getConfig, destroy, reConfigure };
+  return {
+    callbacks,
+    init,
+    get,
+    getConfig,
+    destroy,
+    reConfigure,
+    getRNSOptions,
+  };
 };
 
 const instance = Lumino();
