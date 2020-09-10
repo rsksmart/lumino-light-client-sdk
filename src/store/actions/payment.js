@@ -104,14 +104,6 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       secrethash,
     };
 
-    // For refunded payments
-    if (previousSecretHash) {
-      requestBody.prev_secrethash = previousSecretHash;
-      requestBody.additional_metadata = {
-        previous_hash: previousSecretHash,
-      };
-    }
-
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody);
     const {
@@ -149,6 +141,13 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         signature,
       },
     };
+
+    // For refunded payments
+    if (previousSecretHash) {
+      dataToPut.additional_metadata = {
+        previous_hash: previousSecretHash,
+      };
+    }
 
     const urlPut = "payments_light";
     // Send signed LT to HUB
