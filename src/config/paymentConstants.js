@@ -3,7 +3,9 @@ export const FAILED_PAYMENT = "FAILED";
 export const COMPLETED_PAYMENT = "COMPLETED";
 
 export const EXPIRED = "EXPIRED";
+export const REFUND_TRANSFER = "REFUND_TRANSFER";
 
 export const FAILURE_REASONS = {
   [EXPIRED]: EXPIRED,
+  [REFUND_TRANSFER]: REFUND_TRANSFER,
 };

@@ -8,6 +8,7 @@ import {
   SET_PAYMENT_FAILED,
   ADD_EXPIRED_PAYMENT_MESSAGE,
   PAYMENT_CREATION_ERROR,
+  ADD_REFUNDED_PAYMENT_MESSAGE,
 } from "./types";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -31,6 +32,7 @@ import {
   MessageType,
   PAYMENT_EXPIRED,
   PAYMENT_SUCCESSFUL,
+  PAYMENT_REFUND,
 } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
 import {
@@ -61,7 +63,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
   let paymentData = {};
   try {
     const { getAddress, bigNumberify } = ethers.utils;
-    const { token_address, amount } = params;
+    const { token_address, amount, previousSecretHash } = params;
     let { partner } = params;
     const { address } = getState().client;
     const hashes = generateHashes();
@@ -102,6 +104,11 @@ export const createPayment = params => async (dispatch, getState, lh) => {
       secrethash,
     };
 
+    // For refunded payments
+    if (previousSecretHash) {
+      requestBody.prev_secrethash = previousSecretHash;
+    }
+    
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody);
     const {
@@ -139,6 +146,13 @@ export const createPayment = params => async (dispatch, getState, lh) => {
         signature,
       },
     };
+
+    // For refunded payments
+    if (previousSecretHash) {
+      dataToPut.additional_metadata = {
+        previous_hash: previousSecretHash,
+      };
+    }
 
     const urlPut = "payments_light";
     // Send signed LT to HUB
@@ -213,6 +227,18 @@ export const addExpiredPaymentMessage = (
     storeInMessages,
   });
 
+export const addRefundPaymentMessage = (
+  paymentId,
+  messageOrder,
+  message
+) => dispatch =>
+  dispatch({
+    type: ADD_REFUNDED_PAYMENT_MESSAGE,
+    paymentId,
+    messageOrder,
+    message,
+  });
+
 export const addExpiredPaymentNormalMessage = (
   paymentId,
   messageOrder,
@@ -248,6 +274,19 @@ const nonSuccessfulMessageAdd = data => dispatch => {
         )
       );
     }
+    case PAYMENT_REFUND: {
+      return dispatch(
+        addRefundPaymentMessage(
+          paymentId,
+          order,
+          {
+            message,
+            message_order: order,
+          },
+          storeInMessages
+        )
+      );
+    }
   }
 };
 
@@ -259,7 +298,7 @@ export const putDelivered = (
 ) => async (dispatch, getState, lh) => {
   // We determine the type for failures or success flows
   const message_type_value = getPaymentMessageTypeValue(payment);
-  const { sender, receiver } = getSenderAndReceiver(payment);
+  const { sender, receiver } = getSenderAndReceiver(payment, order);
   const { getAddress } = ethers.utils;
   const { paymentId } = payment;
 
@@ -364,7 +403,8 @@ export const putSecretRequest = (msg, payment) => async (
   getState,
   lh
 ) => {
-  const { sender, receiver } = getSenderAndReceiver(payment);
+  const { sender, receiver } = getSenderAndReceiver(payment, 5);
+
   const body = {
     payment_id: payment.paymentId,
     message_order: 5,
@@ -406,13 +446,12 @@ export const putRevealSecret = (
   message_identifier = getRandomBN(),
   order = 7
 ) => async (dispatch, getState, lh) => {
-  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
-  const { isMediated } = payment;
+  const { sender, receiver } = getSenderAndReceiver(payment, order);
   const body = {
     payment_id: payment.paymentId,
     message_order: order,
     sender,
-    receiver: isMediated ? mediator : receiver,
+    receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       type: MessageType.REVEAL_SECRET,
@@ -446,17 +485,16 @@ export const putBalanceProof = (message, payment) => async (
   getState,
   lh
 ) => {
-  const { sender, receiver, mediator } = getSenderAndReceiver(payment);
+  const { sender, receiver } = getSenderAndReceiver(payment, 11);
   const dataToSign = getDataToSignForBalanceProof(message);
   let signature = "";
 
   signature = await resolver(dataToSign, lh, true);
-  const { isMediated } = payment;
   const body = {
     payment_id: payment.paymentId,
     message_order: 11,
     sender,
-    receiver: isMediated ? mediator : receiver,
+    receiver,
     message_type_value: PAYMENT_SUCCESSFUL,
     message: {
       ...message,
@@ -535,6 +573,7 @@ export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
 export const putLockExpired = data => async (dispatch, getState, lh) => {
   try {
     const { sender, receiver } = getSenderAndReceiver(data);
+
     if (!sender || !receiver) return null;
     const body = {
       payment_id: data.paymentId,

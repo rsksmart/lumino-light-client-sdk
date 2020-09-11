@@ -8,11 +8,13 @@ export const MessageType = {
   SECRET: "Secret",
   BALANCE_PROOF: "BalanceProof",
   LOCK_EXPIRED: "LockExpired",
+  REFUND_TRANSFER: "RefundTransfer",
 };
 
 export const PAYMENT_SUCCESSFUL = "PaymentSuccessful";
 export const PAYMENT_EXPIRED = "PaymentExpired";
 export const LC_PROTOCOL_MESSAGE_TYPE = "LightClientProtocolMessageType";
+export const PAYMENT_REFUND = "PaymentRefund";
 
 export const LIGHT_MESSAGE_TYPE = {
   PAYMENT_OK_FLOW: `${LC_PROTOCOL_MESSAGE_TYPE}.${PAYMENT_SUCCESSFUL}`,
