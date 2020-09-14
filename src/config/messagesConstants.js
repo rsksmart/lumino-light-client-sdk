@@ -9,6 +9,7 @@ export const MessageType = {
   BALANCE_PROOF: "BalanceProof",
   LOCK_EXPIRED: "LockExpired",
   REFUND_TRANSFER: "RefundTransfer",
+  REQUEST_REGISTER_SECRET: "RequestRegisterSecret",
 };
 
 export const PAYMENT_SUCCESSFUL = "PaymentSuccessful";
