@@ -48,12 +48,16 @@ import {
   SET_SECRET_MESSAGE_ID,
 } from "../store/actions/types";
 import Lumino from "../Lumino/index";
-import { searchTokenDataInChannels } from "../store/functions/tokens";
+import {
+  getTokenAddressByTokenNetwork,
+  searchTokenDataInChannels,
+} from "../store/functions/tokens";
 import {
   getPaymentByIdAndState,
   isPaymentCompleteOrPending,
 } from "../store/functions/payments";
 import { chkSum } from "../utils/functions";
+import { settleChannel } from "../store/actions/settle";
 
 /**
  *
@@ -90,8 +94,8 @@ const getPayment = paymentId => {
 };
 
 const manageNonPaymentMessages = messages => {
-  // const { getAddress } = ethers.utils;
   const messagesToProcessLast = [];
+
   messages.forEach(({ message_content: msg }) => {
     const { payment_id } = msg;
     let payment = getPayment(payment_id);
@@ -110,8 +114,12 @@ const manageNonPaymentMessages = messages => {
       case MessageType.LOCKED_TRANSFER: {
         return messagesToProcessLast.push(msg);
       }
+      case MessageType.SETTLEMENT_REQUIRED: {
+        return manageSettlementRequired(msg);
+      }
     }
   });
+
   messagesToProcessLast.forEach(msg => {
     const { payment_id } = msg;
     const payment = getPayment(payment_id);
@@ -121,6 +129,49 @@ const manageNonPaymentMessages = messages => {
       }
     }
   });
+};
+
+const manageSettlementRequired = async msg => {
+  const { message } = msg;
+  const { channel_identifier, channel_network_identifier } = message;
+  const tokenNetwork = chkSum(channel_network_identifier);
+  const token = getTokenAddressByTokenNetwork(tokenNetwork);
+  const channel = getChannelByIdAndToken(channel_identifier, token);
+  if (!channel) {
+    console.error("Channel not found!");
+  }
+  if(channel.sentSettlement) return;
+  const { openedByUser, partner_address } = channel;
+  const lcAddress = Lumino.getConfig().address;
+  const creatorAddress = openedByUser ? lcAddress : partner_address;
+  const partnerAddress = openedByUser ? partner_address : lcAddress;
+
+  const txParams = {
+    address: lcAddress,
+    channelIdentifier: channel_identifier,
+    tokenNetworkAddress: tokenNetwork,
+    p1: {
+      address: chkSum(message.participant1),
+      transferred_amount: message.participant1_transferred_amount,
+      locked_amount: message.participant1_locked_amount,
+      locksroot: message.participant1_locksroot,
+    },
+    p2: {
+      address: chkSum(message.participant2),
+      transferred_amount: message.participant2_transferred_amount,
+      locked_amount: message.participant2_locked_amount,
+      locksroot: message.participant2_locksroot,
+    },
+  };
+  // We need the signing handler, so we continue in an action;
+  const store = Store.getStore();
+  const { dispatch } = store;
+  const settleData = {
+    txParams,
+    creatorAddress: chkSum(creatorAddress),
+    partnerAddress: chkSum(partnerAddress),
+  };
+  dispatch(settleChannel(settleData));
 };
 
 const managePaymentMessages = messages => {
