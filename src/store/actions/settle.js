@@ -1,5 +1,7 @@
+import { Lumino } from "../..";
 import client from "../../apiRest";
 import { createSettleTx } from "../../scripts/settle";
+import { CALLBACKS } from "../../utils/callbacks";
 import resolver from "../../utils/handlerResolver";
 import { getTokenAddressByTokenNetwork } from "../functions/tokens";
 import { SET_CHANNEL_SETTLED } from "./types";
@@ -27,6 +29,9 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
       token_address: tokenAddress,
     };
     dispatch(setChannelSettled(dispatchData));
+    const channelKey = `${channelIdentifier}-${tokenAddress}`;
+    const channel = getState().channelReducer[channelKey];
+    Lumino.callbacks.trigger(CALLBACKS.CHANNEL_HAS_SETTLED, channel);
   } catch (error) {
     console.error("Settlement failed!", error);
   }
