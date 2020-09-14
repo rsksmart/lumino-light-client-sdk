@@ -54,6 +54,7 @@ import {
   isPaymentCompleteOrPending,
 } from "../store/functions/payments";
 import { chkSum } from "../utils/functions";
+import { registerSecret } from "../store/actions/secret";
 
 /**
  *
@@ -109,6 +110,9 @@ const manageNonPaymentMessages = messages => {
       }
       case MessageType.LOCKED_TRANSFER: {
         return messagesToProcessLast.push(msg);
+      }
+      case MessageType.REQUEST_REGISTER_SECRET: {
+        return manageRequestRegisterSecret(msg);
       }
     }
   });
@@ -181,6 +185,18 @@ const managePaymentMessages = messages => {
   } catch (e) {
     console.warn(e);
   }
+};
+
+const manageRequestRegisterSecret = data => {
+  const { payment_id } = data;
+  const payment = getPayment(payment_id);
+  if (!payment) return;
+  const store = Store.getStore();
+  const { dispatch } = store;
+  const { secretRegistryAddress } = data.message;
+  const { secret } = payment;
+  const dispatchData = { secretRegistryAddress, secret };
+  dispatch(registerSecret(dispatchData));
 };
 
 const manageLockExpired = (msgData, payment) => {
