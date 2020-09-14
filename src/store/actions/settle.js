@@ -1,6 +1,5 @@
 import client from "../../apiRest";
 import { createSettleTx } from "../../scripts/settle";
-import { chkSum } from "../../utils/functions";
 import resolver from "../../utils/handlerResolver";
 import { getTokenAddressByTokenNetwork } from "../functions/tokens";
 
@@ -19,9 +18,7 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
   const { tokenNetworkAddress } = txParams;
   const tokenAddress = getTokenAddressByTokenNetwork(tokenNetworkAddress);
   const { creatorAddress, partnerAddress } = data;
-  const url = `light_channels/${chkSum(
-    tokenAddress
-  )}/${creatorAddress}/${partnerAddress}`;
+  const url = `light_channels/${tokenAddress}/${creatorAddress}/${partnerAddress}`;
   try {
     const res = await client.patch(url, { ...requestBody });
     console.log("Settlement successful!", res.data);
