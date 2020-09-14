@@ -9,12 +9,14 @@ import {
   CLOSE_CHANNEL_VOTE,
   SET_CHANNEL_AWAITING_CLOSE,
   ADD_CHANNEL_WAITING_FOR_OPENING,
+  SET_CHANNEL_SETTLED,
 } from "../actions/types";
 import { ethers } from "ethers";
 import {
   SDK_CHANNEL_STATUS,
   CHANNEL_WAITING_FOR_CLOSE,
   CHANNEL_WAITING_OPENING,
+  CHANNEL_SETTLED,
 } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
 
@@ -298,6 +300,16 @@ const channel = (state = initialState, action) => {
         sdk_status: CHANNEL_WAITING_OPENING,
         isTemporary: true,
         isOpening: true,
+      };
+      return newState;
+    }
+    case SET_CHANNEL_SETTLED: {
+      const key = getChannelKey(action.data);
+      const newState = { ...state };
+      newState[key] = {
+        ...newState[key],
+        sdk_status: CHANNEL_SETTLED,
+        isSettled: true,
       };
       return newState;
     }
