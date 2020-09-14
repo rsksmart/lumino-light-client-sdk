@@ -93,7 +93,7 @@ const getPayment = paymentId => {
   return paymentData;
 };
 
-const manageNonPaymentMessages = messages => {
+const manageNonPaymentMessages = (messages = []) => {
   const messagesToProcessLast = [];
 
   messages.forEach(({ message_content: msg }) => {
@@ -140,7 +140,7 @@ const manageSettlementRequired = async msg => {
   if (!channel) {
     console.error("Channel not found!");
   }
-  if(channel.sentSettlement) return;
+  if (channel.sentSettlement) return;
   const { openedByUser, partner_address } = channel;
   const lcAddress = Lumino.getConfig().address;
   const creatorAddress = openedByUser ? lcAddress : partner_address;
@@ -174,7 +174,7 @@ const manageSettlementRequired = async msg => {
   dispatch(settleChannel(settleData));
 };
 
-const managePaymentMessages = messages => {
+const managePaymentMessages = (messages = []) => {
   const { getAddress } = ethers.utils;
   try {
     messages.forEach(({ message_content: msg }) => {
