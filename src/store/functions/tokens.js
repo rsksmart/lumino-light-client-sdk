@@ -1,4 +1,4 @@
-import { swapObjValueForKey } from "../../utils/functions";
+import { chkSum, swapObjValueForKey } from "../../utils/functions";
 import Lumino from "../../Lumino";
 import Web3 from "web3";
 import { tokenAbi } from "../../scripts/constants";
@@ -21,7 +21,7 @@ export const getKnownTokenAddresses = () =>
  */
 export const getTokenAddressByTokenNetwork = tokenNetwork => {
   const tokenNetworks = getKnownTokenNetworks();
-  return tokenNetworks[tokenNetwork] || null;
+  return chkSum(tokenNetworks[tokenNetwork]) || null;
 };
 
 /**
