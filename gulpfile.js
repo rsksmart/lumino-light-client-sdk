@@ -23,7 +23,13 @@ gulp.task("babel", done => {
     .pipe(
       babel({
         presets: ["@babel/env"],
-        plugins: ["@babel/plugin-proposal-object-rest-spread"],
+        plugins: [
+          "@babel/plugin-proposal-object-rest-spread",
+          "@babel/plugin-transform-runtime",
+          "@babel/plugin-transform-modules-commonjs",
+          "@babel/plugin-syntax-dynamic-import",
+          "@babel/plugin-syntax-optional-chaining",
+        ],
       })
     )
     .pipe(gulp.dest("dist"));
@@ -46,7 +52,13 @@ gulp.task("build", done => {
           loader: "babel-loader",
           query: {
             presets: ["@babel/preset-env"],
-            plugins: ["@babel/plugin-proposal-object-rest-spread"],
+            plugins: [
+              "@babel/plugin-proposal-object-rest-spread",
+              "@babel/plugin-transform-runtime",
+              "@babel/plugin-transform-modules-commonjs",
+              "@babel/plugin-syntax-dynamic-import",
+              "@babel/plugin-syntax-optional-chaining",
+            ],
           },
         },
         {
