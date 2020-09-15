@@ -1,4 +1,3 @@
-import { dispatch } from "rxjs/internal/observable/pairs";
 import { Lumino } from "../..";
 import client from "../../apiRest";
 import { createSettleTx } from "../../scripts/settle";
@@ -18,13 +17,13 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
     signed_settle_tx: signedTx,
     channel_identifier: channelIdentifier,
   };
+  const { tokenNetworkAddress } = txParams;
+  const tokenAddress = getTokenAddressByTokenNetwork(tokenNetworkAddress);
+  const { creatorAddress, partnerAddress } = data;
   const dispatchData = {
     channel_identifier: channelIdentifier,
     token_address: tokenAddress,
   };
-  const { tokenNetworkAddress } = txParams;
-  const tokenAddress = getTokenAddressByTokenNetwork(tokenNetworkAddress);
-  const { creatorAddress, partnerAddress } = data;
   const url = `light_channels/${tokenAddress}/${creatorAddress}/${partnerAddress}/settle`;
   try {
     dispatch(setChannelIsSettling({ ...dispatchData, isSettling: true }));
@@ -52,4 +51,5 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
 const setChannelSettled = data => dispatch =>
   dispatch({ type: SET_CHANNEL_SETTLED, data });
 
-const setChannelIsSettling = data => dispatch({ type: SET_IS_SETTLING, data });
+const setChannelIsSettling = data => dispatch =>
+  dispatch({ type: SET_IS_SETTLING, data });
