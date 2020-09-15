@@ -11,24 +11,23 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
   const { txParams } = data;
   const unsignedTx = await createSettleTx(txParams);
   const signedTx = await resolver(unsignedTx, lh);
-  const requestBody = {
-    state: "waiting_for_settle",
-    signed_settle_tx: signedTx,
-  };
+  const { channelIdentifier } = txParams;
 
+  const requestBody = {
+    signed_settle_tx: signedTx,
+    channel_identifier: channelIdentifier,
+  };
+  const dispatchData = {
+    channel_identifier: channelIdentifier,
+    token_address: tokenAddress,
+  };
   const { tokenNetworkAddress } = txParams;
   const tokenAddress = getTokenAddressByTokenNetwork(tokenNetworkAddress);
   const { creatorAddress, partnerAddress } = data;
   const url = `light_channels/${tokenAddress}/${creatorAddress}/${partnerAddress}/settle`;
   try {
-    const res = await client.post(url, { ...requestBody });
-    console.log("Settlement successful!", res.data);
+    await client.post(url, { ...requestBody });
 
-    const { channelIdentifier } = txParams;
-    const dispatchData = {
-      channel_identifier: channelIdentifier,
-      token_address: tokenAddress,
-    };
     dispatch(setChannelSettled(dispatchData));
     const channelKey = `${channelIdentifier}-${tokenAddress}`;
     const channel = getState().channelReducer[channelKey];
@@ -36,6 +35,12 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
     dispatch(saveLuminoData());
   } catch (error) {
     console.error("Settlement failed!", error);
+    // Already unlocked error
+    const alreadyUnlockErr = "Channel is already unlocked.";
+    if (error?.response?.data?.errors?.includes(alreadyUnlockErr)) {
+      dispatch(setChannelSettled(dispatchData));
+      dispatch(saveLuminoData());
+    }
   }
 };
 
