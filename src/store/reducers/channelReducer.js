@@ -10,6 +10,7 @@ import {
   SET_CHANNEL_AWAITING_CLOSE,
   ADD_CHANNEL_WAITING_FOR_OPENING,
   SET_CHANNEL_SETTLED,
+  SET_IS_SETTLING,
 } from "../actions/types";
 import { ethers } from "ethers";
 import {
@@ -64,6 +65,8 @@ const createChannel = (channel, hubAnswered = false) => ({
   offChainBalance: "0",
   receivedTokens: "0",
   sentTokens: "0",
+  isSettling: false,
+  isSettled: false,
   sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
   votes: {
     open: {},
@@ -310,6 +313,16 @@ const channel = (state = initialState, action) => {
         ...newState[key],
         sdk_status: CHANNEL_SETTLED,
         isSettled: true,
+        isSettling: false,
+      };
+      return newState;
+    }
+    case SET_IS_SETTLING: {
+      const key = getChannelKey(action.data);
+      const newState = { ...state };
+      newState[key] = {
+        ...newState[key],
+        isSettling: action.data.isSettling,
       };
       return newState;
     }
