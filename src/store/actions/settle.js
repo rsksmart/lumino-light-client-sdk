@@ -27,7 +27,7 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
   const { creatorAddress, partnerAddress } = data;
   const url = `light_channels/${tokenAddress}/${creatorAddress}/${partnerAddress}/settle`;
   try {
-    dispatch(setChannelIsSettling({...dispatchData, isSettling: true}));
+    dispatch(setChannelIsSettling({ ...dispatchData, isSettling: true }));
     await client.post(url, { ...requestBody });
 
     dispatch(setChannelSettled(dispatchData));
@@ -41,14 +41,15 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
     const alreadyUnlockErr = "Channel is already unlocked.";
     if (error?.response?.data?.errors?.includes(alreadyUnlockErr)) {
       dispatch(setChannelSettled(dispatchData));
-     return dispatch(saveLuminoData());
+      return dispatch(saveLuminoData());
     }
-    return dispatch(setChannelIsSettling({ ...dispatchData, isSettling: false }));
+    return dispatch(
+      setChannelIsSettling({ ...dispatchData, isSettling: false })
+    );
   }
 };
 
 const setChannelSettled = data => dispatch =>
   dispatch({ type: SET_CHANNEL_SETTLED, data });
 
-const setChannelIsSettling = data =>
-  dispatch({ type: SET_IS_SETTLING, data });
+const setChannelIsSettling = data => dispatch({ type: SET_IS_SETTLING, data });
