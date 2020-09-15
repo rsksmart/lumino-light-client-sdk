@@ -138,7 +138,8 @@ const manageSettlementRequired = async msg => {
   const token = getTokenAddressByTokenNetwork(tokenNetwork);
   const channel = getChannelByIdAndToken(channel_identifier, token);
   if (!channel) return console.error("Channel not found!");
-  if (channel.isSettled) return;
+  const { isSettled, isSettling } = channel;
+  if (isSettled || isSettling) return;
   const { openedByUser, partner_address } = channel;
   const lcAddress = Lumino.getConfig().address;
   const creatorAddress = openedByUser ? lcAddress : partner_address;
