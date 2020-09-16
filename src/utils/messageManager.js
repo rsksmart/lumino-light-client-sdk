@@ -68,6 +68,7 @@ export const messageManager = (messages = []) => {
 
   const paymentMessages = [];
   const nonPaymentMessages = [];
+  if (!Array.isArray(messages)) return;
   messages.forEach(m => {
     if (m.message_type === LIGHT_MESSAGE_TYPE.PAYMENT_OK_FLOW)
       return paymentMessages.push(m);
