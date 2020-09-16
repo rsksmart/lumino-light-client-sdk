@@ -193,9 +193,14 @@ const manageRequestRegisterSecret = data => {
   if (!payment) return;
   const store = Store.getStore();
   const { dispatch } = store;
-  const { secretRegistryAddress } = data.message;
+  const { secret_registry_address } = data.message;
   const { secret } = payment;
-  const dispatchData = { secretRegistryAddress, secret };
+  // Not having the secret should stop the execution. Since we shouldn't register something empty
+  if (!secret) return;
+  const dispatchData = {
+    secretRegistryAddress: secret_registry_address,
+    secret,
+  };
   dispatch(registerSecret(dispatchData));
 };
 
