@@ -144,6 +144,8 @@ const manageUnlockRequest = async msg => {
   const { channel_identifier, token_address } = msg.message;
   const channel = getChannelByIdAndToken(channel_identifier, token_address);
   if (!channel) return;
+  const { isUnlocked, isUnlocking } = channel;
+  if (isUnlocked || isUnlocking) return;
   const store = Store.getStore();
   const { dispatch } = store;
   dispatch(unlockChannel(channel));
