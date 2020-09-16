@@ -1,7 +1,10 @@
 import { Lumino } from "../..";
 import client from "../../apiRest";
 import { createRegisterSecretTx } from "../../scripts/secret";
+import { CALLBACKS } from "../../utils/callbacks";
 import resolver from "../../utils/handlerResolver";
+import { getPaymentByIdAndState } from "../functions/payments";
+import { saveLuminoData } from "./storage";
 import { REGISTERING_ON_CHAIN_SECRET } from "./types";
 
 export const registerSecret = data => async (dispatch, getState, lh) => {
@@ -17,6 +20,9 @@ export const registerSecret = data => async (dispatch, getState, lh) => {
     const res = await client.post(url, body);
     console.log("Success sending onchain secret", res);
     dispatch(registeredOnChainSecret(paymentId));
+    const payment = getPaymentByIdAndState("pending", paymentId);
+    Lumino.callbacks.trigger(CALLBACKS.REGISTERED_ON_CHAIN_SECRET, payment);
+    dispatch(saveLuminoData());
   } catch (error) {
     console.error("Error when registering onchain secret", error);
     dispatch(registeringOnChainSecret(false, paymentId));
