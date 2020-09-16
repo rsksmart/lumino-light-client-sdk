@@ -11,6 +11,7 @@ export const MessageType = {
   REFUND_TRANSFER: "RefundTransfer",
   SETTLEMENT_REQUIRED: "SettlementRequiredLightMessage",
   REQUEST_REGISTER_SECRET: "RequestRegisterSecret",
+  UNLOCK_REQUEST: "UnlockLightRequest",
 };
 
 export const PAYMENT_SUCCESSFUL = "PaymentSuccessful";
