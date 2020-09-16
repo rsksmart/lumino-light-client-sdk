@@ -38,7 +38,14 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
     console.error("Settlement failed!", error);
     // Already unlocked error
     const alreadyUnlockErr = "Channel is already unlocked.";
-    if (error?.response?.data?.errors?.includes(alreadyUnlockErr)) {
+    const alreadySettledErr = "channel that's already settled";
+    const wasUnlocked = error?.response?.data?.errors?.includes(
+      alreadyUnlockErr
+    );
+    const wasSettled = error?.response?.data?.errors?.includes(
+      alreadySettledErr
+    );
+    if (wasSettled || wasUnlocked) {
       dispatch(setChannelSettled(dispatchData));
       return dispatch(saveLuminoData());
     }
