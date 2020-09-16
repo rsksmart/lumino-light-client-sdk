@@ -58,6 +58,7 @@ import {
 } from "../store/functions/payments";
 import { chkSum } from "../utils/functions";
 import { settleChannel } from "../store/actions/settle";
+import { registerSecret } from "../store/actions/secret";
 
 /**
  *
@@ -117,6 +118,9 @@ const manageNonPaymentMessages = (messages = []) => {
       }
       case MessageType.SETTLEMENT_REQUIRED: {
         return manageSettlementRequired(msg);
+      }
+      case MessageType.REQUEST_REGISTER_SECRET: {
+        return manageRequestRegisterSecret(msg);
       }
     }
   });
@@ -232,6 +236,27 @@ const managePaymentMessages = (messages = []) => {
   } catch (e) {
     console.warn(e);
   }
+};
+
+const manageRequestRegisterSecret = data => {
+  const { payment_id } = data;
+  const payment = getPayment(payment_id);
+  if (!payment) return;
+  const { registeringOnChainSecret, registeredOnChainSecret } = payment;
+  // If it was registered or it is, do not do anything
+  if (registeringOnChainSecret || registeredOnChainSecret) return;
+  const store = Store.getStore();
+  const { dispatch } = store;
+  const { secret_registry_address } = data.message;
+  const { secret } = payment;
+  // Not having the secret should stop the execution. Since we shouldn't register something empty
+  if (!secret) return;
+  const dispatchData = {
+    secretRegistryAddress: secret_registry_address,
+    secret,
+    paymentId: payment_id,
+  };
+  dispatch(registerSecret(dispatchData));
 };
 
 const manageLockExpired = (msgData, payment) => {

@@ -20,6 +20,7 @@ const FAILED_PAYMENT = "FailedPayment";
 const FAILED_CREATE_PAYMENT = "FailedCreatePayment";
 const TIMED_OUT_OPEN_CHANNEL = "TimedOutOpenChannel";
 const CHANNEL_HAS_SETTLED = "ChannelHasSettled";
+const REGISTERED_ON_CHAIN_SECRET = "REGISTERED_ON_CHAIN_SECRET";
 
 export const CALLBACKS = {
   RECEIVED_PAYMENT,
@@ -44,6 +45,7 @@ export const CALLBACKS = {
   TIMED_OUT_OPEN_CHANNEL,
   DEPOSIT_CHANNEL_VALUE_TOO_LOW,
   CHANNEL_HAS_SETTLED,
+  REGISTERED_ON_CHAIN_SECRET,
 };
 
 const Callbacks = () => {

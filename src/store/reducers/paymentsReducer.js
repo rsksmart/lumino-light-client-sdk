@@ -10,6 +10,8 @@ import {
   ADD_EXPIRED_PAYMENT_MESSAGE,
   STORE_REFUND_TRANSFER,
   ADD_REFUNDED_PAYMENT_MESSAGE,
+  REGISTERED_ON_CHAIN_SECRET,
+  REGISTERING_ON_CHAIN_SECRET,
 } from "../actions/types";
 import { PENDING_PAYMENT } from "../../config/paymentConstants";
 
@@ -157,6 +159,20 @@ const paymentsReducer = (state = initialState, action) => {
       newState.failed[paymentId].refund.messages[messageOrder] = message;
       newState.failed[paymentId].refund.message_order = messageOrder;
 
+      return newState;
+    }
+    case REGISTERING_ON_CHAIN_SECRET: {
+      const newState = cloneState(state);
+      const { registeringOnChainSecret } = action;
+      newState.pending[
+        paymentId
+      ].registeringOnChainSecret = registeringOnChainSecret;
+      return newState;
+    }
+    case REGISTERED_ON_CHAIN_SECRET: {
+      const newState = cloneState(state);
+      newState.pending[paymentId].registeringOnChainSecret = false;
+      newState.pending[paymentId].registeredOnChainSecret = true;
       return newState;
     }
     default:

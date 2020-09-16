@@ -10,6 +10,7 @@ export const MessageType = {
   LOCK_EXPIRED: "LockExpired",
   REFUND_TRANSFER: "RefundTransfer",
   SETTLEMENT_REQUIRED: "SettlementRequiredLightMessage",
+  REQUEST_REGISTER_SECRET: "RequestRegisterSecret",
 };
 
 export const PAYMENT_SUCCESSFUL = "PaymentSuccessful";
