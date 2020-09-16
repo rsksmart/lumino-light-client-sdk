@@ -1,6 +1,7 @@
 const gulp = require("gulp");
 const eslint = require("gulp-eslint");
 const babel = require("gulp-babel");
+const sourcemaps = require("gulp-sourcemaps");
 const jsdoc = require("gulp-jsdoc3");
 const connect = require("gulp-connect");
 const webpack = require("webpack");
@@ -17,9 +18,14 @@ gulp.task("lint", () => {
     .pipe(eslint.format());
 });
 
+gulp.task("watch", () => {
+  gulp.watch(["src/**/*.js"], gulp.series("babel"));
+});
+
 gulp.task("babel", done => {
   gulp
     .src("src/**/*.js")
+    .pipe(sourcemaps.init())
     .pipe(
       babel({
         presets: ["@babel/env"],
@@ -32,6 +38,7 @@ gulp.task("babel", done => {
         ],
       })
     )
+    .pipe(sourcemaps.write("."))
     .pipe(gulp.dest("dist"));
   done();
 });
