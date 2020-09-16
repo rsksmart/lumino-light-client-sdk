@@ -11,6 +11,8 @@ import {
   ADD_CHANNEL_WAITING_FOR_OPENING,
   SET_CHANNEL_SETTLED,
   SET_IS_SETTLING,
+  SET_IS_UNLOCKING,
+  SET_CHANNEL_UNLOCKED,
 } from "../actions/types";
 import { ethers } from "ethers";
 import {
@@ -18,6 +20,7 @@ import {
   CHANNEL_WAITING_FOR_CLOSE,
   CHANNEL_WAITING_OPENING,
   CHANNEL_SETTLED,
+  CHANNEL_UNLOCKED,
 } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
 
@@ -323,6 +326,26 @@ const channel = (state = initialState, action) => {
       newState[key] = {
         ...newState[key],
         isSettling: action.data.isSettling,
+      };
+      return newState;
+    }
+    case SET_IS_UNLOCKING: {
+      const key = getChannelKey(action.data);
+      const newState = { ...state };
+      newState[key] = {
+        ...newState[key],
+        isUnlocking: action.data.isUnlocking,
+      };
+      return newState;
+    }
+    case SET_CHANNEL_UNLOCKED: {
+      const key = getChannelKey(action.data);
+      const newState = { ...state };
+      newState[key] = {
+        ...newState[key],
+        sdk_status: CHANNEL_UNLOCKED,
+        isUnlocked: true,
+        isUnlocking: false,
       };
       return newState;
     }
