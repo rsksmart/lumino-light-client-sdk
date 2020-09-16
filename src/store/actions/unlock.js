@@ -1,7 +1,9 @@
 import { Lumino } from "../..";
 import client from "../../apiRest";
 import { createUnlockTx } from "../../scripts/unlock";
+import { CALLBACKS } from "../../utils/callbacks";
 import resolver from "../../utils/handlerResolver";
+import { getChannelByIdAndToken } from "../functions";
 import { getTokenNetworkByTokenAddress } from "../functions/tokens";
 import { SET_CHANNEL_UNLOCKED, SET_IS_UNLOCKING } from "./types";
 
@@ -28,14 +30,21 @@ export const unlockChannel = data => async (dispatch, getState, lh) => {
     const res = await client.post(url, body);
     console.log("Unlock success!", res.data);
     dispatch(setChannelUnlocked(dispatchData));
+    triggerUnlockCB(dispatchData);
   } catch (error) {
     dispatch(setChannelIsUnlocking({ ...dispatchData, isUnlocking: false }));
     console.error("Unlock error!", error);
   }
 };
 
-export const setChannelIsUnlocking = data => dispatch =>
+const triggerUnlockCB = data => {
+  const { channel_identifier, token_address } = data;
+  const channel = getChannelByIdAndToken(channel_identifier, token_address);
+  Lumino.callbacks.trigger(CALLBACKS.CHANNEL_HAS_BEEN_UNLOCKED, channel);
+};
+
+const setChannelIsUnlocking = data => dispatch =>
   dispatch({ type: SET_IS_UNLOCKING, data });
 
-export const setChannelUnlocked = data => dispatch =>
+const setChannelUnlocked = data => dispatch =>
   dispatch({ type: SET_CHANNEL_UNLOCKED, data });
