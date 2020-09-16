@@ -59,6 +59,7 @@ import {
 import { chkSum } from "../utils/functions";
 import { settleChannel } from "../store/actions/settle";
 import { registerSecret } from "../store/actions/secret";
+import { unlockChannel } from "../store/actions/unlock";
 
 /**
  *
@@ -122,6 +123,9 @@ const manageNonPaymentMessages = (messages = []) => {
       case MessageType.REQUEST_REGISTER_SECRET: {
         return manageRequestRegisterSecret(msg);
       }
+      case MessageType.UNLOCK_REQUEST: {
+        return manageUnlockRequest(msg);
+      }
     }
   });
 
@@ -134,6 +138,15 @@ const manageNonPaymentMessages = (messages = []) => {
       }
     }
   });
+};
+
+const manageUnlockRequest = async msg => {
+  const { channel_identifier, token_address } = msg.message;
+  const channel = getChannelByIdAndToken(channel_identifier, token_address);
+  if (!channel) return;
+  const store = Store.getStore();
+  const { dispatch } = store;
+  dispatch(unlockChannel(channel));
 };
 
 const manageSettlementRequired = async msg => {
