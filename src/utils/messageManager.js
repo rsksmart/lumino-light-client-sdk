@@ -191,6 +191,9 @@ const manageRequestRegisterSecret = data => {
   const { payment_id } = data;
   const payment = getPayment(payment_id);
   if (!payment) return;
+  const { registeringOnChainSecret, registeredOnChainSecret } = payment;
+  // If it was registered or it is, do not do anything
+  if (registeringOnChainSecret || registeredOnChainSecret) return;
   const store = Store.getStore();
   const { dispatch } = store;
   const { secret_registry_address } = data.message;
@@ -200,6 +203,7 @@ const manageRequestRegisterSecret = data => {
   const dispatchData = {
     secretRegistryAddress: secret_registry_address,
     secret,
+    paymentId: payment_id,
   };
   dispatch(registerSecret(dispatchData));
 };
