@@ -20,7 +20,7 @@ export const registerSecret = data => async (dispatch, getState, lh) => {
   try {
     dispatch(registeringOnChainSecret(true, paymentId));
     const body = { signed_tx: signedTx };
-    await client.post(url, body, {transformResponse: null});
+    await client.post(url, body, { transformResponse: null });
     dispatch(registeredOnChainSecret(paymentId));
     const payment = getPaymentByIdAndState("pending", paymentId);
     Lumino.callbacks.trigger(CALLBACKS.REGISTERED_ON_CHAIN_SECRET, payment);
