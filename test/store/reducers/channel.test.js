@@ -1,13 +1,18 @@
 import {
+  ADD_CHANNEL_WAITING_FOR_OPENING,
+  DELETE_CHANNEL_FROM_SDK,
   SET_CHANNEL_SETTLED,
   SET_CHANNEL_UNLOCKED,
   SET_IS_SETTLING,
   SET_IS_UNLOCKING,
+  UPDATE_NON_CLOSING_BP,
 } from "../../../src/store/actions/types";
 import reducer from "../../../src/store/reducers/channelReducer";
 import {
+  CHANNEL_OPENED,
   CHANNEL_SETTLED,
   CHANNEL_UNLOCKED,
+  CHANNEL_WAITING_OPENING,
 } from "../../../src/config/channelStates";
 
 const mockAddr = "0xFb783358Ff2b40630B112e3B937f0c43C1Ab2172";
@@ -15,8 +20,17 @@ const mockToken = "0x931A46774dFDC44aac1D6eCa15930b6c3895dD7a";
 
 const initialState = {};
 
-const getChannelKey = action => {
-  return `${action.data.channel_identifier}-${action.data.token_address}`;
+const getChannelKey = data => {
+  return `${data.channel_identifier}-${data.token_address}`;
+};
+
+const getTemporaryKey = data => {
+  return `T-${data.partner_address}-${data.token_address}`;
+};
+
+const getPaymentChannelKey = data => {
+  const { channelId, token } = data;
+  return `${channelId}-${token}`;
 };
 
 describe("Channel reducer", () => {
@@ -34,7 +48,7 @@ describe("Channel reducer", () => {
         channel_identifier: 1,
       },
     };
-    const channelKey = getChannelKey(action);
+    const channelKey = getChannelKey(action.data);
     const state = {
       [channelKey]: {
         balance: 500,
@@ -62,7 +76,7 @@ describe("Channel reducer", () => {
         isUnlocking: false,
       },
     };
-    const channelKey = getChannelKey(action);
+    const channelKey = getChannelKey(action.data);
     const state = {
       [channelKey]: {
         balance: 500,
@@ -89,7 +103,7 @@ describe("Channel reducer", () => {
         isSettling: false,
       },
     };
-    const channelKey = getChannelKey(action);
+    const channelKey = getChannelKey(action.data);
     const state = {
       [channelKey]: {
         balance: 500,
@@ -116,7 +130,7 @@ describe("Channel reducer", () => {
         channel_identifier: 1,
       },
     };
-    const channelKey = getChannelKey(action);
+    const channelKey = getChannelKey(action.data);
     const state = {
       [channelKey]: {
         balance: 500,
@@ -137,4 +151,72 @@ describe("Channel reducer", () => {
     expect(red).toEqual(expected);
   });
 
+  it("Should handle ADD_CHANNEL_WAITING_FOR_OPENING", () => {
+    const action = {
+      type: ADD_CHANNEL_WAITING_FOR_OPENING,
+      channel: {
+        token_address: mockToken,
+        partner_address: mockAddr,
+      },
+    };
+    const channelKey = getTemporaryKey(action.channel);
+    const state = {};
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        ...action.channel,
+        sdk_status: CHANNEL_WAITING_OPENING,
+        isTemporary: true,
+        isOpening: true,
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle DELETE_CHANNEL_FROM_SDK", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const action = {
+      type: DELETE_CHANNEL_FROM_SDK,
+      id: channel_identifier,
+      token_address,
+    };
+    const channelKey = getChannelKey({ token_address, channel_identifier });
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_UNLOCKED,
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {};
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle UPDATE_NON_CLOSING_BP", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const action = {
+      type: UPDATE_NON_CLOSING_BP,
+      channelId: channel_identifier,
+      token: token_address,
+      nonClosingBp: { secret: mockAddr },
+    };
+    const channelKey = getPaymentChannelKey(action);
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_OPENED,
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        nonClosingBp: action.nonClosingBp,
+      },
+    };
+    expect(red).toEqual(expected);
+  });
 });
