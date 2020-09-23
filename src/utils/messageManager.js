@@ -41,6 +41,7 @@ import {
   validateReceptionLT,
   senderIsSigner,
   isAddressFromMediator,
+  isLcAddress,
 } from "./validators";
 import {
   CREATE_PAYMENT,
@@ -56,7 +57,7 @@ import {
   getPaymentByIdAndState,
   isPaymentCompleteOrPending,
 } from "../store/functions/payments";
-import { chkSum } from "../utils/functions";
+import { chkSum, getRandomBN } from "../utils/functions";
 import { settleChannel } from "../store/actions/settle";
 import { registerSecret } from "../store/actions/secret";
 import { unlockChannel } from "../store/actions/unlock";
@@ -194,7 +195,6 @@ const manageSettlementRequired = async msg => {
 };
 
 const managePaymentMessages = (messages = []) => {
-  const { getAddress } = ethers.utils;
   try {
     messages.forEach(({ message_content: msg }) => {
       const { payment_id, is_signed } = msg;
@@ -212,6 +212,7 @@ const managePaymentMessages = (messages = []) => {
       }
       if (is_signed && type !== MessageType.LOCKED_TRANSFER) {
         const signAddress = signatureRecover(msg[messageKey]);
+        if (isLcAddress(signAddress)) return null;
         const { initiator, partner, isMediated, mediator } = payment;
         const addressFromPayment = isAddressFromPayment(
           signAddress,
@@ -229,8 +230,6 @@ const managePaymentMessages = (messages = []) => {
         } else {
           if (!addressFromPayment) return null;
         }
-
-        if (getAddress(Lumino.getConfig().address) === signAddress) return null;
       }
       switch (type) {
         case MessageType.LOCKED_TRANSFER:
@@ -555,50 +554,48 @@ const manageSecretRequest = (msg, payment, messageKey) => {
  * @param {*} payment The payment associated to the message
  * @param {*} messageKey The data key for accessing the message
  */
-const manageRevealSecret = (msg, payment, messageKey) => {
+const manageRevealSecret = async (msg, payment, messageKey) => {
   if (payment.messages[msg.message_order]) {
     // Message already processed
     return null;
   }
-  // If this is true, then we are on reception
   const store = Store.getStore();
-  if (payment.secret && msg.is_signed) {
-    const hasSameSecret = msg[messageKey].secret === payment.secret;
-    if (!hasSameSecret) return console.warn("Secret does not match");
+  const { dispatch } = store;
+  const { message_order } = msg;
 
-    store.dispatch(
-      addPendingPaymentMessage(msg.payment_id, msg.message_order, {
-        message: msg[messageKey],
-        message_order: msg.message_order,
-      })
-    );
-    if (!payment.messages[10]) {
-      store.dispatch(putDelivered(msg[messageKey], payment, 10));
-    }
-  } else if (msg.message_order === 7) {
+  // Initiator side
+  if (message_order === 7 && payment.isReceived) {
     const { keccak256 } = ethers.utils;
     const hasSameSecretHash =
       keccak256(msg[messageKey].secret) === payment.secret_hash;
     if (!hasSameSecretHash) return console.warn("Secret does not match");
-    store.dispatch(
+    dispatch(
       addPendingPaymentMessage(msg.payment_id, msg.message_order, {
         message: msg[messageKey],
         message_order: msg.message_order,
       })
     );
-    store.dispatch(setPaymentSecret(payment.paymentId, msg[messageKey].secret));
-    return store.dispatch(saveLuminoData());
-  } else {
-    store.dispatch(
+    payment.secret = msg[messageKey].secret;
+    dispatch(setPaymentSecret(payment.paymentId, msg[messageKey].secret));
+    await dispatch(putDelivered(msg[messageKey], payment, 8));
+    await dispatch(putRevealSecret(payment, getRandomBN(), 9, true));
+    return dispatch(saveLuminoData());
+  }
+  // Receiver side
+  if (message_order === 9 && !payment.isReceived) {
+    const hasSameSecret = msg[messageKey].secret === payment.secret;
+    if (!hasSameSecret) return console.warn("Secret does not match");
+    dispatch(setPaymentSecret(payment.paymentId, msg[messageKey].secret));
+    await dispatch(
       addPendingPaymentMessage(msg.payment_id, msg.message_order, {
         message: msg[messageKey],
         message_order: msg.message_order,
       })
     );
-    store.dispatch(putDelivered(payment.messages[7].message, payment, 8));
-    store.dispatch(
-      putRevealSecret(payment, msg[messageKey].message_identifier, 9, true)
-    );
+    if (!payment.messages[10])
+      dispatch(putDelivered(msg[messageKey], payment, 10));
+
+    return dispatch(saveLuminoData());
   }
 };
 
