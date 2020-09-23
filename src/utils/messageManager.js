@@ -41,6 +41,7 @@ import {
   validateReceptionLT,
   senderIsSigner,
   isAddressFromMediator,
+  isLcAddress,
 } from "./validators";
 import {
   CREATE_PAYMENT,
@@ -48,12 +49,18 @@ import {
   SET_SECRET_MESSAGE_ID,
 } from "../store/actions/types";
 import Lumino from "../Lumino/index";
-import { searchTokenDataInChannels } from "../store/functions/tokens";
+import {
+  getTokenAddressByTokenNetwork,
+  searchTokenDataInChannels,
+} from "../store/functions/tokens";
 import {
   getPaymentByIdAndState,
   isPaymentCompleteOrPending,
 } from "../store/functions/payments";
-import { chkSum } from "../utils/functions";
+import { chkSum, getRandomBN } from "../utils/functions";
+import { settleChannel } from "../store/actions/settle";
+import { registerSecret } from "../store/actions/secret";
+import { unlockChannel } from "../store/actions/unlock";
 
 /**
  *
@@ -64,6 +71,7 @@ export const messageManager = (messages = []) => {
 
   const paymentMessages = [];
   const nonPaymentMessages = [];
+  if (!Array.isArray(messages)) return;
   messages.forEach(m => {
     if (m.message_type === LIGHT_MESSAGE_TYPE.PAYMENT_OK_FLOW)
       return paymentMessages.push(m);
@@ -89,9 +97,9 @@ const getPayment = paymentId => {
   return paymentData;
 };
 
-const manageNonPaymentMessages = messages => {
-  // const { getAddress } = ethers.utils;
+const manageNonPaymentMessages = (messages = []) => {
   const messagesToProcessLast = [];
+
   messages.forEach(({ message_content: msg }) => {
     const { payment_id } = msg;
     let payment = getPayment(payment_id);
@@ -110,8 +118,18 @@ const manageNonPaymentMessages = messages => {
       case MessageType.LOCKED_TRANSFER: {
         return messagesToProcessLast.push(msg);
       }
+      case MessageType.SETTLEMENT_REQUIRED: {
+        return manageSettlementRequired(msg);
+      }
+      case MessageType.REQUEST_REGISTER_SECRET: {
+        return manageRequestRegisterSecret(msg);
+      }
+      case MessageType.UNLOCK_REQUEST: {
+        return manageUnlockRequest(msg);
+      }
     }
   });
+
   messagesToProcessLast.forEach(msg => {
     const { payment_id } = msg;
     const payment = getPayment(payment_id);
@@ -123,8 +141,60 @@ const manageNonPaymentMessages = messages => {
   });
 };
 
-const managePaymentMessages = messages => {
-  const { getAddress } = ethers.utils;
+const manageUnlockRequest = async msg => {
+  const { channel_identifier, token_address } = msg.message;
+  const channel = getChannelByIdAndToken(channel_identifier, token_address);
+  if (!channel) return;
+  const { isUnlocked, isUnlocking } = channel;
+  if (isUnlocked || isUnlocking) return;
+  const store = Store.getStore();
+  const { dispatch } = store;
+  dispatch(unlockChannel(channel));
+};
+
+const manageSettlementRequired = async msg => {
+  const { message } = msg;
+  const { channel_identifier, channel_network_identifier } = message;
+  const tokenNetwork = chkSum(channel_network_identifier);
+  const token = getTokenAddressByTokenNetwork(tokenNetwork);
+  const channel = getChannelByIdAndToken(channel_identifier, token);
+  if (!channel) return console.error("Channel not found!");
+  const { isSettled, isSettling } = channel;
+  if (isSettled || isSettling) return;
+  const { openedByUser, partner_address } = channel;
+  const lcAddress = Lumino.getConfig().address;
+  const creatorAddress = openedByUser ? lcAddress : partner_address;
+  const partnerAddress = openedByUser ? partner_address : lcAddress;
+
+  const txParams = {
+    address: lcAddress,
+    channelIdentifier: channel_identifier,
+    tokenNetworkAddress: tokenNetwork,
+    p1: {
+      address: chkSum(message.participant1),
+      transferred_amount: message.participant1_transferred_amount,
+      locked_amount: message.participant1_locked_amount,
+      locksroot: message.participant1_locksroot,
+    },
+    p2: {
+      address: chkSum(message.participant2),
+      transferred_amount: message.participant2_transferred_amount,
+      locked_amount: message.participant2_locked_amount,
+      locksroot: message.participant2_locksroot,
+    },
+  };
+  // We need the signing handler, so we continue in an action;
+  const store = Store.getStore();
+  const { dispatch } = store;
+  const settleData = {
+    txParams,
+    creatorAddress: chkSum(creatorAddress),
+    partnerAddress: chkSum(partnerAddress),
+  };
+  dispatch(settleChannel(settleData));
+};
+
+const managePaymentMessages = (messages = []) => {
   try {
     messages.forEach(({ message_content: msg }) => {
       const { payment_id, is_signed } = msg;
@@ -142,6 +212,7 @@ const managePaymentMessages = messages => {
       }
       if (is_signed && type !== MessageType.LOCKED_TRANSFER) {
         const signAddress = signatureRecover(msg[messageKey]);
+        if (isLcAddress(signAddress)) return null;
         const { initiator, partner, isMediated, mediator } = payment;
         const addressFromPayment = isAddressFromPayment(
           signAddress,
@@ -159,8 +230,6 @@ const managePaymentMessages = messages => {
         } else {
           if (!addressFromPayment) return null;
         }
-
-        if (getAddress(Lumino.getConfig().address) === signAddress) return null;
       }
       switch (type) {
         case MessageType.LOCKED_TRANSFER:
@@ -181,6 +250,27 @@ const managePaymentMessages = messages => {
   } catch (e) {
     console.warn(e);
   }
+};
+
+const manageRequestRegisterSecret = data => {
+  const { payment_id } = data;
+  const payment = getPayment(payment_id);
+  if (!payment) return;
+  const { registeringOnChainSecret, registeredOnChainSecret } = payment;
+  // If it was registered or it is, do not do anything
+  if (registeringOnChainSecret || registeredOnChainSecret) return;
+  const store = Store.getStore();
+  const { dispatch } = store;
+  const { secret_registry_address } = data.message;
+  const { secret } = payment;
+  // Not having the secret should stop the execution. Since we shouldn't register something empty
+  if (!secret) return;
+  const dispatchData = {
+    secretRegistryAddress: secret_registry_address,
+    secret,
+    paymentId: payment_id,
+  };
+  dispatch(registerSecret(dispatchData));
 };
 
 const manageLockExpired = (msgData, payment) => {
@@ -464,50 +554,48 @@ const manageSecretRequest = (msg, payment, messageKey) => {
  * @param {*} payment The payment associated to the message
  * @param {*} messageKey The data key for accessing the message
  */
-const manageRevealSecret = (msg, payment, messageKey) => {
+const manageRevealSecret = async (msg, payment, messageKey) => {
   if (payment.messages[msg.message_order]) {
     // Message already processed
     return null;
   }
-  // If this is true, then we are on reception
   const store = Store.getStore();
-  if (payment.secret && msg.is_signed) {
-    const hasSameSecret = msg[messageKey].secret === payment.secret;
-    if (!hasSameSecret) return console.warn("Secret does not match");
+  const { dispatch } = store;
+  const { message_order } = msg;
 
-    store.dispatch(
-      addPendingPaymentMessage(msg.payment_id, msg.message_order, {
-        message: msg[messageKey],
-        message_order: msg.message_order,
-      })
-    );
-    if (!payment.messages[10]) {
-      store.dispatch(putDelivered(msg[messageKey], payment, 10));
-    }
-  } else if (msg.message_order === 7) {
+  // Initiator side
+  if (message_order === 7 && payment.isReceived) {
     const { keccak256 } = ethers.utils;
     const hasSameSecretHash =
       keccak256(msg[messageKey].secret) === payment.secret_hash;
     if (!hasSameSecretHash) return console.warn("Secret does not match");
-    store.dispatch(
+    dispatch(
       addPendingPaymentMessage(msg.payment_id, msg.message_order, {
         message: msg[messageKey],
         message_order: msg.message_order,
       })
     );
-    store.dispatch(setPaymentSecret(payment.paymentId, msg[messageKey].secret));
-    return store.dispatch(saveLuminoData());
-  } else {
-    store.dispatch(
+    payment.secret = msg[messageKey].secret;
+    dispatch(setPaymentSecret(payment.paymentId, msg[messageKey].secret));
+    await dispatch(putDelivered(msg[messageKey], payment, 8));
+    await dispatch(putRevealSecret(payment, getRandomBN(), 9, true));
+    return dispatch(saveLuminoData());
+  }
+  // Receiver side
+  if (message_order === 9 && !payment.isReceived) {
+    const hasSameSecret = msg[messageKey].secret === payment.secret;
+    if (!hasSameSecret) return console.warn("Secret does not match");
+    dispatch(setPaymentSecret(payment.paymentId, msg[messageKey].secret));
+    await dispatch(
       addPendingPaymentMessage(msg.payment_id, msg.message_order, {
         message: msg[messageKey],
         message_order: msg.message_order,
       })
     );
-    store.dispatch(putDelivered(payment.messages[7].message, payment, 8));
-    store.dispatch(
-      putRevealSecret(payment, msg[messageKey].message_identifier, 9, true)
-    );
+    if (!payment.messages[10])
+      dispatch(putDelivered(msg[messageKey], payment, 10));
+
+    return dispatch(saveLuminoData());
   }
 };
 

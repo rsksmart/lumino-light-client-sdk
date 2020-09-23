@@ -108,7 +108,7 @@ export const createPayment = params => async (dispatch, getState, lh) => {
     if (previousSecretHash) {
       requestBody.prev_secrethash = previousSecretHash;
     }
-    
+
     const urlCreate = "payments_light/create";
     const res = await client.post(urlCreate, requestBody);
     const {
