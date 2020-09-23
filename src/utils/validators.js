@@ -2,6 +2,7 @@ import { ethers } from "ethers";
 import { CHANNEL_OPENED } from "../config/channelStates";
 import { getPackedData } from "./pack";
 import Lumino from "../Lumino/index";
+import { chkSum } from "./functions";
 
 /**
  *
@@ -11,6 +12,11 @@ export const signatureRecover = message => {
   const { verifyMessage } = ethers.utils;
   if (message.signature === "0x" || !message.signature) return "0x";
   return verifyMessage(getPackedData(message), message.signature);
+};
+
+export const isLcAddress = otherAddress => {
+  const { address } = Lumino.getConfig();
+  return chkSum(address) === chkSum(otherAddress);
 };
 
 const getBN = number => {
