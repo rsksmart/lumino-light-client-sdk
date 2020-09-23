@@ -10,6 +10,7 @@ export const requestTokenAddressFromTokenNetwork = tokenNetwork => async dispatc
     return res.data;
   } catch (error) {
     console.error(error);
+    return null;
   }
 };
 
