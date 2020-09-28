@@ -14,6 +14,7 @@ import {
   SET_IS_UNLOCKING,
   SET_CHANNEL_UNLOCKED,
   RECEIVED_PAYMENT,
+  SET_PAYMENT_FAILED,
 } from "../actions/types";
 import { ethers } from "ethers";
 import {
@@ -25,6 +26,7 @@ import {
 } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
 import { chkSum } from "../../utils/functions";
+import { FAILURE_REASONS } from "../../config/paymentConstants";
 
 const initialState = {};
 
@@ -177,7 +179,17 @@ const channel = (state = initialState, action) => {
 
       return { ...newState, [chKey]: ch };
     }
-
+    case SET_PAYMENT_FAILED: {
+      const isExpired = action.reason === FAILURE_REASONS.EXPIRED;
+      if (!isExpired) return state;
+      const key = getChannelKey(action.channel);
+      const stateClone = { ...state, [key]: { ...state[key] } };
+      if (stateClone[key].previousNonClosingBp) {
+        stateClone[key].nonClosingBp = state[key].previousNonClosingBp;
+        delete stateClone[key].previousNonClosingBp;
+      }
+      return stateClone;
+    }
     case SET_CHANNEL_CLOSED: {
       const cChannelKey = getChannelKey(action.channel);
 
