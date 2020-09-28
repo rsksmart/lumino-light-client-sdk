@@ -13,6 +13,7 @@ import {
   SET_IS_SETTLING,
   SET_IS_UNLOCKING,
   SET_CHANNEL_UNLOCKED,
+  RECEIVED_PAYMENT,
 } from "../actions/types";
 import { ethers } from "ethers";
 import {
@@ -23,6 +24,7 @@ import {
   CHANNEL_UNLOCKED,
 } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
+import { chkSum } from "../../utils/functions";
 
 const initialState = {};
 
@@ -242,6 +244,43 @@ const channel = (state = initialState, action) => {
           sentTokens: channelSent.toString(),
         },
       };
+    }
+    case RECEIVED_PAYMENT: {
+      const {
+        payment: { payment: p },
+      } = action;
+      const msg = p.messages[1].message;
+      const channelKey = getChannelKey({
+        ...msg,
+        token_address: chkSum(msg.token),
+      });
+      const tokenNetwork = chkSum(msg.token_network_address);
+      const nonClosingBp = {
+        light_client_payment_id: msg.payment_identifier,
+        secret_hash: msg.lock.secrethash,
+        nonce: msg.nonce,
+        channel_id: msg.channel_identifier,
+        token_network_address: tokenNetwork,
+        partner_balance_proof: {
+          chain_id: msg.chain_id,
+          channel_identifier: msg.channel_identifier,
+          locked_amount: msg.locked_amount,
+          locksroot: msg.locksroot,
+          message_identifier: msg.message_identifier,
+          nonce: msg.nonce,
+          payment_identifier: msg.payment_identifier,
+          secret: msg.secret,
+          token_network_address: tokenNetwork,
+          transferred_amount: msg.transferred_amount,
+        },
+      };
+      const stateClone = {...state};
+      const hasPreviousBP = state[channelKey].nonClosingBp;
+      if (hasPreviousBP)
+        stateClone[channelKey].previousNonClosingBp =
+          stateClone[channelKey].nonClosingBp;
+      stateClone[channelKey].nonClosingBp = nonClosingBp;
+      return stateClone;
     }
     case UPDATE_NON_CLOSING_BP: {
       const ncbpChannel = getPaymentChannelKey(action);
