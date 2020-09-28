@@ -556,12 +556,18 @@ export const setPaymentSecret = (paymentId, secret) => ({
   paymentId,
 });
 
-export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
+export const setPaymentFailed = (
+  paymentId,
+  state,
+  reason,
+  channel
+) => dispatch => {
   const obj = {
     type: SET_PAYMENT_FAILED,
     paymentId,
     reason,
     paymentState: state,
+    channel,
   };
   return dispatch(obj);
 };
