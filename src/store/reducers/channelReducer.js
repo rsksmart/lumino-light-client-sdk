@@ -182,10 +182,11 @@ const channel = (state = initialState, action) => {
     case SET_PAYMENT_FAILED: {
       const isExpired = action.reason === FAILURE_REASONS.EXPIRED;
       if (!isExpired) return state;
+
       const key = getChannelKey(action.channel);
       const stateClone = { ...state, [key]: { ...state[key] } };
       if (stateClone[key].previousNonClosingBp) {
-        stateClone[key].nonClosingBp = state[key].previousNonClosingBp;
+        stateClone[key].nonClosingBp = stateClone[key].previousNonClosingBp;
         delete stateClone[key].previousNonClosingBp;
       }
       return stateClone;
