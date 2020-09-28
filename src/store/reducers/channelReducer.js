@@ -274,7 +274,7 @@ const channel = (state = initialState, action) => {
           transferred_amount: msg.transferred_amount,
         },
       };
-      const stateClone = { ...state, [channelKey]: {...state[channelKey]} };
+      const stateClone = { ...state, [channelKey]: { ...state[channelKey] } };
       const hasPreviousBP = state[channelKey].nonClosingBp;
       if (hasPreviousBP)
         stateClone[channelKey].previousNonClosingBp =
