@@ -292,7 +292,19 @@ const manageLockExpired = (msgData, payment) => {
   if (paymentAux.expiration && paymentAux.expiration.messages[1]) return null;
   const isFailed = !!paymentAux.failureReason;
   const paymentState = isFailed ? FAILED_PAYMENT : PENDING_PAYMENT;
-  dispatch(setPaymentFailed(payment_id, paymentState, FAILURE_REASONS.EXPIRED));
+  const { channelId, token } = paymentAux;
+  const channelData = {
+    channel_identifier: channelId,
+    token_address: token,
+  };
+  dispatch(
+    setPaymentFailed(
+      payment_id,
+      paymentState,
+      FAILURE_REASONS.EXPIRED,
+      channelData
+    )
+  );
   const dataForPut = {
     ...paymentAux,
     signature: message.signature,
