@@ -19,6 +19,7 @@ const FAILED_CLOSE_CHANNEL = "FailedCloseChannel";
 const FAILED_PAYMENT = "FailedPayment";
 const FAILED_CREATE_PAYMENT = "FailedCreatePayment";
 const TIMED_OUT_OPEN_CHANNEL = "TimedOutOpenChannel";
+const CHANNEL_HAS_SETTLED = "ChannelHasSettled";
 
 export const CALLBACKS = {
   RECEIVED_PAYMENT,
@@ -42,6 +43,7 @@ export const CALLBACKS = {
   CLIENT_ONBOARDING_FAILURE,
   TIMED_OUT_OPEN_CHANNEL,
   DEPOSIT_CHANNEL_VALUE_TOO_LOW,
+  CHANNEL_HAS_SETTLED,
 };
 
 const Callbacks = () => {
@@ -63,7 +65,7 @@ const Callbacks = () => {
    */
   const trigger = (name, ...args) => {
     if (callbacks[name]) return callbacks[name](...args);
-    return () => {};
+    return () => undefined;
   };
 
   return { set, trigger, names: CALLBACKS };

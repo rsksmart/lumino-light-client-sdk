@@ -6,6 +6,7 @@ module.exports = {
     jest: true,
   },
   extends: "eslint:recommended",
+  parser: "@babel/eslint-parser",
   globals: {
     Atomics: "readonly",
     SharedArrayBuffer: "readonly",

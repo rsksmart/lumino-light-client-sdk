@@ -9,12 +9,15 @@ import {
   CLOSE_CHANNEL_VOTE,
   SET_CHANNEL_AWAITING_CLOSE,
   ADD_CHANNEL_WAITING_FOR_OPENING,
+  SET_CHANNEL_SETTLED,
+  SET_IS_SETTLING,
 } from "../actions/types";
 import { ethers } from "ethers";
 import {
   SDK_CHANNEL_STATUS,
   CHANNEL_WAITING_FOR_CLOSE,
   CHANNEL_WAITING_OPENING,
+  CHANNEL_SETTLED,
 } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
 
@@ -62,6 +65,8 @@ const createChannel = (channel, hubAnswered = false) => ({
   offChainBalance: "0",
   receivedTokens: "0",
   sentTokens: "0",
+  isSettling: false,
+  isSettled: false,
   sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
   votes: {
     open: {},
@@ -298,6 +303,26 @@ const channel = (state = initialState, action) => {
         sdk_status: CHANNEL_WAITING_OPENING,
         isTemporary: true,
         isOpening: true,
+      };
+      return newState;
+    }
+    case SET_CHANNEL_SETTLED: {
+      const key = getChannelKey(action.data);
+      const newState = { ...state };
+      newState[key] = {
+        ...newState[key],
+        sdk_status: CHANNEL_SETTLED,
+        isSettled: true,
+        isSettling: false,
+      };
+      return newState;
+    }
+    case SET_IS_SETTLING: {
+      const key = getChannelKey(action.data);
+      const newState = { ...state };
+      newState[key] = {
+        ...newState[key],
+        isSettling: action.data.isSettling,
       };
       return newState;
     }

@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { ethers } from "ethers";
+import { AddressZero } from "ethers/constants";
 import { NON_CLOSED_STATES } from "../config/channelStates";
 
 const getGreater = (n1, n2) => (n1 > n2 ? n1 : n2);
@@ -8,7 +9,7 @@ const getGreater = (n1, n2) => (n1 > n2 ? n1 : n2);
  * Checksums an address
  * @param {*} addr The address to be checksummed
  */
-export const chkSum = addr => ethers.utils.getAddress(addr);
+export const chkSum = (addr = AddressZero) => ethers.utils.getAddress(addr);
 
 /**
  * This methods performs a simple loop through an array and return the highest numeric value
