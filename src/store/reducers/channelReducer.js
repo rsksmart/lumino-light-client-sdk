@@ -170,7 +170,7 @@ const channel = (state = initialState, action) => {
       let newChannel = createChannel(action.channel, true);
       newChannel = checkIfChannelCanBeOpened(newChannel, numberOfNotifiers);
       let newState = { ...state };
-      
+
       // Can we remove a temporary channel?
       if (newChannel.canRemoveTemporalChannel)
         newState = removeTemporaryChannel(newChannel, newState);
