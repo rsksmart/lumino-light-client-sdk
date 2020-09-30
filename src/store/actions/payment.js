@@ -535,7 +535,7 @@ export const putNonClosingBalanceProof = (
     channel_id: payment.channelId,
     token_network_address: getAddress(payment.tokenNetworkAddress),
     lc_bp_signature: signature,
-    partner_balance_proof: message,
+    partner_balance_proof: dataForPack,
   };
   try {
     const urlPut = "watchtower";
