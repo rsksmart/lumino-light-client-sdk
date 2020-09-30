@@ -22,7 +22,7 @@ const Lumino = () => {
     apiKey: "",
     notifierEndPoint: NOTIFIER_BASE_URL,
     registryAddress: AddressZero,
-    useNotifiers: false
+    useNotifiers: false,
   };
 
   /**
