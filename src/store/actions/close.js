@@ -12,6 +12,7 @@ import { CHANNEL_WAITING_FOR_CLOSE } from "../../config/channelStates";
 import { Lumino } from "../..";
 import { CALLBACKS } from "../../utils/callbacks";
 import { getChannelByIdAndToken } from "../functions";
+import { getNumberOfNotifiers } from "../functions/notifiers";
 
 /**
  * Close a channel.
@@ -53,10 +54,14 @@ export const closeChannel = params => async (dispatch, getState, lh) => {
       channelAwaitingClose
     );
     const res = await client.patch(url, { ...requestBody });
-
+    const numberOfNotifiers = getNumberOfNotifiers().length;
     dispatch({
       type: SET_CHANNEL_CLOSED,
-      channel: { ...res.data, sdk_status: CHANNEL_WAITING_FOR_CLOSE },
+      channel: {
+        ...res.data,
+        sdk_status: CHANNEL_WAITING_FOR_CLOSE,
+        numberOfNotifiers,
+      },
     });
     const allData = getState();
     return await lh.storage.saveLuminoData(allData);

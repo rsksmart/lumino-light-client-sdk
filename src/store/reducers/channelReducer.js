@@ -201,16 +201,22 @@ const channel = (state = initialState, action) => {
     }
 
     case SET_CHANNEL_CLOSED: {
-      const cChannelKey = getChannelKey(action.channel);
+      const chKey = getChannelKey(action.channel);
 
-      const channelsModified = {
+      const newState = {
         ...state,
-        [cChannelKey]: {
-          ...state[cChannelKey],
+        [chKey]: {
+          ...state[chKey],
           ...action.channel,
         },
       };
-      return channelsModified;
+      const { numberOfNotifiers } = action;
+      newState[chKey] = checkIfChannelCanBeClosed(
+        newState[chKey],
+        numberOfNotifiers
+      );
+
+      return newState;
     }
 
     case NEW_DEPOSIT: {
