@@ -210,7 +210,8 @@ const managePaymentMessages = (messages = []) => {
         const paymentPendingOrComplete = isPaymentCompleteOrPending(paymentId);
         if (paymentPendingOrComplete) return null;
       }
-      if (is_signed && type !== MessageType.LOCKED_TRANSFER) {
+      const isLT = type === MessageType.LOCKED_TRANSFER;
+      if (is_signed && !isLT) {
         const signAddress = signatureRecover(msg[messageKey]);
         if (isLcAddress(signAddress)) return null;
         const { initiator, partner, isMediated, mediator } = payment;
@@ -230,6 +231,10 @@ const managePaymentMessages = (messages = []) => {
         } else {
           if (!addressFromPayment) return null;
         }
+      }
+      if (!is_signed && isLT) {
+        const { initiator } = msg[messageKey];
+        if (!isLcAddress(initiator)) return null;
       }
       switch (type) {
         case MessageType.LOCKED_TRANSFER:
