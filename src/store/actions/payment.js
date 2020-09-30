@@ -531,7 +531,7 @@ export const putNonClosingBalanceProof = (
     sender: getAddress(payment.partner),
     light_client_payment_id: payment.paymentId,
     secret_hash: payment.secret_hash,
-    nonce: message.nonce,
+    nonce: message.nonce || dataToPack.nonce,
     channel_id: payment.channelId,
     token_network_address: getAddress(payment.tokenNetworkAddress),
     lc_bp_signature: signature,
