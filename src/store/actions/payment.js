@@ -516,13 +516,15 @@ export const putBalanceProof = (message, payment) => async (
   }
 };
 
-export const putNonClosingBalanceProof = (message, payment) => async (
-  dispatch,
-  getState,
-  lh
-) => {
+export const putNonClosingBalanceProof = (
+  message,
+  payment,
+  dataToPack = null
+) => async (dispatch, getState, lh) => {
   const { getAddress } = ethers.utils;
-  const dataToSign = getDataToSignForNonClosingBalanceProof(message);
+  const dataForPack = dataToPack || message;
+  const isLT = dataToPack !== null;
+  const dataToSign = getDataToSignForNonClosingBalanceProof(dataForPack, isLT);
   let signature = "";
   signature = await resolver(dataToSign, lh, true);
   const body = {

@@ -589,8 +589,8 @@ const manageRevealSecret = (msg, payment, messageKey) => {
     }
   } else if (msg.message_order === 7) {
     const { keccak256 } = ethers.utils;
-    const hasSameSecretHash =
-      keccak256(msg[messageKey].secret) === payment.secret_hash;
+    const { secret } = msg[messageKey];
+    const hasSameSecretHash = keccak256(secret) === payment.secret_hash;
     if (!hasSameSecretHash) return console.warn("Secret does not match");
     store.dispatch(
       addPendingPaymentMessage(msg.payment_id, msg.message_order, {
@@ -598,7 +598,13 @@ const manageRevealSecret = (msg, payment, messageKey) => {
         message_order: msg.message_order,
       })
     );
-    store.dispatch(setPaymentSecret(payment.paymentId, msg[messageKey].secret));
+    store.dispatch(setPaymentSecret(payment.paymentId, secret));
+    const paymentAux = getPaymentByIdAndState(PENDING_PAYMENT, msg.payment_id);
+    const dataToPack = paymentAux.messages[1].message;
+    dataToPack.secret = secret;
+    store.dispatch(
+      putNonClosingBalanceProof(msg[messageKey], paymentAux, dataToPack)
+    );
     return store.dispatch(saveLuminoData());
   } else {
     store.dispatch(

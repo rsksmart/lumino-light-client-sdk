@@ -163,8 +163,12 @@ export const getDataToSignForBalanceProof = (
   return dataToSign;
 };
 
-export const getDataToSignForNonClosingBalanceProof = message => {
-  const bpData = getDataToSignForBalanceProof(message, "UPDATE_BALANCE_PROOF");
+export const getDataToSignForNonClosingBalanceProof = (
+  message,
+  isLT = false
+) => {
+  const msgType = isLT ? MessageType.BALANCE_PROOF : "UPDATE_BALANCE_PROOF";
+  const bpData = getDataToSignForBalanceProof(message, msgType);
   const dataToSign = ethers.utils.concat([bpData, message.signature]);
   return dataToSign;
 };
