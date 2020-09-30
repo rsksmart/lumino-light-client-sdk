@@ -20,6 +20,7 @@ import {
   CHANNEL_SETTLED,
 } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
+import { Lumino } from "../..";
 
 const initialState = {};
 
@@ -106,6 +107,7 @@ const addVote = (channel, vote, voteType) => {
 const checkIfChannelCanBeOpened = (channel, numberOfNotifiers) => {
   // If we have the half + 1 votes of approval, we open the channel
   // Also we need the hub to have answered the request and we opened the channel
+  const { useNotifiers } = Lumino.getConfig();
   const openVotesQuantity = Object.values(channel.votes.open).filter(v => v)
     .length;
 
@@ -114,7 +116,7 @@ const checkIfChannelCanBeOpened = (channel, numberOfNotifiers) => {
   const canBeOpened = !openedByUser || (openedByUser && hubAnswered);
 
   // Needed votes to be opened
-  const neededVotes = Math.ceil(numberOfNotifiers / 2);
+  const neededVotes = useNotifiers ? Math.ceil(numberOfNotifiers / 2) : 0;
 
   if (openVotesQuantity >= neededVotes && canBeOpened) {
     channel.sdk_status = SDK_CHANNEL_STATUS.CHANNEL_OPENED;
