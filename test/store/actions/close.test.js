@@ -38,6 +38,7 @@ describe("test close channel action", () => {
         channel_identifier: 1,
       },
     },
+    notifier: { notifiers: {} },
   };
 
   const params = {
@@ -92,6 +93,7 @@ describe("test close channel action", () => {
         channel_identifier: 1,
         sdk_status: "CHANNEL_WAITING_FOR_CLOSE",
       },
+      numberOfNotifiers: 0,
       type: SET_CHANNEL_CLOSED,
     };
 
