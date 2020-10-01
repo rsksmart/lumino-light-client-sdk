@@ -20,6 +20,7 @@ import {
   CHANNEL_SETTLED,
 } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
+import { Lumino } from "../..";
 
 const initialState = {};
 
@@ -105,7 +106,9 @@ const addVote = (channel, vote, voteType) => {
 
 const checkIfChannelCanBeOpened = (channel, numberOfNotifiers) => {
   // If we have the half + 1 votes of approval, we open the channel
+  // Unless we do not use them, in that case we need 0 votes
   // Also we need the hub to have answered the request and we opened the channel
+  const { useNotifiers } = Lumino.getConfig();
   const openVotesQuantity = Object.values(channel.votes.open).filter(v => v)
     .length;
 
@@ -114,12 +117,29 @@ const checkIfChannelCanBeOpened = (channel, numberOfNotifiers) => {
   const canBeOpened = !openedByUser || (openedByUser && hubAnswered);
 
   // Needed votes to be opened
-  const neededVotes = Math.ceil(numberOfNotifiers / 2);
+  const neededVotes = useNotifiers ? Math.ceil(numberOfNotifiers / 2) : 0;
 
   if (openVotesQuantity >= neededVotes && canBeOpened) {
     channel.sdk_status = SDK_CHANNEL_STATUS.CHANNEL_OPENED;
     channel.canRemoveTemporalChannel = true;
   }
+  return { ...channel };
+};
+
+const checkIfChannelCanBeClosed = (channel, numberOfNotifiers) => {
+  const { useNotifiers } = Lumino.getConfig();
+
+  // Check for valid votes and quantity of notifiers
+  const openVotesQuantity = Object.values(channel.votes.close).filter(v => v)
+    .length;
+
+  // The needed votes are the half of the notifiers + 1
+  // Or if the notifiers are not being used, we return 0
+  const neededVotes = useNotifiers ? Math.ceil(numberOfNotifiers / 2) : 0;
+
+  if (openVotesQuantity >= neededVotes)
+    channel.sdk_status = SDK_CHANNEL_STATUS.CHANNEL_CLOSED;
+
   return { ...channel };
 };
 
@@ -129,13 +149,13 @@ const channel = (state = initialState, action) => {
     case OPEN_CHANNEL: {
       const nChannelKey = getChannelKey(action.channel);
       // We don't open if it is already there
+      const { numberOfNotifiers } = action;
       if (state[nChannelKey]) {
         let channelWithResponse = {
           ...state[nChannelKey],
           hubAnswered: true,
           openedByUser: true,
         };
-        const { numberOfNotifiers } = action;
 
         channelWithResponse = checkIfChannelCanBeOpened(
           channelWithResponse,
@@ -147,8 +167,15 @@ const channel = (state = initialState, action) => {
 
         return { ...newState, [nChannelKey]: channelWithResponse };
       }
-      const newChannel = createChannel(action.channel, true);
-      return { ...state, [nChannelKey]: newChannel };
+      let newChannel = createChannel(action.channel, true);
+      newChannel = checkIfChannelCanBeOpened(newChannel, numberOfNotifiers);
+      let newState = { ...state };
+
+      // Can we remove a temporary channel?
+      if (newChannel.canRemoveTemporalChannel)
+        newState = removeTemporaryChannel(newChannel, newState);
+
+      return { ...newState, [nChannelKey]: newChannel };
     }
 
     // Notifiers vote for new channel
@@ -174,16 +201,22 @@ const channel = (state = initialState, action) => {
     }
 
     case SET_CHANNEL_CLOSED: {
-      const cChannelKey = getChannelKey(action.channel);
+      const chKey = getChannelKey(action.channel);
 
-      const channelsModified = {
+      const newState = {
         ...state,
-        [cChannelKey]: {
-          ...state[cChannelKey],
+        [chKey]: {
+          ...state[chKey],
           ...action.channel,
         },
       };
-      return channelsModified;
+      const { numberOfNotifiers } = action;
+      newState[chKey] = checkIfChannelCanBeClosed(
+        newState[chKey],
+        numberOfNotifiers
+      );
+
+      return newState;
     }
 
     case NEW_DEPOSIT: {
@@ -272,15 +305,12 @@ const channel = (state = initialState, action) => {
         VOTE_TYPE.CLOSE_CHANNEL_VOTE
       );
 
-      // Check for valid votes and quantity of notifiers
-      const openVotesQuantity = Object.values(
-        newState[channelKey].votes.close
-      ).filter(v => v).length;
+      // Can we close the channel?
       const { numberOfNotifiers } = action;
-
-      // If we have the half + 1 votes of approval, we close the channel
-      if (openVotesQuantity >= Math.ceil(numberOfNotifiers / 2))
-        newState[channelKey].sdk_status = SDK_CHANNEL_STATUS.CHANNEL_CLOSED;
+      newState[channelKey] = checkIfChannelCanBeClosed(
+        newState[channelKey],
+        numberOfNotifiers
+      );
 
       return newState;
     }
