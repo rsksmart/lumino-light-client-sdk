@@ -9,6 +9,11 @@ const addr2 = "0xff26fa3EA651aa9806c70EAE6A2a9E86E72bF048";
 const addr3 = "0x01252550e9a5BF537e4dBe8F1dc444E541d0d799";
 const addr4 = "0x03c7250C44e7E1bBC7577dD6Ba0CF4F7a628b92F";
 
+const addr1 = "0x7D49E67C730A625ADCeB000951D792505aFf4f17";
+const addr2 = "0xff26fa3EA651aa9806c70EAE6A2a9E86E72bF048";
+const addr3 = "0x01252550e9a5BF537e4dBe8F1dc444E541d0d799";
+const addr4 = "0x03c7250C44e7E1bBC7577dD6Ba0CF4F7a628b92F";
+
 describe("Test token functions", () => {
   afterEach(() => {
     Store.destroyStore();
