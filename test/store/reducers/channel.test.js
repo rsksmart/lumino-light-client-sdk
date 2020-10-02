@@ -4,12 +4,16 @@ import {
   CLOSE_CHANNEL_VOTE,
   DELETE_CHANNEL_FROM_SDK,
   NEW_DEPOSIT,
+  OPEN_CHANNEL,
   OPEN_CHANNEL_VOTE,
+  RECEIVED_PAYMENT,
   SET_CHANNEL_AWAITING_CLOSE,
+  SET_CHANNEL_CLOSED,
   SET_CHANNEL_SETTLED,
   SET_CHANNEL_UNLOCKED,
   SET_IS_SETTLING,
   SET_IS_UNLOCKING,
+  SET_PAYMENT_FAILED,
   UPDATE_NON_CLOSING_BP,
 } from "../../../src/store/actions/types";
 import reducer from "../../../src/store/reducers/channelReducer";
@@ -21,6 +25,7 @@ import {
   CHANNEL_WAITING_FOR_CLOSE,
   CHANNEL_WAITING_OPENING,
 } from "../../../src/config/channelStates";
+import { FAILURE_REASONS } from "../../../src/config/paymentConstants";
 
 const mockAddr = "0xFb783358Ff2b40630B112e3B937f0c43C1Ab2172";
 const mockToken = "0x931A46774dFDC44aac1D6eCa15930b6c3895dD7a";
@@ -336,6 +341,80 @@ describe("Channel reducer", () => {
     expect(red).toEqual(expected);
   });
 
+  it("Should handle OPEN_CHANNEL", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const notifier1 = "http://localhost:8080";
+    const partner_address = mockAddr;
+    const action = {
+      type: OPEN_CHANNEL,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address,
+        partner_address,
+      },
+      shouldOpen: true,
+      notifier: notifier1,
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_OPENED,
+        votes: { open: {}, close: {} },
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      [channelKey]: {
+        ...state[channelKey],
+        canRemoveTemporalChannel: true,
+        hubAnswered: true,
+        openedByUser: true,
+        sdk_status: CHANNEL_OPENED,
+        votes: { open: {}, close: {} },
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle OPEN_CHANNEL when the channel does not exist", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const notifier1 = "http://localhost:8080";
+    const partner_address = mockAddr;
+    const action = {
+      type: OPEN_CHANNEL,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address,
+        partner_address,
+      },
+      shouldOpen: true,
+      notifier: notifier1,
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {};
+    const red = reducer(state, action);
+    const expected = {
+      [channelKey]: {
+        ...state[channelKey],
+        canRemoveTemporalChannel: true,
+        channel_identifier,
+        hubAnswered: true,
+        isSettled: false,
+        isSettling: false,
+        offChainBalance: "0",
+        receivedTokens: "0",
+        partner_address,
+        sdk_status: CHANNEL_OPENED,
+        sentTokens: "0",
+        token_address,
+        votes: { open: {}, close: {} },
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
   it("Should handle OPEN_CHANNEL_VOTE with the channel not being created", () => {
     const channel_identifier = 1;
     const token_address = mockToken;
@@ -395,6 +474,173 @@ describe("Channel reducer", () => {
       [channelKey]: {
         ...state[channelKey],
         sdk_status: CHANNEL_WAITING_FOR_CLOSE,
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle SET_CHANNEL_CLOSED", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const action = {
+      type: SET_CHANNEL_CLOSED,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address: token_address,
+      },
+      numberOfNotifiers: 1,
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {
+      [channelKey]: {
+        channel_identifier,
+        token_address,
+        sdk_status: CHANNEL_OPENED,
+        votes: { open: {}, close: {} },
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        sdk_status: CHANNEL_CLOSED,
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle RECEIVED_PAYMENT", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const action = {
+      type: RECEIVED_PAYMENT,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address: token_address,
+      },
+      payment: {
+        payment: {
+          messages: {
+            1: {
+              message: {
+                channel_identifier,
+                token_address,
+                secret_hash: "0x0",
+                token: token_address,
+                channel_id: 1,
+                payment_identifier: "1234",
+                nonce: 1,
+                lock: {
+                  secrethash: "0x0",
+                },
+                chain_id: 33,
+                locked_amount: "",
+                locksroot: "0x0",
+                message_identifier: "333333",
+                secret: "0x123",
+                token_network_address:
+                  "0x0000000000000000000000000000000000000000",
+                transferred_amount: "500",
+              },
+            },
+          },
+        },
+      },
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {
+      [channelKey]: {
+        channel_identifier,
+        token_address,
+        sdk_status: CHANNEL_OPENED,
+        votes: { open: {}, close: {} },
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        sdk_status: CHANNEL_OPENED,
+        nonClosingBp: {
+          token_network_address: "0x0000000000000000000000000000000000000000",
+          channel_id: 1,
+          light_client_payment_id: "1234",
+          nonce: 1,
+          secret_hash: "0x0",
+          partner_balance_proof: {
+            chain_id: 33,
+            channel_identifier: 1,
+            locked_amount: "",
+            locksroot: "0x0",
+            message_identifier: "333333",
+            nonce: 1,
+            payment_identifier: "1234",
+            secret: "0x123",
+            token_network_address: "0x0000000000000000000000000000000000000000",
+            transferred_amount: "500",
+          },
+        },
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle SET_PAYMENT_FAILED", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const action = {
+      type: SET_PAYMENT_FAILED,
+      reason: FAILURE_REASONS.EXPIRED,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address: token_address,
+      },
+      payment: {
+        payment: {
+          messages: {
+            1: {
+              message: {
+                channel_identifier,
+                token_address,
+                secret_hash: "0x0",
+                token: token_address,
+                channel_id: 1,
+                payment_identifier: "1234",
+                nonce: 1,
+                lock: {
+                  secrethash: "0x0",
+                },
+                chain_id: 33,
+                locked_amount: "",
+                locksroot: "0x0",
+                message_identifier: "333333",
+                secret: "0x123",
+                token_network_address:
+                  "0x0000000000000000000000000000000000000000",
+                transferred_amount: "500",
+              },
+            },
+          },
+        },
+      },
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {
+      [channelKey]: {
+        channel_identifier,
+        token_address,
+        sdk_status: CHANNEL_OPENED,
+        votes: { open: {}, close: {} },
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        sdk_status: CHANNEL_OPENED,
       },
     };
     expect(red).toEqual(expected);
