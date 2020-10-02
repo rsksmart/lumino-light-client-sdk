@@ -1,6 +1,9 @@
 import {
   ADD_CHANNEL_WAITING_FOR_OPENING,
+  CLOSE_CHANNEL_VOTE,
   DELETE_CHANNEL_FROM_SDK,
+  OPEN_CHANNEL_VOTE,
+  SET_CHANNEL_AWAITING_CLOSE,
   SET_CHANNEL_SETTLED,
   SET_CHANNEL_UNLOCKED,
   SET_IS_SETTLING,
@@ -9,9 +12,11 @@ import {
 } from "../../../src/store/actions/types";
 import reducer from "../../../src/store/reducers/channelReducer";
 import {
+  CHANNEL_CLOSED,
   CHANNEL_OPENED,
   CHANNEL_SETTLED,
   CHANNEL_UNLOCKED,
+  CHANNEL_WAITING_FOR_CLOSE,
   CHANNEL_WAITING_OPENING,
 } from "../../../src/config/channelStates";
 
@@ -215,6 +220,134 @@ describe("Channel reducer", () => {
       [channelKey]: {
         ...state[channelKey],
         nonClosingBp: action.nonClosingBp,
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle OPEN_CHANNEL_VOTE", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const notifier1 = "http://localhost:8080";
+    const action = {
+      type: OPEN_CHANNEL_VOTE,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address: token_address,
+      },
+      shouldOpen: true,
+      notifier: notifier1,
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_OPENED,
+        votes: { open: {} },
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        canRemoveTemporalChannel: true,
+        votes: { open: { [notifier1]: true } },
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle OPEN_CHANNEL_VOTE with the channel not being created", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const notifier1 = "http://localhost:8080";
+    const action = {
+      type: OPEN_CHANNEL_VOTE,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address: token_address,
+      },
+      shouldOpen: true,
+      notifier: notifier1,
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {};
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        canRemoveTemporalChannel: true,
+        channel_identifier,
+        hubAnswered: false,
+        isSettled: false,
+        isSettling: false,
+        offChainBalance: "0",
+        receivedTokens: "0",
+        sdk_status: CHANNEL_OPENED,
+        sentTokens: "0",
+        token_address,
+        votes: { open: { [notifier1]: true }, close: {} },
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle SET_CHANNEL_AWAITING_CLOSE", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const action = {
+      type: SET_CHANNEL_AWAITING_CLOSE,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address: token_address,
+      },
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_OPENED,
+        votes: { open: {} },
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        sdk_status: CHANNEL_WAITING_FOR_CLOSE,
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle CLOSE_CHANNEL_VOTE", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const notifier1 = "http://localhost:8080";
+    const action = {
+      type: CLOSE_CHANNEL_VOTE,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address: token_address,
+      },
+      shouldClose: true,
+      notifier: notifier1,
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_OPENED,
+        votes: { open: {} },
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        sdk_status: CHANNEL_CLOSED,
+        votes: { close: { [notifier1]: true }, open: {} },
       },
     };
     expect(red).toEqual(expected);
