@@ -1,7 +1,9 @@
 import {
   ADD_CHANNEL_WAITING_FOR_OPENING,
+  CHANGE_CHANNEL_BALANCE,
   CLOSE_CHANNEL_VOTE,
   DELETE_CHANNEL_FROM_SDK,
+  NEW_DEPOSIT,
   OPEN_CHANNEL_VOTE,
   SET_CHANNEL_AWAITING_CLOSE,
   SET_CHANNEL_SETTLED,
@@ -225,6 +227,39 @@ describe("Channel reducer", () => {
     expect(red).toEqual(expected);
   });
 
+  it("Should handle NEW_DEPOSIT", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const action = {
+      type: NEW_DEPOSIT,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address: token_address,
+        total_deposit: "500",
+      },
+    };
+    const channelKey = getChannelKey(action.channel);
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_OPENED,
+        channel_identifier,
+        offChainBalance: "0",
+        token_address,
+        total_deposit: "0",
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        total_deposit: "500",
+        offChainBalance: "500",
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
   it("Should handle OPEN_CHANNEL_VOTE", () => {
     const channel_identifier = 1;
     const token_address = mockToken;
@@ -252,6 +287,50 @@ describe("Channel reducer", () => {
         ...state[channelKey],
         canRemoveTemporalChannel: true,
         votes: { open: { [notifier1]: true } },
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle OPEN_CHANNEL_VOTE and delete the Temporary Channel", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const notifier1 = "http://localhost:8080";
+    const partner_address = mockAddr;
+    const action = {
+      type: OPEN_CHANNEL_VOTE,
+      channel: {
+        channel_identifier: channel_identifier,
+        token_address,
+        partner_address,
+      },
+      shouldOpen: true,
+      notifier: notifier1,
+    };
+    const channelKey = getTemporaryKey(action.channel);
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_OPENED,
+        votes: { open: {} },
+      },
+    };
+    const red = reducer(state, action);
+    const newKey = getChannelKey({ ...action.channel, channel_identifier });
+    const expected = {
+      [newKey]: {
+        ...state[channelKey],
+        canRemoveTemporalChannel: true,
+        channel_identifier,
+        hubAnswered: false,
+        isSettled: false,
+        isSettling: false,
+        offChainBalance: "0",
+        receivedTokens: "0",
+        partner_address,
+        sdk_status: CHANNEL_OPENED,
+        sentTokens: "0",
+        token_address,
+        votes: { open: { [notifier1]: true }, close: {} },
       },
     };
     expect(red).toEqual(expected);
@@ -351,5 +430,128 @@ describe("Channel reducer", () => {
       },
     };
     expect(red).toEqual(expected);
+  });
+
+  it("Should handle CHANGE_CHANNEL_BALANCE when receiving", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const notifier1 = "http://localhost:8080";
+    const action = {
+      type: CHANGE_CHANNEL_BALANCE,
+      payment: {
+        isReceived: true,
+        channelId: channel_identifier,
+        token: token_address,
+        secretMessageId: 11,
+        messages: {
+          11: {
+            message: {
+              transferred_amount: "500",
+            },
+          },
+        },
+      },
+      shouldClose: true,
+      notifier: notifier1,
+    };
+    const channelKey = getPaymentChannelKey(action.payment);
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_OPENED,
+        total_deposit: "0",
+        sentTokens: "0",
+        receivedTokens: "0",
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        offChainBalance: "500",
+        sdk_status: CHANNEL_OPENED,
+        receivedTokens: "500",
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle CHANGE_CHANNEL_BALANCE when sending", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const notifier1 = "http://localhost:8080";
+    const action = {
+      type: CHANGE_CHANNEL_BALANCE,
+      payment: {
+        isReceived: false,
+        channelId: channel_identifier,
+        token: token_address,
+        secretMessageId: 11,
+        messages: {
+          11: {
+            message: {
+              transferred_amount: "500",
+            },
+          },
+        },
+      },
+      shouldClose: true,
+      notifier: notifier1,
+    };
+    const channelKey = getPaymentChannelKey(action.payment);
+    const state = {
+      [channelKey]: {
+        sdk_status: CHANNEL_OPENED,
+        total_deposit: "1000",
+        sentTokens: "0",
+        receivedTokens: "0",
+      },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      [channelKey]: {
+        ...state[channelKey],
+        offChainBalance: "500",
+        sdk_status: CHANNEL_OPENED,
+        sentTokens: "500",
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle CHANGE_CHANNEL_BALANCE when channel does not exist", () => {
+    const channel_identifier = 1;
+    const token_address = mockToken;
+    const notifier1 = "http://localhost:8080";
+    const action = {
+      type: CHANGE_CHANNEL_BALANCE,
+      payment: {
+        isReceived: false,
+        channelId: channel_identifier,
+        token: token_address,
+        secretMessageId: 11,
+        messages: {
+          11: {
+            message: {
+              transferred_amount: "500",
+            },
+          },
+        },
+      },
+      shouldClose: true,
+      notifier: notifier1,
+    };
+    const channelKey = getPaymentChannelKey(action.payment);
+    const state = {
+      [channelKey + "1"]: {
+        sdk_status: CHANNEL_OPENED,
+        total_deposit: "1000",
+        sentTokens: "0",
+        receivedTokens: "0",
+      },
+    };
+    const red = reducer(state, action);
+    expect(red).toEqual(state);
   });
 });
