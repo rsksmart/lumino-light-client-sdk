@@ -73,7 +73,10 @@ export const createMessageHash = (data, type = MessageType.BALANCE_PROOF) => {
 
 // TODO: Separate the methods and document their uses according to messages
 
-export const getDataToSignForLockedTransfer = message => {
+export const getDataToSignForLockedTransfer = (
+  message,
+  messageTypeId = MessageTypeID.BALANCE_PROOF
+) => {
   const messageHashArray = ethers.utils.concat([
     hexEncode(MessageNumPad[MessageType.LOCKED_TRANSFER], 1), // CMDID, as in the python implementation
     hexEncode(0, 3), // Padding
@@ -105,15 +108,19 @@ export const getDataToSignForLockedTransfer = message => {
     message.locksroot
   );
 
-  const dataArray = ethers.utils.concat([
+  let dataArrayBase = [
     hexEncode(message.token_network_address, 20),
     hexEncode(message.chain_id, 32),
-    hexEncode(MessageTypeID.BALANCE_PROOF, 32), //Msg type (balance proof)
+    hexEncode(messageTypeId, 32), //Msg type (balance proof)
     hexEncode(message.channel_identifier, 32),
     hexEncode(balanceHash, 32), // balance hash
     hexEncode(message.nonce, 32),
     hexEncode(messageHash, 32), // additional hash
-  ]);
+  ];
+  if (messageTypeId === MessageTypeID.UPDATE_BALANCE_PROOF) {
+    dataArrayBase.push(message.signature);
+  }
+  const dataArray = ethers.utils.concat(dataArrayBase);
 
   // dataArray is a byte array, this can be signed with an ethers wallet
   // signing it with an ethers wallet is equal as the method with python

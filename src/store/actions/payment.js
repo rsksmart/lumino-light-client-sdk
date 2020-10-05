@@ -33,6 +33,7 @@ import {
   PAYMENT_EXPIRED,
   PAYMENT_SUCCESSFUL,
   PAYMENT_REFUND,
+  MessageTypeID,
 } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
 import {
@@ -524,7 +525,12 @@ export const putNonClosingBalanceProof = (
   const { getAddress } = ethers.utils;
   const dataForPack = dataToPack || message;
   const isLT = dataToPack !== null;
-  const dataToSign = getDataToSignForNonClosingBalanceProof(dataForPack, isLT);
+  const dataToSign = isLT
+    ? getDataToSignForLockedTransfer(
+        dataForPack,
+        MessageTypeID.UPDATE_BALANCE_PROOF
+      )
+    : getDataToSignForNonClosingBalanceProof(dataForPack, isLT);
   let signature = "";
   signature = await resolver(dataToSign, lh, true);
   const body = {

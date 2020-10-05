@@ -61,4 +61,5 @@ export const MessageNumPad = {
 
 export const MessageTypeID = {
   BALANCE_PROOF: 1,
+  UPDATE_BALANCE_PROOF: 2,
 };

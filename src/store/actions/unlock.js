@@ -9,7 +9,13 @@ import { SET_CHANNEL_UNLOCKED, SET_IS_UNLOCKING } from "./types";
 
 export const unlockChannel = data => async (dispatch, getState, lh) => {
   const { address } = Lumino.getConfig();
-  const { tokenAddress, channel_identifier, receiver, sender } = data;
+  const {
+    merkle_tree_leaves: leaves,
+    token_address: tokenAddress,
+    channel_identifier,
+    receiver,
+    sender,
+  } = data;
   const tokenNetworkAddress = getTokenNetworkByTokenAddress(tokenAddress);
   const dispatchData = { channel_identifier, token_address: tokenAddress };
   const txParams = {
@@ -18,6 +24,7 @@ export const unlockChannel = data => async (dispatch, getState, lh) => {
     channelIdentifier: channel_identifier,
     receiver,
     sender,
+    leaves,
   };
 
   const unsignedTx = await createUnlockTx(txParams);

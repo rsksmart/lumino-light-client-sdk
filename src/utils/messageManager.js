@@ -148,7 +148,7 @@ const manageUnlockRequest = async msg => {
   if (isUnlocked || isUnlocking) return;
   const store = Store.getStore();
   const { dispatch } = store;
-  dispatch(unlockChannel(channel));
+  dispatch(unlockChannel(msg.message));
 };
 
 const manageSettlementRequired = async msg => {

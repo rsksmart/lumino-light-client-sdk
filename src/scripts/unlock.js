@@ -26,7 +26,7 @@ export const createUnlockTx = async params => {
         params.channelIdentifier,
         params.receiver,
         params.sender,
-        params.extra
+        params.leaves
       )
       .encodeABI(),
     chainId,
