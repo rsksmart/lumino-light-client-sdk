@@ -8,6 +8,7 @@ import {
   ADD_REFUNDED_PAYMENT_MESSAGE,
   CREATE_PAYMENT,
   DELETE_ALL_PENDING_PAYMENTS,
+  PUT_LOCK_EXPIRED,
   REGISTERED_ON_CHAIN_SECRET,
   REGISTERING_ON_CHAIN_SECRET,
   SET_PAYMENT_COMPLETE,
@@ -178,6 +179,52 @@ describe("Client reducer", () => {
               [action.messageOrder]: {
                 ...action.message,
               },
+            },
+          },
+        },
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle ADD_EXPIRED_PAYMENT_MESSAGE when storing in normal messages", () => {
+    const secret = "0x123456";
+    const token = mockToken;
+    const paymentId = "12345";
+    const state = {
+      completed: {},
+      pending: {},
+      failed: {
+        [paymentId]: {
+          secret,
+          token,
+          messages: {},
+          expiration: {
+            messages: {},
+          },
+        },
+      },
+    };
+    const action = {
+      type: ADD_EXPIRED_PAYMENT_MESSAGE,
+      paymentId,
+      secret,
+      messageOrder: 12,
+      message: {
+        data: "dataExample",
+      },
+      storeInMessages: true,
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      failed: {
+        [paymentId]: {
+          ...state.failed[paymentId],
+          messages: {
+            ...state.failed[paymentId].messages,
+            [action.messageOrder]: {
+              ...action.message,
             },
           },
         },
@@ -448,6 +495,41 @@ describe("Client reducer", () => {
           ...state.failed[paymentId],
           refund: {
             messages: { 1: action.refundTransfer },
+            message_order: 1,
+          },
+        },
+      },
+    };
+    expect(red).toEqual(expected);
+  });
+
+  it("Should handle PUT_LOCK_EXPIRED", () => {
+    const token = mockToken;
+    const paymentId = "12345";
+    const state = {
+      completed: {},
+      pending: {},
+      failed: {
+        [paymentId]: {
+          token,
+          messages: {},
+        },
+      },
+    };
+    const action = {
+      type: PUT_LOCK_EXPIRED,
+      paymentId,
+      lockExpired: { test: "Test" },
+    };
+    const red = reducer(state, action);
+    const expected = {
+      ...state,
+      failed: {
+        ...state.failed,
+        [paymentId]: {
+          ...state.failed[paymentId],
+          expiration: {
+            messages: { 1: action.lockExpired },
             message_order: 1,
           },
         },
