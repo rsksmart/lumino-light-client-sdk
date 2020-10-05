@@ -530,7 +530,7 @@ export const putNonClosingBalanceProof = (
         dataForPack,
         MessageTypeID.UPDATE_BALANCE_PROOF
       )
-    : getDataToSignForNonClosingBalanceProof(dataForPack, isLT);
+    : getDataToSignForNonClosingBalanceProof(dataForPack);
   let signature = "";
   signature = await resolver(dataToSign, lh, true);
   const body = {

@@ -108,7 +108,7 @@ export const getDataToSignForLockedTransfer = (
     message.locksroot
   );
 
-  let dataArrayBase = [
+  const dataArrayBase = [
     hexEncode(message.token_network_address, 20),
     hexEncode(message.chain_id, 32),
     hexEncode(messageTypeId, 32), //Msg type (balance proof)
@@ -117,9 +117,9 @@ export const getDataToSignForLockedTransfer = (
     hexEncode(message.nonce, 32),
     hexEncode(messageHash, 32), // additional hash
   ];
-  if (messageTypeId === MessageTypeID.UPDATE_BALANCE_PROOF) {
+  if (messageTypeId === MessageTypeID.UPDATE_BALANCE_PROOF)
     dataArrayBase.push(message.signature);
-  }
+
   const dataArray = ethers.utils.concat(dataArrayBase);
 
   // dataArray is a byte array, this can be signed with an ethers wallet
@@ -170,12 +170,8 @@ export const getDataToSignForBalanceProof = (
   return dataToSign;
 };
 
-export const getDataToSignForNonClosingBalanceProof = (
-  message,
-  isLT = false
-) => {
-  const msgType = isLT ? MessageType.BALANCE_PROOF : "UPDATE_BALANCE_PROOF";
-  const bpData = getDataToSignForBalanceProof(message, msgType);
+export const getDataToSignForNonClosingBalanceProof = message => {
+  const bpData = getDataToSignForBalanceProof(message, "UPDATE_BALANCE_PROOF");
   const dataToSign = ethers.utils.concat([bpData, message.signature]);
   return dataToSign;
 };
