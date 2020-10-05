@@ -27,7 +27,7 @@ const initialState = {
   failed: {},
 };
 
-describe("Client reducer", () => {
+describe("Payment reducer", () => {
   it("should return initial state", () => {
     const red = reducer(undefined, {});
     expect(red).toEqual(initialState);
