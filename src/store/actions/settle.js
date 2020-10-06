@@ -8,7 +8,7 @@ import { saveLuminoData } from "./storage";
 import { SET_CHANNEL_SETTLED, SET_IS_SETTLING } from "./types";
 
 export const settleChannel = data => async (dispatch, getState, lh) => {
-  const { txParams } = data;
+  const { txParams, internal_message_identifier } = data;
   const unsignedTx = await createSettleTx(txParams);
   const signedTx = await resolver(unsignedTx, lh);
   const { channelIdentifier } = txParams;
@@ -16,6 +16,7 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
   const requestBody = {
     signed_settle_tx: signedTx,
     channel_identifier: channelIdentifier,
+    internal_message_identifier,
   };
   const { tokenNetworkAddress } = txParams;
   const tokenAddress = getTokenAddressByTokenNetwork(tokenNetworkAddress);
