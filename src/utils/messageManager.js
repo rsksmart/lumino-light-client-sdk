@@ -254,7 +254,7 @@ const managePaymentMessages = (messages = []) => {
 };
 
 const manageRequestRegisterSecret = data => {
-  const { payment_id } = data;
+  const { payment_id, internal_message_identifier } = data;
   const payment = getPayment(payment_id);
   if (!payment) return;
   const { registeringOnChainSecret, registeredOnChainSecret } = payment;
@@ -270,6 +270,7 @@ const manageRequestRegisterSecret = data => {
     secretRegistryAddress: secret_registry_address,
     secret,
     paymentId: payment_id,
+    internal_message_identifier,
   };
   dispatch(registerSecret(dispatchData));
 };
