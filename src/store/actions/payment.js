@@ -520,12 +520,14 @@ export const putBalanceProof = (message, payment) => async (
 export const putNonClosingBalanceProof = (
   message,
   payment,
-  dataToPack = null
+  ltToPack = null
 ) => async (dispatch, getState, lh) => {
   const { getAddress } = ethers.utils;
-  const dataForPack = dataToPack || message;
-  const isLT = dataToPack !== null;
-  const dataToSign = isLT
+  // LT may only be present when we sign after a Reveal Secret 7
+  // In other cases, we only sign a BP
+  // The data is abstracted to this const to avoid repeated code
+  const dataForPack = ltToPack || message;
+  const dataToSign = ltToPack
     ? getDataToSignForLockedTransfer(
         dataForPack,
         MessageTypeID.UPDATE_BALANCE_PROOF
