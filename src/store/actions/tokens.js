@@ -25,9 +25,7 @@ export const requestTokenNetworkFromTokenAddress = tokenAddress => async dispatc
   }
 };
 
-export const getTokenNameAndSymbol = tokenAddress => async (
-  dispatch
-) => {
+export const getTokenNameAndSymbol = tokenAddress => async dispatch => {
   const { tokenNames } = getState();
   if (tokenNames[tokenAddress]) {
     return {
