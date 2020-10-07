@@ -97,7 +97,7 @@ const getPayment = paymentId => {
 const manageNonPaymentMessages = (messages = []) => {
   const messagesToProcessLast = [];
 
-  messages.forEach(({ message_content: msg }) => {
+  messages.forEach(({ message_content: msg, internal_msg_identifier }) => {
     const { payment_id } = msg;
     let payment = getPayment(payment_id);
 
@@ -116,7 +116,7 @@ const manageNonPaymentMessages = (messages = []) => {
         return messagesToProcessLast.push(msg);
       }
       case MessageType.SETTLEMENT_REQUIRED: {
-        return manageSettlementRequired(msg);
+        return manageSettlementRequired({ ...msg, internal_msg_identifier });
       }
     }
   });
