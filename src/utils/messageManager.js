@@ -133,7 +133,7 @@ const manageNonPaymentMessages = (messages = []) => {
 };
 
 const manageSettlementRequired = async msg => {
-  const { message } = msg;
+  const { message, internal_msg_identifier } = msg;
   const { channel_identifier, channel_network_identifier } = message;
   const tokenNetwork = chkSum(channel_network_identifier);
   const token = getTokenAddressByTokenNetwork(tokenNetwork);
@@ -168,6 +168,7 @@ const manageSettlementRequired = async msg => {
   const { dispatch } = store;
   const settleData = {
     txParams,
+    internal_msg_identifier,
     creatorAddress: chkSum(creatorAddress),
     partnerAddress: chkSum(partnerAddress),
   };
