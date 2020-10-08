@@ -3,11 +3,12 @@ import client from "../../apiRest";
 import { createSettleTx } from "../../scripts/settle";
 import { CALLBACKS } from "../../utils/callbacks";
 import resolver from "../../utils/handlerResolver";
+import { getChannelByIdAndToken } from "../functions";
 import { getTokenAddressByTokenNetwork } from "../functions/tokens";
 import { saveLuminoData } from "./storage";
 import { SET_CHANNEL_SETTLED, SET_IS_SETTLING } from "./types";
 
-export const settleChannel = data => async (dispatch, getState, lh) => {
+export const settleChannel = data => async (dispatch, _, lh) => {
   const { txParams, internal_msg_identifier } = data;
   const unsignedTx = await createSettleTx(txParams);
   const signedTx = await resolver(unsignedTx, lh);
@@ -31,8 +32,7 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
     await client.post(url, { ...requestBody });
 
     dispatch(setChannelSettled(dispatchData));
-    const channelKey = `${channelIdentifier}-${tokenAddress}`;
-    const channel = getState().channelReducer[channelKey];
+    const channel = getChannelByIdAndToken(channelIdentifier, tokenAddress);
     Lumino.callbacks.trigger(CALLBACKS.CHANNEL_HAS_SETTLED, channel);
     dispatch(saveLuminoData());
   } catch (error) {
@@ -48,6 +48,8 @@ export const settleChannel = data => async (dispatch, getState, lh) => {
     );
     if (wasSettled || wasUnlocked) {
       dispatch(setChannelSettled(dispatchData));
+      const channel = getChannelByIdAndToken(channelIdentifier, tokenAddress);
+      Lumino.callbacks.trigger(CALLBACKS.CHANNEL_HAS_SETTLED, channel);
       return dispatch(saveLuminoData());
     }
     return dispatch(
