@@ -99,7 +99,7 @@ const getPayment = paymentId => {
 const manageNonPaymentMessages = (messages = []) => {
   const messagesToProcessLast = [];
 
-  messages.forEach(({ message_content: msg, internal_message_identifier }) => {
+  messages.forEach(({ message_content: msg, internal_msg_identifier }) => {
     const { payment_id } = msg;
     let payment = getPayment(payment_id);
 
@@ -123,7 +123,7 @@ const manageNonPaymentMessages = (messages = []) => {
       case MessageType.REQUEST_REGISTER_SECRET: {
         return manageRequestRegisterSecret({
           ...msg,
-          internal_message_identifier,
+          internal_msg_identifier,
         });
       }
       case MessageType.UNLOCK_REQUEST: {
@@ -257,7 +257,7 @@ const managePaymentMessages = (messages = []) => {
 };
 
 const manageRequestRegisterSecret = data => {
-  const { payment_id, internal_message_identifier } = data;
+  const { payment_id, internal_msg_identifier } = data;
   const payment = getPayment(payment_id);
   if (!payment) return;
   const { registeringOnChainSecret, registeredOnChainSecret } = payment;
@@ -273,7 +273,7 @@ const manageRequestRegisterSecret = data => {
     secretRegistryAddress: secret_registry_address,
     secret,
     paymentId: payment_id,
-    internal_message_identifier,
+    internal_msg_identifier,
   };
   dispatch(registerSecret(dispatchData));
 };

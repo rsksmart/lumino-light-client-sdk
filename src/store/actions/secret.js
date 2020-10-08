@@ -15,7 +15,7 @@ export const registerSecret = data => async (dispatch, getState, lh) => {
     secret,
     secretRegistryAddress,
     paymentId,
-    internal_message_identifier,
+    internal_msg_identifier,
   } = data;
   const { address } = Lumino.getConfig();
   const txParams = { secret, secretRegistryAddress, address };
@@ -24,7 +24,7 @@ export const registerSecret = data => async (dispatch, getState, lh) => {
   const url = "payments_light/register_onchain_secret";
   try {
     dispatch(registeringOnChainSecret(true, paymentId));
-    const body = { signed_tx: signedTx, internal_message_identifier };
+    const body = { signed_tx: signedTx, internal_msg_identifier };
     await client.post(url, body, { transformResponse: null });
     dispatch(registeredOnChainSecret(paymentId));
     const payment = getPaymentByIdAndState("pending", paymentId);
