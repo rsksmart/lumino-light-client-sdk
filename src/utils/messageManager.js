@@ -99,7 +99,7 @@ const getPayment = paymentId => {
 const manageNonPaymentMessages = (messages = []) => {
   const messagesToProcessLast = [];
 
-  messages.forEach(({ message_content: msg, internal_message_identifier }) => {
+  messages.forEach(({ message_content: msg, internal_msg_identifier }) => {
     const { payment_id } = msg;
     let payment = getPayment(payment_id);
 
@@ -124,7 +124,7 @@ const manageNonPaymentMessages = (messages = []) => {
         return manageRequestRegisterSecret(msg);
       }
       case MessageType.UNLOCK_REQUEST: {
-        return manageUnlockRequest({ ...msg, internal_message_identifier });
+        return manageUnlockRequest({ ...msg, internal_msg_identifier });
       }
     }
   });
@@ -141,7 +141,7 @@ const manageNonPaymentMessages = (messages = []) => {
 };
 
 const manageUnlockRequest = async msg => {
-  const { internal_message_identifier } = msg;
+  const { internal_msg_identifier } = msg;
   const { channel_identifier, token_address } = msg.message;
   const channel = getChannelByIdAndToken(channel_identifier, token_address);
   if (!channel) return;
@@ -149,7 +149,7 @@ const manageUnlockRequest = async msg => {
   if (isUnlocked || isUnlocking) return;
   const store = Store.getStore();
   const { dispatch } = store;
-  dispatch(unlockChannel({ ...msg.message, internal_message_identifier }));
+  dispatch(unlockChannel({ ...msg.message, internal_msg_identifier }));
 };
 
 const manageSettlementRequired = async msg => {

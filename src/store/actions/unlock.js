@@ -15,7 +15,7 @@ export const unlockChannel = data => async (dispatch, getState, lh) => {
     channel_identifier,
     receiver,
     sender,
-    internal_message_identifier,
+    internal_msg_identifier,
   } = data;
   const tokenNetworkAddress = getTokenNetworkByTokenAddress(tokenAddress);
   const dispatchData = { channel_identifier, token_address: tokenAddress };
@@ -30,7 +30,7 @@ export const unlockChannel = data => async (dispatch, getState, lh) => {
 
   const unsignedTx = await createUnlockTx(txParams);
   const signedTx = await resolver(unsignedTx, lh);
-  const body = { signed_tx: signedTx, internal_message_identifier };
+  const body = { signed_tx: signedTx, internal_msg_identifier };
   const url = `payments_light/unlock/${tokenAddress}`;
 
   try {
