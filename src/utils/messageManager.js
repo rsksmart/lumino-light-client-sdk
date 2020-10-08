@@ -99,7 +99,7 @@ const getPayment = paymentId => {
 const manageNonPaymentMessages = (messages = []) => {
   const messagesToProcessLast = [];
 
-  messages.forEach(({ message_content: msg }) => {
+  messages.forEach(({ message_content: msg, internal_message_identifier }) => {
     const { payment_id } = msg;
     let payment = getPayment(payment_id);
 
@@ -121,7 +121,10 @@ const manageNonPaymentMessages = (messages = []) => {
         return manageSettlementRequired(msg);
       }
       case MessageType.REQUEST_REGISTER_SECRET: {
-        return manageRequestRegisterSecret(msg);
+        return manageRequestRegisterSecret({
+          ...msg,
+          internal_message_identifier,
+        });
       }
       case MessageType.UNLOCK_REQUEST: {
         return manageUnlockRequest(msg);
