@@ -71,8 +71,6 @@ export const createMessageHash = (data, type = MessageType.BALANCE_PROOF) => {
   return ethers.utils.keccak256(messageHashUnhashed);
 };
 
-// TODO: Separate the methods and document their uses according to messages
-
 export const getDataToSignForLockedTransfer = message => {
   const messageHashArray = ethers.utils.concat([
     hexEncode(MessageNumPad[MessageType.LOCKED_TRANSFER], 1), // CMDID, as in the python implementation

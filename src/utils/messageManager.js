@@ -97,7 +97,7 @@ const getPayment = paymentId => {
 const manageNonPaymentMessages = (messages = []) => {
   const messagesToProcessLast = [];
 
-  messages.forEach(({ message_content: msg }) => {
+  messages.forEach(({ message_content: msg, internal_msg_identifier }) => {
     const { payment_id } = msg;
     let payment = getPayment(payment_id);
 
@@ -116,7 +116,7 @@ const manageNonPaymentMessages = (messages = []) => {
         return messagesToProcessLast.push(msg);
       }
       case MessageType.SETTLEMENT_REQUIRED: {
-        return manageSettlementRequired(msg);
+        return manageSettlementRequired({ ...msg, internal_msg_identifier });
       }
     }
   });
@@ -133,7 +133,7 @@ const manageNonPaymentMessages = (messages = []) => {
 };
 
 const manageSettlementRequired = async msg => {
-  const { message } = msg;
+  const { message, internal_msg_identifier } = msg;
   const { channel_identifier, channel_network_identifier } = message;
   const tokenNetwork = chkSum(channel_network_identifier);
   const token = getTokenAddressByTokenNetwork(tokenNetwork);
@@ -168,6 +168,7 @@ const manageSettlementRequired = async msg => {
   const { dispatch } = store;
   const settleData = {
     txParams,
+    internal_msg_identifier,
     creatorAddress: chkSum(creatorAddress),
     partnerAddress: chkSum(partnerAddress),
   };
