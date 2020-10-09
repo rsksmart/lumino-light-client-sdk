@@ -40,18 +40,20 @@ export const settleChannel = data => async (dispatch, _, lh) => {
     // Already unlocked error
     const alreadyUnlockErr = "Channel is already unlocked.";
     const alreadySettledErr = "channel that's already settled";
-    const wasUnlocked = error?.response?.data?.errors?.includes(
-      alreadyUnlockErr
-    );
-    const wasSettled = error?.response?.data?.errors?.includes(
-      alreadySettledErr
-    );
-    if (wasSettled || wasUnlocked) {
-      dispatch(setChannelSettled(dispatchData));
-      const channel = getChannelByIdAndToken(channelIdentifier, tokenAddress);
-      Lumino.callbacks.trigger(CALLBACKS.CHANNEL_HAS_SETTLED, channel);
-      return dispatch(saveLuminoData());
+    const alreadySignedErr = "Message already signed";
+    const requestError = error?.response?.data?.errors;
+    if (requestError) {
+      const wasUnlocked = requestError?.includes(alreadyUnlockErr);
+      const wasSettled = requestError?.includes(alreadySettledErr);
+      const alreadySigned = requestError?.includes(alreadySignedErr);
+      if (wasSettled || wasUnlocked || alreadySigned) {
+        dispatch(setChannelSettled(dispatchData));
+        const channel = getChannelByIdAndToken(channelIdentifier, tokenAddress);
+        Lumino.callbacks.trigger(CALLBACKS.CHANNEL_HAS_SETTLED, channel);
+        return dispatch(saveLuminoData());
+      }
     }
+
     return dispatch(
       setChannelIsSettling({ ...dispatchData, isSettling: false })
     );
