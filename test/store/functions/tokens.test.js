@@ -1,7 +1,8 @@
 import * as tokenFunctions from "../../../src/store/functions/tokens";
 import Store from "../../../src/store";
-import { LocalStorageHandler } from "../../../src";
+import { LocalStorageHandler, Lumino } from "../../../src";
 import { swapObjValueForKey } from "../../../src/utils/functions";
+import * as web3 from "../../../src/utils/web3";
 
 const addr1 = "0x7D49E67C730A625ADCeB000951D792505aFf4f17";
 const addr2 = "0xff26fa3EA651aa9806c70EAE6A2a9E86E72bF048";
@@ -85,5 +86,40 @@ describe("Test token functions", () => {
     );
     expect(tokenName).toBe("test");
     expect(tokenSymbol).toBe("TEST");
+  });
+
+  test("Should request Token Name and Symbol", async () => {
+    const stubFn = () => jest.fn();
+    const signingHandler = { sign: stubFn, offChainSign: stubFn };
+    const stubStorageHandler = {
+      getLuminoData: () => {},
+      setLuminoData: () => {},
+    };
+    const config = {
+      rskEndpoint: "http://localhost:4444",
+    };
+    const mockTokenName = "RIF";
+    const mockTokenSymbol = "tRIF";
+    await Lumino.init(signingHandler, stubStorageHandler, config);
+    // Mock web3
+    const mockWeb3 = {
+      eth: {
+        Contract: jest.fn().mockImplementation(() => {
+          return {
+            methods: {
+              name: () => ({ call: () => mockTokenName }),
+              symbol: () => ({ call: () => mockTokenSymbol }),
+            },
+          };
+        }),
+      },
+    };
+    jest.spyOn(web3, "getWeb3").mockImplementation(() => mockWeb3);
+
+    const { name, symbol } = await tokenFunctions.requestTokenNameAndSymbol(
+      addr1
+    );
+    expect(name).toBe(mockTokenName);
+    expect(symbol).toBe(mockTokenSymbol);
   });
 });

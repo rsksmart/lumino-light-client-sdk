@@ -10,6 +10,8 @@ export const MessageType = {
   LOCK_EXPIRED: "LockExpired",
   REFUND_TRANSFER: "RefundTransfer",
   SETTLEMENT_REQUIRED: "SettlementRequiredLightMessage",
+  REQUEST_REGISTER_SECRET: "RequestRegisterSecret",
+  UNLOCK_REQUEST: "UnlockLightRequest",
 };
 
 export const PAYMENT_SUCCESSFUL = "PaymentSuccessful";
@@ -59,4 +61,5 @@ export const MessageNumPad = {
 
 export const MessageTypeID = {
   BALANCE_PROOF: 1,
+  UPDATE_BALANCE_PROOF: 2,
 };

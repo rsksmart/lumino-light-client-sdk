@@ -58,6 +58,8 @@ import {
 } from "../store/functions/payments";
 import { chkSum } from "../utils/functions";
 import { settleChannel } from "../store/actions/settle";
+import { registerSecret } from "../store/actions/secret";
+import { unlockChannel } from "../store/actions/unlock";
 
 /**
  *
@@ -118,6 +120,12 @@ const manageNonPaymentMessages = (messages = []) => {
       case MessageType.SETTLEMENT_REQUIRED: {
         return manageSettlementRequired({ ...msg, internal_msg_identifier });
       }
+      case MessageType.REQUEST_REGISTER_SECRET: {
+        return manageRequestRegisterSecret(msg);
+      }
+      case MessageType.UNLOCK_REQUEST: {
+        return manageUnlockRequest(msg);
+      }
     }
   });
 
@@ -130,6 +138,17 @@ const manageNonPaymentMessages = (messages = []) => {
       }
     }
   });
+};
+
+const manageUnlockRequest = async msg => {
+  const { channel_identifier, token_address } = msg.message;
+  const channel = getChannelByIdAndToken(channel_identifier, token_address);
+  if (!channel) return;
+  const { isUnlocked, isUnlocking } = channel;
+  if (isUnlocked || isUnlocking) return;
+  const store = Store.getStore();
+  const { dispatch } = store;
+  dispatch(unlockChannel(msg.message));
 };
 
 const manageSettlementRequired = async msg => {
@@ -235,6 +254,27 @@ const managePaymentMessages = (messages = []) => {
   }
 };
 
+const manageRequestRegisterSecret = data => {
+  const { payment_id } = data;
+  const payment = getPayment(payment_id);
+  if (!payment) return;
+  const { registeringOnChainSecret, registeredOnChainSecret } = payment;
+  // If it was registered or it is, do not do anything
+  if (registeringOnChainSecret || registeredOnChainSecret) return;
+  const store = Store.getStore();
+  const { dispatch } = store;
+  const { secret_registry_address } = data.message;
+  const { secret } = payment;
+  // Not having the secret should stop the execution. Since we shouldn't register something empty
+  if (!secret) return;
+  const dispatchData = {
+    secretRegistryAddress: secret_registry_address,
+    secret,
+    paymentId: payment_id,
+  };
+  dispatch(registerSecret(dispatchData));
+};
+
 const manageLockExpired = (msgData, payment) => {
   const store = Store.getStore();
   const { dispatch } = store;
@@ -253,7 +293,19 @@ const manageLockExpired = (msgData, payment) => {
   if (paymentAux.expiration && paymentAux.expiration.messages[1]) return null;
   const isFailed = !!paymentAux.failureReason;
   const paymentState = isFailed ? FAILED_PAYMENT : PENDING_PAYMENT;
-  dispatch(setPaymentFailed(payment_id, paymentState, FAILURE_REASONS.EXPIRED));
+  const { channelId, token } = paymentAux;
+  const channelData = {
+    channel_identifier: channelId,
+    token_address: token,
+  };
+  dispatch(
+    setPaymentFailed(
+      payment_id,
+      paymentState,
+      FAILURE_REASONS.EXPIRED,
+      channelData
+    )
+  );
   const dataForPut = {
     ...paymentAux,
     signature: message.signature,
@@ -538,8 +590,8 @@ const manageRevealSecret = (msg, payment, messageKey) => {
     }
   } else if (msg.message_order === 7) {
     const { keccak256 } = ethers.utils;
-    const hasSameSecretHash =
-      keccak256(msg[messageKey].secret) === payment.secret_hash;
+    const { secret } = msg[messageKey];
+    const hasSameSecretHash = keccak256(secret) === payment.secret_hash;
     if (!hasSameSecretHash) return console.warn("Secret does not match");
     store.dispatch(
       addPendingPaymentMessage(msg.payment_id, msg.message_order, {
@@ -547,7 +599,13 @@ const manageRevealSecret = (msg, payment, messageKey) => {
         message_order: msg.message_order,
       })
     );
-    store.dispatch(setPaymentSecret(payment.paymentId, msg[messageKey].secret));
+    store.dispatch(setPaymentSecret(payment.paymentId, secret));
+    const paymentAux = getPaymentByIdAndState(PENDING_PAYMENT, msg.payment_id);
+    const dataToPack = paymentAux.messages[1].message;
+    dataToPack.secret = secret;
+    store.dispatch(
+      putNonClosingBalanceProof(msg[messageKey], paymentAux, dataToPack)
+    );
     return store.dispatch(saveLuminoData());
   } else {
     store.dispatch(

@@ -1,6 +1,7 @@
 import client from "../../apiRest";
 import { ADD_NEW_TOKEN, ADD_NEW_TOKEN_NAME_SYMBOL } from "./types";
 import { requestTokenNameAndSymbol } from "../functions/tokens";
+import { getState } from "../functions";
 
 export const requestTokenAddressFromTokenNetwork = tokenNetwork => async dispatch => {
   try {
@@ -24,10 +25,7 @@ export const requestTokenNetworkFromTokenAddress = tokenAddress => async dispatc
   }
 };
 
-export const getTokenNameAndSymbol = tokenAddress => async (
-  dispatch,
-  getState
-) => {
+export const getTokenNameAndSymbol = tokenAddress => async dispatch => {
   const { tokenNames } = getState();
   if (tokenNames[tokenAddress]) {
     return {

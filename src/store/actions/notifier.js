@@ -20,6 +20,7 @@ import {
 import Store from "..";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import { getState } from "../functions/state";
+import { AddressZero } from "ethers/constants";
 
 export const notifierRegistration = url => async (dispatch, getState, lh) => {
   try {
@@ -316,7 +317,7 @@ const manageNewChannel = async (notification, notifier) => {
 
   const token_network_identifier = getAddress(contractAddress);
   let token_address = getTokenAddressByTokenNetwork(token_network_identifier);
-  if (!token_address) {
+  if (!token_address || token_address === AddressZero) {
     token_address = await Store.getStore().dispatch(
       requestTokenAddressFromTokenNetwork(token_network_identifier)
     );

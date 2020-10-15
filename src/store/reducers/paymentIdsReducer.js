@@ -20,11 +20,11 @@ const paymentIdsReducer = (state = initialState, action) => {
       return newPayment;
     }
     case DELETE_ALL_PENDING_PAYMENTS: {
-      const nonPending = [];
+      const newState = { ...state };
       Object.keys(state).forEach(p => {
-        if (state[p] !== PENDING_PAYMENT) nonPending.push(state[p]);
+        if (state[p] === PENDING_PAYMENT) delete newState[p];
       });
-      return nonPending;
+      return newState;
     }
     case SET_PAYMENT_COMPLETE: {
       const completed = { ...state, [paymentId]: COMPLETED_PAYMENT };

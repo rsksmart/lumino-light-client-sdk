@@ -11,6 +11,10 @@ import {
   ADD_CHANNEL_WAITING_FOR_OPENING,
   SET_CHANNEL_SETTLED,
   SET_IS_SETTLING,
+  SET_IS_UNLOCKING,
+  SET_CHANNEL_UNLOCKED,
+  RECEIVED_PAYMENT,
+  SET_PAYMENT_FAILED,
 } from "../actions/types";
 import { ethers } from "ethers";
 import {
@@ -18,8 +22,11 @@ import {
   CHANNEL_WAITING_FOR_CLOSE,
   CHANNEL_WAITING_OPENING,
   CHANNEL_SETTLED,
+  CHANNEL_UNLOCKED,
 } from "../../config/channelStates";
 import { VOTE_TYPE } from "../../config/notifierConstants";
+import { chkSum } from "../../utils/functions";
+import { FAILURE_REASONS } from "../../config/paymentConstants";
 import { Lumino } from "../..";
 
 const initialState = {};
@@ -199,7 +206,18 @@ const channel = (state = initialState, action) => {
 
       return { ...newState, [chKey]: ch };
     }
+    case SET_PAYMENT_FAILED: {
+      const isExpired = action.reason === FAILURE_REASONS.EXPIRED;
+      if (!isExpired) return state;
 
+      const key = getChannelKey(action.channel);
+      const stateClone = { ...state, [key]: { ...state[key] } };
+      if (stateClone[key].previousNonClosingBp) {
+        stateClone[key].nonClosingBp = stateClone[key].previousNonClosingBp;
+        delete stateClone[key].previousNonClosingBp;
+      }
+      return stateClone;
+    }
     case SET_CHANNEL_CLOSED: {
       const chKey = getChannelKey(action.channel);
 
@@ -272,6 +290,43 @@ const channel = (state = initialState, action) => {
           sentTokens: channelSent.toString(),
         },
       };
+    }
+    case RECEIVED_PAYMENT: {
+      const {
+        payment: { payment: p },
+      } = action;
+      const msg = p.messages[1].message;
+      const channelKey = getChannelKey({
+        ...msg,
+        token_address: chkSum(msg.token),
+      });
+      const tokenNetwork = chkSum(msg.token_network_address);
+      const nonClosingBp = {
+        light_client_payment_id: msg.payment_identifier,
+        secret_hash: msg.lock.secrethash,
+        nonce: msg.nonce,
+        channel_id: msg.channel_identifier,
+        token_network_address: tokenNetwork,
+        partner_balance_proof: {
+          chain_id: msg.chain_id,
+          channel_identifier: msg.channel_identifier,
+          locked_amount: msg.locked_amount,
+          locksroot: msg.locksroot,
+          message_identifier: msg.message_identifier,
+          nonce: msg.nonce,
+          payment_identifier: msg.payment_identifier,
+          secret: msg.secret,
+          token_network_address: tokenNetwork,
+          transferred_amount: msg.transferred_amount,
+        },
+      };
+      const stateClone = { ...state, [channelKey]: { ...state[channelKey] } };
+      const hasPreviousBP = state[channelKey].nonClosingBp;
+      if (hasPreviousBP)
+        stateClone[channelKey].previousNonClosingBp =
+          stateClone[channelKey].nonClosingBp;
+      stateClone[channelKey].nonClosingBp = nonClosingBp;
+      return stateClone;
     }
     case UPDATE_NON_CLOSING_BP: {
       const ncbpChannel = getPaymentChannelKey(action);
@@ -353,6 +408,26 @@ const channel = (state = initialState, action) => {
       newState[key] = {
         ...newState[key],
         isSettling: action.data.isSettling,
+      };
+      return newState;
+    }
+    case SET_IS_UNLOCKING: {
+      const key = getChannelKey(action.data);
+      const newState = { ...state };
+      newState[key] = {
+        ...newState[key],
+        isUnlocking: action.data.isUnlocking,
+      };
+      return newState;
+    }
+    case SET_CHANNEL_UNLOCKED: {
+      const key = getChannelKey(action.data);
+      const newState = { ...state };
+      newState[key] = {
+        ...newState[key],
+        sdk_status: CHANNEL_UNLOCKED,
+        isUnlocked: true,
+        isUnlocking: false,
       };
       return newState;
     }

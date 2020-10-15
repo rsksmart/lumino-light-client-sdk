@@ -33,6 +33,7 @@ import {
   PAYMENT_EXPIRED,
   PAYMENT_SUCCESSFUL,
   PAYMENT_REFUND,
+  MessageTypeID,
 } from "../../config/messagesConstants";
 import { saveLuminoData } from "./storage";
 import {
@@ -516,24 +517,33 @@ export const putBalanceProof = (message, payment) => async (
   }
 };
 
-export const putNonClosingBalanceProof = (message, payment) => async (
-  dispatch,
-  getState,
-  lh
-) => {
+export const putNonClosingBalanceProof = (
+  message,
+  payment,
+  ltToPack = null
+) => async (dispatch, getState, lh) => {
   const { getAddress } = ethers.utils;
-  const dataToSign = getDataToSignForNonClosingBalanceProof(message);
+  // LT may only be present when we sign after a Reveal Secret 7
+  // In other cases, we only sign a BP
+  // The data is abstracted to this const to avoid repeated code
+  const dataForPack = ltToPack || message;
+  const dataToSign = ltToPack
+    ? getDataToSignForLockedTransfer(
+        dataForPack,
+        MessageTypeID.UPDATE_BALANCE_PROOF
+      )
+    : getDataToSignForNonClosingBalanceProof(dataForPack);
   let signature = "";
   signature = await resolver(dataToSign, lh, true);
   const body = {
     sender: getAddress(payment.partner),
     light_client_payment_id: payment.paymentId,
     secret_hash: payment.secret_hash,
-    nonce: message.nonce,
+    nonce: dataForPack.nonce,
     channel_id: payment.channelId,
     token_network_address: getAddress(payment.tokenNetworkAddress),
     lc_bp_signature: signature,
-    partner_balance_proof: message,
+    partner_balance_proof: dataForPack,
   };
   try {
     const urlPut = "watchtower";
@@ -556,12 +566,18 @@ export const setPaymentSecret = (paymentId, secret) => ({
   paymentId,
 });
 
-export const setPaymentFailed = (paymentId, state, reason) => dispatch => {
+export const setPaymentFailed = (
+  paymentId,
+  state,
+  reason,
+  channel
+) => dispatch => {
   const obj = {
     type: SET_PAYMENT_FAILED,
     paymentId,
     reason,
     paymentState: state,
+    channel,
   };
   return dispatch(obj);
 };
