@@ -127,7 +127,7 @@ const manageNonPaymentMessages = (messages = []) => {
         });
       }
       case MessageType.UNLOCK_REQUEST: {
-        return manageUnlockRequest(msg);
+        return manageUnlockRequest({ ...msg, internal_msg_identifier });
       }
     }
   });
@@ -144,6 +144,7 @@ const manageNonPaymentMessages = (messages = []) => {
 };
 
 const manageUnlockRequest = async msg => {
+  const { internal_msg_identifier } = msg;
   const { channel_identifier, token_address } = msg.message;
   const channel = getChannelByIdAndToken(channel_identifier, token_address);
   if (!channel) return;
@@ -151,7 +152,7 @@ const manageUnlockRequest = async msg => {
   if (isUnlocked || isUnlocking) return;
   const store = Store.getStore();
   const { dispatch } = store;
-  dispatch(unlockChannel(msg.message));
+  dispatch(unlockChannel({ ...msg.message, internal_msg_identifier }));
 };
 
 const manageSettlementRequired = async msg => {
