@@ -121,7 +121,10 @@ const manageNonPaymentMessages = (messages = []) => {
         return manageSettlementRequired({ ...msg, internal_msg_identifier });
       }
       case MessageType.REQUEST_REGISTER_SECRET: {
-        return manageRequestRegisterSecret(msg);
+        return manageRequestRegisterSecret({
+          ...msg,
+          internal_msg_identifier,
+        });
       }
       case MessageType.UNLOCK_REQUEST: {
         return manageUnlockRequest(msg);
@@ -255,7 +258,7 @@ const managePaymentMessages = (messages = []) => {
 };
 
 const manageRequestRegisterSecret = data => {
-  const { payment_id } = data;
+  const { payment_id, internal_msg_identifier } = data;
   const payment = getPayment(payment_id);
   if (!payment) return;
   const { registeringOnChainSecret, registeredOnChainSecret } = payment;
@@ -271,6 +274,7 @@ const manageRequestRegisterSecret = data => {
     secretRegistryAddress: secret_registry_address,
     secret,
     paymentId: payment_id,
+    internal_msg_identifier,
   };
   dispatch(registerSecret(dispatchData));
 };
