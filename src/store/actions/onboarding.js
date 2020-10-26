@@ -29,7 +29,7 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
     const signed_seed_retry = await resolver(seed_retry, lh, true);
     // Prepare a body for the request with all the required data
     const body = {
-      registration_data = {
+      registration_data : {
         address,
         signed_password,
         signed_display_name,
