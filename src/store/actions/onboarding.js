@@ -15,7 +15,7 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
   try {
     dispatch(stopAllPolling());
     client.defaults.headers = {};
-    const urlOnboard = "light_clients/matrix/credentials";
+    const urlOnboard = "light_clients/";
     const onboardReq = await client.get(urlOnboard, { params: { address } });
     // We get the data
     const {
@@ -29,17 +29,18 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
     const signed_seed_retry = await resolver(seed_retry, lh, true);
     // Prepare a body for the request with all the required data
     const body = {
-      address,
-      signed_password,
-      signed_display_name,
-      signed_seed_retry,
-      password: password_to_sign,
-      display_name: display_name_to_sign,
-      seed_retry,
+      registration_data : {
+        address,
+        signed_password,
+        signed_display_name,
+        signed_seed_retry,
+        password: password_to_sign,
+        display_name: display_name_to_sign,
+        seed_retry,
+      },
     };
-    const urlPostOnboard = "light_clients/";
     dispatch({ type: REQUEST_CLIENT_ONBOARDING, address });
-    const resOnboard = await client.post(urlPostOnboard, body);
+    const resOnboard = await client.post(urlOnboard, body);
     // We extract the api key, set it as a header and store it on redux
     const { api_key } = resOnboard.data;
 
