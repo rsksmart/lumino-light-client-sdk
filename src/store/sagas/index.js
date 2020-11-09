@@ -54,9 +54,10 @@ export function* workMessagePolling({ data }) {
     });
     yield all(completed.map(paymentId => setCompleted(paymentId)));
     const maxIdentifier = findMaxMsgInternalId(data);
-
-    yield put({ type: SET_LATEST_INTERNAL_MSG_ID, id: maxIdentifier });
-
+    if (data && data.length && data.length >= 0) {
+      // no messages so we don't update the last message id then
+      yield put({ type: SET_LATEST_INTERNAL_MSG_ID, id: maxIdentifier });
+    }
     yield put(saveLuminoData());
   } catch (error) {
     console.error(error);
