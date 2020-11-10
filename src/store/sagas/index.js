@@ -54,8 +54,8 @@ export function* workMessagePolling({ data }) {
     });
     yield all(completed.map(paymentId => setCompleted(paymentId)));
     const maxIdentifier = findMaxMsgInternalId(data);
-    if (data && data.length && data.length >= 0) {
-      // no messages so we don't update the last message id then
+    if (data && data.length && data.length > 0) {
+      // we update the id only if we have messages, if not we skip the update
       yield put({ type: SET_LATEST_INTERNAL_MSG_ID, id: maxIdentifier });
     }
     yield put(saveLuminoData());

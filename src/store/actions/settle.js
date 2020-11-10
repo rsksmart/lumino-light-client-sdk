@@ -44,8 +44,8 @@ export const settleChannel = data => async (dispatch, _, lh) => {
   } catch (error) {
     const requestError = error?.response?.data?.errors;
     if (requestError) {
-      const channelAlreadySettled = SETTLED_EXPECTED_ERRORS
-        .indexOf(requestError) !== -1;
+      const channelAlreadySettled =
+        SETTLED_EXPECTED_ERRORS.indexOf(requestError) !== -1;
       if (channelAlreadySettled) {
         dispatch(setChannelSettled(dispatchData));
         const channel = getChannelByIdAndToken(channelIdentifier, tokenAddress);
