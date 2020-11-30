@@ -90,7 +90,7 @@ function* checkForOpenChannelInProcessing(data) {
         yield Lumino.callbacks.trigger(CALLBACKS.OPEN_CHANNEL, channelAfter);
     }
   } else {
-    // Channel did not exist
+    yield Lumino.callbacks.trigger(CALLBACKS.OPEN_CHANNEL, channelsAfter[k]);
   }
 }
 
@@ -115,8 +115,6 @@ function checkForCloseChannelInProcessing(data) {
       if (channelAfter.sdk_status === SDK_CHANNEL_STATUS.CHANNEL_CLOSED)
         Lumino.callbacks.trigger(CALLBACKS.CLOSE_CHANNEL, channelAfter);
     }
-  } else {
-    // Channel did not exist
   }
 }
 
