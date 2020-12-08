@@ -27,15 +27,19 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
     } = onboardReq.data;
 
     // Check hub current transport implementation
-    let register_body = {}
-    if(transport_mode === "matrix"){
+    let register_body = {};
+    if (transport_mode === "matrix") {
       // Sign the onboarding matrix data
-      const signed_display_name = await resolver(display_name_to_sign, lh, true);
+      const signed_display_name = await resolver(
+        display_name_to_sign,
+        lh,
+        true
+      );
       const signed_password = await resolver(password_to_sign, lh, true);
       const signed_seed_retry = await resolver(seed_retry, lh, true);
       // Prepare a body for the request with all the required data
       register_body = {
-        registration_data : {
+        registration_data: {
           address,
           signed_password,
           signed_display_name,
@@ -45,14 +49,14 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
           seed_retry,
         },
       };
-    }else if(transport_mode === "rif-comms"){
+    } else if (transport_mode === "rif-comms") {
       register_body = {
-        registration_data : {
-          address
-        }
-      }
-    }else{
-      throw new Error("Onboadring error: hub isnt using rif comms nor matrix")
+        registration_data: {
+          address,
+        },
+      };
+    } else {
+      throw new Error("Onboadring error: hub isnt using rif comms nor matrix");
     }
 
     // Register the light client
