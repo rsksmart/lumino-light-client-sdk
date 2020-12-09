@@ -35,7 +35,7 @@ describe("test onboarding behaviour", () => {
     const store = mockStore(state);
     client.get.mockResolvedValue({
       data: {
-        transport_mode: "matrix",
+        transport_type: "matrix",
         display_name_to_sign: "name",
         seed_retry: "seed_retry",
         password_to_sign: "password",

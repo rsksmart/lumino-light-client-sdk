@@ -20,7 +20,7 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
 
     // Get the onboarding data from the hub
     const {
-      transport_mode,
+      transport_type,
       display_name_to_sign,
       seed_retry,
       password_to_sign,
@@ -28,7 +28,7 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
 
     // Check hub current transport implementation
     let register_body = {};
-    if (transport_mode === "matrix") {
+    if (transport_type === "matrix") {
       // Sign the onboarding matrix data
       const signed_display_name = await resolver(
         display_name_to_sign,
@@ -49,7 +49,7 @@ export const onboardingClient = () => async (dispatch, getState, lh) => {
           seed_retry,
         },
       };
-    } else if (transport_mode === "rif-comms") {
+    } else if (transport_type === "rif-comms") {
       register_body = {
         registration_data: {
           address,
