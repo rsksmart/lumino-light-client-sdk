@@ -1,4 +1,8 @@
-import { OPEN_CHANNEL, ADD_CHANNEL_WAITING_FOR_OPENING } from "./types";
+import {
+  OPEN_CHANNEL,
+  ADD_CHANNEL_WAITING_FOR_OPENING,
+  REMOVE_CHANNEL_WAITING_FOR_OPENING,
+} from "./types";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -6,6 +10,7 @@ import { createOpenTx } from "../../scripts/open";
 import {
   isRnsDomain,
   findNonClosedChannelWithPartner,
+  UUIDv4,
 } from "../../utils/functions";
 import { getRnsInstance } from "../functions/rns";
 import {
@@ -28,6 +33,7 @@ import { ethers } from "ethers";
  */
 export const openChannel = params => async (dispatch, getState, lh) => {
   const { tokenAddress } = params;
+  let internalChannelId = params.internalChannelId ? params.internalChannelId : UUIDv4();
   let { partner } = params;
   const { getAddress } = ethers.utils;
 
@@ -96,6 +102,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
       ...requestBody,
       token_name,
       token_symbol,
+      internalChannelId,
     };
 
     requestBody.signed_tx = signed_tx;
@@ -143,12 +150,17 @@ export const openChannel = params => async (dispatch, getState, lh) => {
         openedByUser: true,
         token_name,
         sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
+        internalChannelId,
       },
     });
 
     const allData = getState();
     await lh.storage.saveLuminoData(allData);
   } catch (error) {
+    dispatch({
+      type: REMOVE_CHANNEL_WAITING_FOR_OPENING,
+      internalChannelId,
+    });
     Lumino.callbacks.trigger(CALLBACKS.FAILED_OPEN_CHANNEL, channel, error);
   }
 };

@@ -15,6 +15,7 @@ import {
   SET_CHANNEL_UNLOCKED,
   RECEIVED_PAYMENT,
   SET_PAYMENT_FAILED,
+  REMOVE_CHANNEL_WAITING_FOR_OPENING,
 } from "../actions/types";
 import { ethers } from "ethers";
 import {
@@ -389,6 +390,21 @@ const channel = (state = initialState, action) => {
         isTemporary: true,
         isOpening: true,
       };
+      return newState;
+    }
+    case REMOVE_CHANNEL_WAITING_FOR_OPENING: {
+      const { internalChannelId } = action;
+      const newState = { ...state };
+      Object.keys(newState).forEach(key => {
+        const channel = newState[key];
+        if (
+          channel &&
+          channel.internalChannelId &&
+          channel.internalChannelId === internalChannelId
+        ) {
+          delete newState[key];
+        }
+      });
       return newState;
     }
     case SET_CHANNEL_SETTLED: {
