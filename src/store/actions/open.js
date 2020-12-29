@@ -1,4 +1,4 @@
-import { OPEN_CHANNEL, ADD_CHANNEL_WAITING_FOR_OPENING } from "./types";
+import { OPEN_CHANNEL, ADD_CHANNEL_WAITING_FOR_OPENING, REMOVE_CHANNEL_WAITING_FOR_OPENING } from "./types";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -6,6 +6,7 @@ import { createOpenTx } from "../../scripts/open";
 import {
   isRnsDomain,
   findNonClosedChannelWithPartner,
+  UUIDv4,
 } from "../../utils/functions";
 import { getRnsInstance } from "../functions/rns";
 import {
@@ -58,6 +59,8 @@ export const openChannel = params => async (dispatch, getState, lh) => {
     tokenAddress
   );
 
+  const internalChannelId = UUIDv4();
+
   try {
     if (getAddress(partner) === clientAddress)
       throw new Error("Can't create channel with yourself");
@@ -96,6 +99,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
       ...requestBody,
       token_name,
       token_symbol,
+      internalChannelId
     };
 
     requestBody.signed_tx = signed_tx;
@@ -149,6 +153,10 @@ export const openChannel = params => async (dispatch, getState, lh) => {
     const allData = getState();
     await lh.storage.saveLuminoData(allData);
   } catch (error) {
+    dispatch({
+      type: REMOVE_CHANNEL_WAITING_FOR_OPENING,
+      internalChannelId
+    });
     Lumino.callbacks.trigger(CALLBACKS.FAILED_OPEN_CHANNEL, channel, error);
   }
 };
