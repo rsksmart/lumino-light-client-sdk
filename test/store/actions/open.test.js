@@ -8,7 +8,7 @@ import configureMockStore from "redux-mock-store";
 import thunk from "redux-thunk";
 import { ADD_CHANNEL_WAITING_FOR_OPENING } from "../../../src/store/actions/types";
 import { CHANNEL_OPENED } from "../../../src/config/channelStates";
-import { chkSum } from "../../../src/utils/functions";
+import { chkSum, UUIDv4 } from "../../../src/utils/functions";
 
 // Mock store
 const lh = {
@@ -73,10 +73,13 @@ describe("test open channel action", () => {
       Promise.resolve({ data: { channel_identifier: 1 } })
     );
 
+    const internalChannelId = UUIDv4();
+
     await store.dispatch(
       openActions.openChannel({
         partner: randomPartner,
         tokenAddress: randomAddress,
+        internalChannelId
       })
     );
 
@@ -86,6 +89,7 @@ describe("test open channel action", () => {
       partner_address: randomPartner,
       creator_address: address,
       token_address: randomAddress,
+      internalChannelId
     });
     const actions = store.getActions();
 
@@ -98,6 +102,7 @@ describe("test open channel action", () => {
         offChainBalance: "0",
         partner_address: randomPartner,
         token_address: randomAddress,
+        internalChannelId
       },
       type: ADD_CHANNEL_WAITING_FOR_OPENING,
     };
@@ -110,6 +115,7 @@ describe("test open channel action", () => {
         sdk_status: "CHANNEL_AWAITING_NOTIFICATION",
         token_name: "LUMINO",
         token_symbol: "LUM",
+        internalChannelId
       },
       channelId: 1,
       numberOfNotifiers: 0,
@@ -137,10 +143,13 @@ describe("test open channel action", () => {
     });
     client.put.mockImplementationOnce(() => Promise.reject("Generic Error"));
 
+    const internalChannelId = UUIDv4();
+
     await store.dispatch(
       openActions.openChannel({
         partner: randomPartner,
         tokenAddress: randomAddress,
+        internalChannelId
       })
     );
 
@@ -151,6 +160,7 @@ describe("test open channel action", () => {
       partner_address: randomPartner,
       creator_address: address,
       token_address: randomAddress,
+      internalChannelId
     };
     expect(spyCallbacks).toHaveBeenNthCalledWith(
       1,

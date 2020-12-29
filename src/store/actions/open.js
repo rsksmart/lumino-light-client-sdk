@@ -33,6 +33,7 @@ import { ethers } from "ethers";
  */
 export const openChannel = params => async (dispatch, getState, lh) => {
   const { tokenAddress } = params;
+  let internalChannelId = params.internalChannelId ? params.internalChannelId : UUIDv4();
   let { partner } = params;
   const { getAddress } = ethers.utils;
 
@@ -62,8 +63,6 @@ export const openChannel = params => async (dispatch, getState, lh) => {
     channel.partner,
     tokenAddress
   );
-
-  const internalChannelId = UUIDv4();
 
   try {
     if (getAddress(partner) === clientAddress)
@@ -151,6 +150,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
         openedByUser: true,
         token_name,
         sdk_status: SDK_CHANNEL_STATUS.CHANNEL_AWAITING_NOTIFICATION,
+        internalChannelId,
       },
     });
 
