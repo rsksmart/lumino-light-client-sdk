@@ -11,7 +11,7 @@ import { SET_CHANNEL_SETTLED, SET_IS_SETTLING } from "./types";
 const SETTLED_EXPECTED_ERRORS = [
   "CHANNEL_ALREADY_SETTLED",
   "MESSAGE_ALREADY_SIGNED",
-  "CHANNEL_UNLOCKED"
+  "CHANNEL_UNLOCKED",
 ];
 
 export const settleChannel = data => async (dispatch, _, lh) => {

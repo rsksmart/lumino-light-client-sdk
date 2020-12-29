@@ -1,4 +1,8 @@
-import { OPEN_CHANNEL, ADD_CHANNEL_WAITING_FOR_OPENING, REMOVE_CHANNEL_WAITING_FOR_OPENING } from "./types";
+import {
+  OPEN_CHANNEL,
+  ADD_CHANNEL_WAITING_FOR_OPENING,
+  REMOVE_CHANNEL_WAITING_FOR_OPENING,
+} from "./types";
 import { SDK_CHANNEL_STATUS } from "../../config/channelStates";
 import client from "../../apiRest";
 import resolver from "../../utils/handlerResolver";
@@ -99,7 +103,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
       ...requestBody,
       token_name,
       token_symbol,
-      internalChannelId
+      internalChannelId,
     };
 
     requestBody.signed_tx = signed_tx;
@@ -155,7 +159,7 @@ export const openChannel = params => async (dispatch, getState, lh) => {
   } catch (error) {
     dispatch({
       type: REMOVE_CHANNEL_WAITING_FOR_OPENING,
-      internalChannelId
+      internalChannelId,
     });
     Lumino.callbacks.trigger(CALLBACKS.FAILED_OPEN_CHANNEL, channel, error);
   }

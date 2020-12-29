@@ -397,9 +397,11 @@ const channel = (state = initialState, action) => {
       const newState = { ...state };
       Object.keys(newState).forEach(key => {
         const channel = newState[key];
-        if (channel &&
-             channel.internalChannelId &&
-              channel.internalChannelId === internalChannelId) {
+        if (
+          channel &&
+          channel.internalChannelId &&
+          channel.internalChannelId === internalChannelId
+        ) {
           delete newState[key];
         }
       });
