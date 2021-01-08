@@ -17,7 +17,7 @@ const requestMessages = async (from_message, url) =>
 
 const getTransactionInfo = () => {
   const from_message = getState().client.internal_msg_id || 1;
-  const url = "light_client_messages";
+  const url = "light_clients/messages";
   return from(requestMessages(from_message, url));
 };
 
