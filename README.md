@@ -12,32 +12,34 @@ The SDK gives the developer all the functions to work with a Lumino HUB and inte
 
 **Yarn**
 
-`yarn install @rsksmart/lumino-light-client-sdk`
+`yarn add @rsksmart/lumino-light-client-sdk`
 
 **NPM**
 
 `npm install --save @rsksmart/lumino-light-client-sdk`
 
-## Starting
+<br/>
 
-```javascript
-import { Lumino } from "@rsksmart/lumino-light-client-sdk";
-```
+# Examples
 
-Lumino is our main interface to interact with the SDK.
-Lumino must be initialized before being used, with the function
+Some examples on how to integrate and use the SDK are available [here](examples/fullExample.js)
 
-```javascript
-Lumino.init(signignHandler, storageHandler, config);
-```
+</br>The documentation is worthwile reading though and we encourage you to use the examples as a guideline
+</br>
 
 ## Initialization
 
 ```javascript
+import { Lumino } from "@rsksmart/lumino-light-client-sdk";
+
 Lumino.init(signignHandler, storageHandler, config);
 ```
 
+Lumino is our main interface to interact with the SDK.<br/>
+This interface returns a singleton instance of the SDK.<br/>
 In order to initialize Lumino, the method accepts the next params
+
+<br/>
 
 ## SigningHandler
 
@@ -47,18 +49,22 @@ This is an object with the next two methods
 sign(data: Transaction) => signature: String
 ```
 
-Method that signs an Ethereum transaction (for example web3 signTransaction)
+Method that signs an Ethereum transaction (for example a web3 signTransaction)
+
+<br/>
 
 ```javascript
 offChainSign(data: Uint8Array) => signature: String
 ```
 
-Method that signs any kind of message, not just transactions
+Method that signs any kind of message, not just transactions.
 
 **NOTE:** We conducted our tests of the SDK with the ether.js Wallet implementation, which perfectly supports the data, we encourage using ethers.js or other method that is capable of signing the data.
 
 In order to make the setup more easier, we provided a default handler,
 in the form of SigningHandler, which can be imported from the sdk
+
+<br/>
 
 ```javascript
 import { SigningHandler } from "@rsksmart/lumino-light-client-sdk";
@@ -68,11 +74,13 @@ const signingHandler = SigningHandler();
 signingHandler.init(web3, PrivateKey);
 ```
 
-The signingHandler accepts a web3 instance pointing to a provider, and a PrivateKey, with this, the handler could be passed to Lumino and it will work.
+The signingHandler accepts a web3 instance pointing to a provider, and a PrivateKey, this handler can be passed to Lumino and it will work.
 
 **Providing your own handler**
 
 We support custom implementations, as long as an object with both of the prior methods are passed and can perform a correct signature, we encourage new implementations and research on the matter.
+
+<br/>
 
 ## LocalStorageHandler
 
@@ -86,7 +94,7 @@ getLuminoData() => data: Object
 
 This method returns the data that has been stored by the SDK, it could be any implementation (localStorage, AsyncStorage...), it supports async operations.
 
----
+<br/>
 
 ```javascript
 saveLuminoData(data: Object) => void
@@ -94,102 +102,103 @@ saveLuminoData(data: Object) => void
 
 This method saves the data that the SDK has stored in memory, implementations can also be of any type, it must accept a parameter (**data**) which is a JS object containing the data of the SDK.
 
+<br/>
+
 ```javascript
 import { LocalStorageHandler } from "@rsksmart/lumino-light-client-sdk";
 ```
 
 We also provide a default implementation of the handler in the SDK, this is for a web enviroment and can be imported from the SDK.
 
----
-
 **Providing your own handler**
 
 As in the Signing, we also support your own custom implementations, as long as the object of the handler has the required methods.
+
+<br/>
 
 ## ConfigParams
 
 This is an object with the next params
 
-| Name        | Description                 |
-| ----------- | --------------------------- |
-| chainId     | The chainId to use          |
-| rskEndpoint | An endpoint to a RSK Node   |
-| hubEndpoint | An endpoint to a Lumino HUB |
-| address     | The Client address          |
+| Name            | Description                 |
+| --------------- | --------------------------- |
+| chainId         | The chainId to use          |
+| rskEndpoint     | An endpoint to a RSK Node   |
+| hubEndpoint     | An endpoint to a Lumino HUB |
+| address         | The Client address          |
+| registryAddress | The RNS registry address    |
 
-## Initializing
+<br/>
+
+## Getting access to an instance
 
 With all the aforementioned values, Lumino can be initialized with the params in this order with the next ASYNC method.
 
 ```javascript
-await Lumino.init(signingHandler, localStorageHandler,ConfigParams) => LuminoInstance
+Lumino.init(signingHandler, localStorageHandler,ConfigParams) => Promise<LuminoInstance>
 ```
 
-This method returns an instance of lumino, so we can just assign it to a const and use it later.
+This method returns a singleton instance of lumino, which can be used to access all lumino features and functions
 
-```javascript
-const lumino = await Lumino.init(luminoHandler, storageImplementation);
-```
+<br />
 
-# How it Works
+# How to use
 
-When we have a instance of Lumino we have to understand how it works and what are the steps to accomplish it
+Lumino has a predefined path on how it works and how the users should experience using the technology, these points illustrate how it should go.
 
-1.  Onboard the Client with the Hub in order to interact with it (Onboarding)
-2.  Open a channel with a partner to send and receive payments with them (Open Channel)
-3.  Deposit some tokens to make a payment (Deposit)
-4.  Make a Payment (Payments)
-5.  Close the channels to settle all the funds and get new onChain balance from the payments (Close Channel)
+1.  Onboard the Client with the Hub in order to interact with it [(Onboarding)](#onboarding)
+    - Learn about callbacks in the SDK [(Callbacks)](#Callbacks)
+2.  Register the user with a RIF Notifier, and subscribe to topics [(RIF Notifier)](#onboarding)
+3.  Open a channel with a partner to send and receive payments with them [(Open Channel)](<#Open Channel>)
+4.  Deposit some tokens to make a payment [(Deposit)](#deposit)
+5.  Make a Payment [(Payments)](#payments)
+6.  Close the channels to settle all the funds and get new onChain balance from the payments [(Close Channel)](<#Close Channel>)
 
-Even though Lumino may be simple at a first most of the logic behind it is abstracted, allowing the developer not to worry about strange and difficult logical decisions and focus on the User Experience.
+Most of the payments logic and checks are abstracted and checked inside the SDK, so you can focus on writing code for the UX.
 
-For this we have also a series of Success Callbacks, so when an operation is completed, the developer can provide actual feedback to the user (Callbacks)
+<br/>
 
-# Lumino
+# Lumino instance
 
 After Lumino has been initialized, new methods are exposed to be used
 
 ```javascript
-get() => luminoInstance
+Lumino.get() => LuminoInstance
 ```
 
 Returns the intialized lumino instance, if lumino was not initialized before it will throw an error
 
-The instance methods are the following
-
-# lumino
+</br>
 
 ```javascript
-getLuminoInternalState() => luminoInternalState: Object
+Lumino.destroy() => void
 ```
 
-Retrieves the internal state of SDK and returns it
+Destroys the singleton isntance of Lumino and stops all polling, recommended to use when SDK won't be needed anymore
 
-Example:
+</br>
 
 ```javascript
-lumino.getLuminoInternalState();
+Lumino.reConfigure(signignHandler, storageHandler, config) => Promise<LuminoInstance>
 ```
 
----
+This method will destroy the current isntance and reinitialize it with the provided new values, the details are the same from [initialization](#initialization)
 
-```javascript
-luminoInternalState;
-```
+<br/>
 
-This is the lumino internal state, it can be accessed directly in order to be inspected or make comparisons.
-
-## Onboarding
+# Onboarding
 
 Before any kind of operation can be processed, the SDK must be onboarded, for this we abstracted a method in the actions of Lumino
 
+<br/>
+
 ```javascript
-await Lumino.actions.onboardingClient() => void
+lumino.actions.onboardingClient() => Promise<void>
 ```
 
 **Async** method that request to the hub to start the process of onboarding, it resolves and stores an Api Key in the SDK data.
 
----
+<br/>
 
 ```javascript
 Lumino.actions.getApiKey() => apiKey: String
@@ -197,23 +206,15 @@ Lumino.actions.getApiKey() => apiKey: String
 
 Method that returns the Apikey stored by the onboarding process, or an empty string if no onboarding was performed.
 
----
+<br/>
 
 ```javascript
 Lumino.actions.setApiKey(apiKey: String) => void
 ```
 
-This method forces a new api key on the SDK, it will set it and then store it, so caution is advised when using it.
+This method forces a new api key on the SDK, it will set it and then store it, it is not recommended to use it without caution
 
-Example of an onboarding
-
-```javascript
-const lumino = Lumino.init(...)
-await lumino.actions.onboardingClient();
-
-// Get api key to show,store in another place, etc
-const apiKey = lumino.actions.getApiKey();
-```
+<br/>
 
 # Actions
 
@@ -224,227 +225,250 @@ getChannels() => channels: Object
 ```
 
 Returns a list of all lumino channels held in the internal state, regardless of their state.
+<br/>
+
 The channels are identified by their channel identifier number and the token address where they were opened.
 
-Example of channel key: `1-0x1234abc`
+<br/>
 
----
-
-**ON CHAIN Operations**
+# On Chain Operations
 
 The next functions are considered **ON CHAIN** operations and will have a cost of RBTC, all of them are async functions and will take time depending on the type of Network (Regtest,Testnet,Mainnet).
 
-```javascript
-await openChannel(requestBody: Object) => void
-```
+## Open Channel
 
-Opens a new channel with an address, the request body is the next:
+Requests to open a channel with a partner in a given token address
 
 ```javascript
-const requestBody = {
-  partner_address: "0x123...",
-  token_address: "0x987...",
-};
+openChannel(requestBody: Object) => Promise<void>
 ```
 
-Optional params
+### Caveats
 
-| Name          | Description                              |
-| ------------- | ---------------------------------------- |
-| settleTimeout | Blocks for timeout to settle the channel |
-| gasPrice      | The gas price to use in the transaction  |
-| gasLimit      | The gas limit to use in the transaction  |
+- When opening a channel, the original request must be awaited for, if the request is lost, the channel will no te be opened
+- After the REQUEST_OPEN_CHANNEL has been fired, a temporary channel is created, that temporary channel is not meant to be used for operations, only for showing an intermediate state
+  <br/>
+
+### Request Body values
+
+|      Name       |   Type   | Required | Description                                            |
+| :-------------: | :------: | :------: | ------------------------------------------------------ |
+| partner_address | `String` |    ✔️    | Partner to open the channel with                       |
+|  token_address  | `String` |    ✔️    | The token address in which the channell will be opened |
+|  settleTimeout  | `Number` |          | Blocks for timeout to settle the channel               |
+|    gasPrice     | `String` |          | The gas price to use in the transaction                |
+|    gasLimit     | `String` |          | The gas limit to use in the transaction                |
 
 ---
 
+<br/>
+
+## Deposit
+
+Requests to deposit a certain amount of tokens in an opened channel
+
 ```javascript
-await createDeposit(requestBody: Object) => void
+createDeposit(requestBody: Object) => Promise<void>
 ```
 
-Deposits balance in a channel, the request body is the next:
+### Caveats
+
+- When depositing a channel, the original request must be awaited for, if the request is lost, the deposit may succeed, but the SDK will not update the balance
+  <br/>
+
+### Request Body values
+
+|       Name       |   Type   | Required | Description                                      |
+| :--------------: | :------: | :------: | ------------------------------------------------ |
+| partner_address  | `String` |    ✔️    | Partner of the channel                           |
+|  token_address   | `String` |    ✔️    | The token address of the channel                 |
+|  total_deposit   | `String` |    ✔️    | The deposit to add (in wei)                      |
+|    channelId     | `Number` |    ✔️    | The id of the channel                            |
+|     gasPrice     | `String` |          | The gas price to use in the transaction          |
+| gasLimitApproval | `String` |          | The gas limit to use in the approval transaction |
+| gasLimitDeposit  | `String` |          | The gas limit to use in the deposit transaction  |
+
+<br/>
+
+## Close Channel
+
+Requests the closing of a channel that is in an opened state
 
 ```javascript
-const requestBody = {
-  partner_address: "0x123...",
-  total_deposit: Number,
-  channelId: Number,
-  token_address: "0x987...",
-};
+closeChannel(requestBody: Object) => Promise<void>
 ```
 
-The amount of the deposit should be expressed in wei.
+<br/>
 
-Optional params
+### Request Body values
 
-| Name             | Description                                      |
-| ---------------- | ------------------------------------------------ |
-| gasPrice         | The gas price to use in the transaction          |
-| gasLimitApproval | The gas limit to use in the approval transaction |
-| gasLimitDeposit  | The gas limit to use in the deposit transaction  |
+|      Name       |   Type   | Required | Description                             |
+| :-------------: | :------: | :------: | --------------------------------------- |
+| partner_address | `String` |    ✔️    | Partner of the channel                  |
+|  token_address  | `String` |    ✔️    | The token address of the channel        |
+|    channelId    | `Number` |    ✔️    | The id of the channel                   |
+|    gasPrice     | `String` |          | The gas price to use in the transaction |
+|    gasLimit     | `String` |          | The gas limit to use in the transaction |
 
----
+<br/>
+
+# Payments
+
+The most important part of the SDK, fast payments with low fees.
+Due to the offchain nature of this operation, it will not take as much time as the other ones.
 
 ```javascript
-await closeChannel(requestBody: Object) => void
+createPayment(requestBody: Object) => Promise<void>
 ```
 
-Requests the close of a channel that is opened, the requestBody is the next:
+<br/>
+
+### Request Body values
+
+|     Name      |   Type   | Required | Description                                        |
+| :-----------: | :------: | :------: | -------------------------------------------------- |
+|    partner    | `String` |    ✔️    | Partner that we want to send the payment to        |
+| token_address | `String` |    ✔️    | The token address of the token that we want to pay |
+|    amount     | `String` |    ✔️    | The amount of tokens (in wei)                      |
+
+<br/>
+
+# Callbacks
+
+When an event is processed, a failure in an operation is detected, the SDK will trigger certain callbacks.
+</br>
+
+It is up to the developer to take action or not, in the next table, the callbacks of the SDK are displayed.
+
+</br>
+
+## Request and success callbacks
+
+</br>
+
+| Constant name             | Activated when                                           | Passed Params                             |
+| ------------------------- | -------------------------------------------------------- | ----------------------------------------- |
+| REQUEST_OPEN_CHANNEL      | The SDK requested the HUB to open a channel              | Data about the channel                    |
+| REQUEST_DEPOSIT_CHANNEL   | The SDK requested the HUB to make a deposit in a channel | Data about the channel                    |
+| REQUEST_CLOSE_CHANNEL     | The SDK requested the HUB to close a channel             | Data about the channel                    |
+| REQUEST_CLIENT_ONBOARDING | The SDK requested an onboarding to a HUB                 | The address that requested the onboarding |
+| CLIENT_ONBOARDING_SUCCESS | The HUB onboarding was successful                        | The address that requested the onboarding |
+| OPEN_CHANNEL              | A channel has successfuly opened                         | The channel                               |
+| DEPOSIT_CHANNEL           | A deposit in a channel was successful                    | The channel                               |
+| CLOSE_CHANNEL             | A channel was closed successfuly                         | The channel                               |
+| RECEIVED_PAYMENT          | A payment is received and will be processed              | The payment                               |
+| COMPLETED_PAYMENT         | A received or sent payment has completed processing      | The payment                               |
+| SENT_PAYMENT              | A created payment started its process successfuly        | The payment                               |
+
+</br>
+
+To set a callback the process is very easy:
 
 ```javascript
-const requestBody = {
-	partner_address: "0x123...",
-	channel_identifier: Number
-	token_address: "0x987..."
-};
-```
-
-Optional params
-
-| Name     | Description                             |
-| -------- | --------------------------------------- |
-| gasPrice | The gas price to use in the transaction |
-| gasLimit | The gas limit to use in the transaction |
-
----
-
-## Payments
-
-This is the core of the SDK, the ability to make offChain payments that are fast and easy for low fees.
-Due to the offchain nature of this opreation, it will not take as much time as the other ones.
-In order to invoke the method and allow the SDK to process a payment the next method is used:
-
-```javascript
-await createPayment(requestBody: Object) => void
-```
-
-This create a payment in a channel with balance, wheter it was from a deposit or from received payments, the body is the next:
-
-```javascript
-const requestBody = {
-  partner: partner_address: "0x123...",
-  amount: 1000000000000,
-  token_address: "0x987...",
-};
-```
-
-The amount should be in wei, and should be equal or less than the balance of the channel, if a payment is requested with insufficent funds, the SDK will log an error and interrupt the process.
-
-## Callbacks
-
-Lumino provides a simple interfaces for callbacks, which are the ones that we trigger on certain actions and pass data regarding the action.
-Thanks to this the developer can provide actual feedback to its users.
-
-Callbacks are set on the **Lumino** instance like this:
-
-```javascript
-Lumino.callbacks.set.setNameOfCallback;
-```
-
-The callbacks.set method sets a function that may or may not receive the data regarding the event, the next table illustrates the callbacks, when they are fired and the data they provide (Which is always a single object or nothing)
-
-| Name                          | Fired when                                         | Data (Object)                         |
-| ----------------------------- | -------------------------------------------------- | ------------------------------------- |
-| setOnCompletedPaymentCallback | Received or sent payment is successfully completed | The payment data                      |
-| setOnReceivedPaymentCallback  | Payment is received                                | The payment data                      |
-| setOnOpenChannelCallback      | Channel is Opened by the client or a partner       | The channel data                      |
-| setOnChannelDepositCallback   | channel deposit is successful                      | The channel data                      |
-| setOnRequestClientOnboarding  | Onboarding process is initiated                    | Address that requested the onboarding |
-| setOnClientOnboardingSuccess  | Onboarding process is successful                   | Address that requested the onboarding |
-
-Examples
-
-```javascript
-// Inform that we receive a payment
-Lumino.callbacks.set.setOnReceivedPaymentCallback(payment => {
-  showInfo("Received a payment, now processing it...");
-});
-
-// A payment was completed
-Lumino.callbacks.set.setOnCompletedPaymentCallback(payment => {
-  const { amount, partner: p, isReceived } = payment;
-  let message = `Successfully sent ${amount} to ${p}!`;
-  // We distignuish between received and sent payments with this prop
-  if (isReceived) message = `Successfully received ${amount} from ${p}!`;
-  showSuccess(message);
-});
-
-// A channel was opened
-Lumino.callbacks.set.setOnOpenChannelCallback(channel => {
-  const { channel_identifier: id } = channel;
-  const message = `Opened new channel ${id}`;
-  showSuccess(message);
-});
-
-// A deposit on a channel was susccessfull
-Lumino.callbacks.set.setOnChannelDepositCallback(channel => {
-  const { channel_identifier: id } = channel;
-  const message = `New deposit on channel ${id}`;
-  showSuccess(message);
-});
-
-// An onboarding process has started
-Lumino.callbacks.set.setOnRequestClientOnboarding(address => {
-  showInfo(`Requested Client onboarding with address ${address}`);
-});
-
-// An onboarding process was successfull
-Lumino.callbacks.set.setOnClientOnboardingSuccess(address => {
-  showSuccess(`Client onboarding with address ${address} was successful!`);
+const callbackConst = Lumino.callbacks.names.CALLBACKS.REQUEST_OPEN_CHANNEL;
+Lumino.callbacks.set(callbackConst, data => {
+  /* do something...*/
 });
 ```
 
-The functions can be of any kind, in these examples we just used a toast to show the info, but the developer is free to use whatever they want
+</br>
+The constants are under the name key in the callback section.
 
-## Notifier
+## Failure callbacks
 
-The Light client is not aware of everything that happens outside of the action it performs.
-For example, when a partner opens a channel, it is not made aware of that event, the same as when a channel is closed by a partner.
+</br>
 
-To tackle this problem, the Lumino ecosystem has a Notifier, which objective is to provide the information about events regarding what operations happen on the blockchain.
+| Constant name             | Activated when                                              | Passed Params                             |
+| ------------------------- | ----------------------------------------------------------- | ----------------------------------------- |
+| EXPIRED_PAYMENT           | A received or sent payment has expired                      | The payment                               |
+| SIGNING_FAIL              | Signing a message or transaction failed                     | The error \*                              |
+| FAILED_OPEN_CHANNEL       | Trying to open a channel resulted in a failure              | Data about the channel                    |
+| FAILED_DEPOSIT_CHANNEL    | Trying to make a deposit in a channel resulted in a failure | Data about the channel                    |
+| FAILED_CLOSE_CHANNEL      | Trying to close a channel resulted in a failure             | Data about the channel                    |
+| FAILED_PAYMENT            | A payment failed during its processing                      | The payment                               |
+| FAILED_CREATE_PAYMENT     | A payment could not be created                              | Data about the payment                    |
+| CLIENT_ONBOARDING_FAILURE | The onboarding process has failed                           | The address that requested the onboarding |
+| TIMED_OUT_OPEN_CHANNEL    | Trying to open a channel took too much time                 | Data about the channel                    |
 
-Those events are filtered by topics, which are abstracted by the SDK so the developer doesn't have to write logic for managing them.
+</br>
 
-## How to use it
+\* This callback has only 1 parameter
 
-The notifier is abstracted in simple methods that just need to be summoned, they accept no params since they just use the data from the config of the SDK
+The failure callbacks provide 2 parameters, the data related to the operation and a JS error, the JS error has some info about the issue,. </br>The data related to the error has the last successful state of the operation (for example the channel data before a deposit)
 
-These methods live under the actions and are all async
-
-**Registering with the notifier**
-
-```javascript
-notifierRegistration() => void
-```
-
-Registers the LC in the notifier that was passed in the config of `Lumino.init` it must be executed **only once per SDK configuration**, since the data of the registration is stored.
-
-Example
-
-```javascript
-await lumino.actions.notifierRegistration();
-```
-
----
-
-**Listening to Open Channel events**
+To set an error callback the process is the same as a non failure one, with a little difference:
 
 ```javascript
-subscribeToOpenChannel() => void
+const callbackConst =
+  Lumino.callbacks.names.CALLBACKS.CLIENT_ONBOARDING_FAILURE;
+Lumino.callbacks.set(callbackConst, (data, error) => {
+  /* do something...*/
+});
 ```
 
-This method subscribes the Light client to all the events of open channel where a partner creates a channel with them.
+## Examples
 
-The SDK will take care of creating the channel and will execute the OpenChannel callback on success.
+Follow this [link](examples/callbacks.js) for some examples and usages
 
-## Notifier on the background
+The callbacks are recommended to use for displaying UX events, refreshing certains states and provide the best experience when creating a dApp
 
-In order to receive events, this iteration of the SDK and notifier work in a polling model, every one second the notifier is asked for events, in case that a new one has been detected, the SDK will act accordingly to them.
+# RIF Notifier
 
-After processing an event, it will not be fetched again since the SDK will ask for events after the last one processed, so no overfetching is performed.
+The Light client is not aware of everything that happens in the blockchain and when events are really processed.
 
-## Reproduce build
+To tackle this problem, the RIF ecosystem has a Notifier, whose objective is to provide the information about events regarding what operations happen on the blockchain.
 
-Run:
+Those events are filtered by topics, which are abstracted by the SDK in order to avoid writing complex logic.
+
+</br>
+
+## How to use the notifier
+
+The notifier is abstracted in simple methods that just need to be summoned, they are made in order to make very simple the RIF notifier integration.
+
+</br>
+
+## Registering with the notifier
+
+```javascript
+notifierRegistration(notifierURL: String) => Promise<void>
+```
+
+Registers the LC in the notifier that was passed in the config of `Lumino.init` you only need to call it once per initialization, since its data is stored.
+
+</br>
+
+## Listening to Open Channel events
+
+```javascript
+subscribeToOpenChannel(notifierURL: String) => Promise<void>
+```
+
+This method subscribes the LC to all the events of open channel where a partner creates a channel with them.
+
+</br>
+
+## Listening to Close Channel events
+
+```javascript
+subscribeToUserClosesChannelOnToken(notifierURL: String, tokenNetworkAddress: String) => Promise<void>
+```
+
+With this method, whenever the user closes a channel in an specific Token Network, the SDK will get these related events
+</br>
+NOTE: The token network address is available in the channel structure.
+
+</br>
+
+```javascript
+subscribeToPartnerClosesSpecificChannel(notifierURL: String, channelId: Number, tokenNetworkAddress: String) => Promise<void>
+```
+
+With this method if the partner closes an X channel in the Y token network, the SDK will pull from the notifier the related events.
+
+# Reproduce build
+
+Run the next command:
 
 ```
 npm run build

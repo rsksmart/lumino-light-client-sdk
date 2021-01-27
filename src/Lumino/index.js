@@ -2,9 +2,13 @@ import Store from "../store/index";
 import Actions from "../store/actions";
 import client from "../apiRest";
 import callbacks from "../utils/callbacks";
-import { SET_CLIENT_ADDRESS } from "../store/actions/types";
+import {
+  SET_CLIENT_ADDRESS,
+  SET_REGISTRY_ADDRESS,
+} from "../store/actions/types";
 import notifier from "../notifierRest";
 import { NOTIFIER_BASE_URL } from "../config/notifierConstants";
+import { AddressZero } from "ethers/constants";
 
 const Lumino = () => {
   let actions;
@@ -17,6 +21,8 @@ const Lumino = () => {
     address: "",
     apiKey: "",
     notifierEndPoint: NOTIFIER_BASE_URL,
+    registryAddress: AddressZero,
+    useNotifiers: false,
   };
 
   /**
@@ -26,17 +32,26 @@ const Lumino = () => {
    */
   const init = async (luminoHandler, storage, configParams) => {
     if (!store) {
-      store = await Store.initStore(storage, luminoHandler);
+      luminoConfig = { ...luminoConfig, ...configParams };
+      store = await Store.initStore(
+        storage,
+        luminoHandler,
+        luminoConfig.apiKey
+      );
       actions = Store.bindActions(Actions, store.dispatch);
       // Set address
       store.dispatch({
         type: SET_CLIENT_ADDRESS,
         address: configParams.address,
       });
+      // Set RNS registry address
+      store.dispatch({
+        type: SET_REGISTRY_ADDRESS,
+        registryAddress: configParams.registryAddress,
+      });
       const changesHook = fn => store.subscribe(fn);
       const luminoInternalState = store.getState();
       const getLuminoInternalState = () => store.getState();
-      luminoConfig = { ...luminoConfig, ...configParams };
       client.defaults.baseURL = luminoConfig.hubEndpoint;
       notifier.defaults.baseURL = luminoConfig.notifierEndPoint;
       actions = { ...actions };
@@ -63,7 +78,51 @@ const Lumino = () => {
     throw new Error("Lumino has not been initialized");
   };
 
-  return { callbacks, init, get, getConfig };
+  /**
+   * Gets the options for the RNS object needed to use rnsjs library
+   * @returns an object like {{networkId: (() => number) | number, contractAddresses: {registry: string}}}
+   */
+  const getRNSOptions = () => {
+    return {
+      networkId: luminoConfig.chainId,
+      contractAddresses: {
+        registry: luminoConfig.registryAddress,
+      },
+    };
+  };
+
+  /**
+   * Destroys the lumino instance
+   */
+  const destroy = () => {
+    if (store) Store.stopAllPollings(Actions);
+    actions = null;
+    store = null;
+    luminoFns = null;
+    luminoConfig = {
+      rskEndpoint: "",
+      chainId: 0,
+      hubEndpoint: "http://localhost:5001/api/v1",
+      address: "",
+      apiKey: "",
+      notifierEndPoint: NOTIFIER_BASE_URL,
+    };
+  };
+
+  const reConfigure = async (luminoHandler, storage, configParams) => {
+    destroy();
+    return init(luminoHandler, storage, configParams);
+  };
+
+  return {
+    callbacks,
+    init,
+    get,
+    getConfig,
+    destroy,
+    reConfigure,
+    getRNSOptions,
+  };
 };
 
 const instance = Lumino();

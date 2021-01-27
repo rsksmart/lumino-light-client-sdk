@@ -1,20 +1,19 @@
-import Store from "../index";
-import { swapObjValueForKey } from "../../utils/functions";
+import { chkSum, swapObjValueForKey } from "../../utils/functions";
 import Lumino from "../../Lumino";
-import Web3 from "web3";
 import { tokenAbi } from "../../scripts/constants";
+import { getState } from "./state";
+import { getWeb3 } from "../../utils/web3";
 
 /**
  * Returns the Token Networks and their corresponding Token Address
  */
-export const getKnownTokenNetworks = () =>
-  Store.getStore().getState().tokenNetworks;
+export const getKnownTokenNetworks = () => getState().tokenNetworks;
 
 /**
  * Returns the Token Addresses and their corresponding Token Network
  */
 export const getKnownTokenAddresses = () =>
-  swapObjValueForKey(Store.getStore().getState().tokenNetworks);
+  swapObjValueForKey(getState().tokenNetworks);
 
 /**
  * Returns the Token Address corresponding to a Token Network, or null
@@ -22,7 +21,7 @@ export const getKnownTokenAddresses = () =>
  */
 export const getTokenAddressByTokenNetwork = tokenNetwork => {
   const tokenNetworks = getKnownTokenNetworks();
-  return tokenNetworks[tokenNetwork] || null;
+  return chkSum(tokenNetworks[tokenNetwork]) || null;
 };
 
 /**
@@ -37,7 +36,7 @@ export const getTokenNetworkByTokenAddress = tokenAddress => {
 export const requestTokenNameAndSymbol = async tokenAddress => {
   try {
     const { rskEndpoint } = Lumino.getConfig();
-    const web3 = new Web3(rskEndpoint);
+    const web3 = getWeb3(rskEndpoint);
     const token = new web3.eth.Contract(tokenAbi, tokenAddress);
     const name = await token.methods.name().call();
     const symbol = await token.methods.symbol().call();
@@ -49,7 +48,7 @@ export const requestTokenNameAndSymbol = async tokenAddress => {
 };
 
 export const searchTokenDataInChannels = tokenAddress => {
-  const channels = Store.getStore().getState().channelReducer;
+  const channels = getState().channelReducer;
   const ch = Object.keys(channels).find(c => c.includes(tokenAddress));
   const { token_name: tokenName, token_symbol: tokenSymbol } = channels[ch];
   return { tokenName, tokenSymbol };

@@ -1,65 +1,80 @@
-const Callbacks = () => {
-  // TODO: Rewrite this in a more extensible way
-  let onReceivedPaymentCallback = () => {};
-  let onCompletedPaymentCallback = () => {};
+const RECEIVED_PAYMENT = "ReceivedPayment";
+const COMPLETED_PAYMENT = "CompletedPayment";
+const EXPIRED_PAYMENT = "ExpiredPayment";
+const OPEN_CHANNEL = "OpenChannel";
+const REQUEST_CLIENT_ONBOARDING = "RequestClientOnboarding";
+const CLIENT_ONBOARDING_SUCCESS = "ClientOnboardingSuccess";
+const CLIENT_ONBOARDING_FAILURE = "ClientOnboardingFailure";
+const DEPOSIT_CHANNEL = "ChannelDeposit";
+const CLOSE_CHANNEL = "CloseChannel";
+const REQUEST_OPEN_CHANNEL = "RequestOpenChannel";
+const REQUEST_DEPOSIT_CHANNEL = "RequestDepositChannel";
+const REQUEST_CLOSE_CHANNEL = "RequestCloseChannel";
+const SENT_PAYMENT = "SentPayment";
+const SIGNING_FAIL = "SigningFail";
+const FAILED_OPEN_CHANNEL = "FailedOpenChannel";
+const FAILED_DEPOSIT_CHANNEL = "FailedDepositChannel";
+const DEPOSIT_CHANNEL_VALUE_TOO_LOW = "DepositChannelValueTooLow";
+const FAILED_CLOSE_CHANNEL = "FailedCloseChannel";
+const FAILED_PAYMENT = "FailedPayment";
+const FAILED_CREATE_PAYMENT = "FailedCreatePayment";
+const TIMED_OUT_OPEN_CHANNEL = "TimedOutOpenChannel";
+const CHANNEL_HAS_SETTLED = "ChannelHasSettled";
+const REGISTERED_ON_CHAIN_SECRET = "REGISTERED_ON_CHAIN_SECRET";
+const CHANNEL_HAS_BEEN_UNLOCKED = "CHANNEL_HAS_BEEN_UNLOCKED";
 
-  let onOpenChannel = () => {};
-  let onChannelDeposit = () => {};
-
-  let onRequestClientOnboarding = () => {};
-  let onClientOnboardingSuccess = () => {};
-
-  const setOnReceivedPaymentCallback = fn => (onReceivedPaymentCallback = fn);
-  const setOnCompletedPaymentCallback = fn => (onCompletedPaymentCallback = fn);
-
-  const setOnOpenChannelCallback = fn => (onOpenChannel = fn);
-  const setOnChannelDepositCallback = fn => (onChannelDeposit = fn);
-
-  const setOnRequestClientOnboarding = fn => (onRequestClientOnboarding = fn);
-  const setOnClientOnboardingSuccess = fn => (onClientOnboardingSuccess = fn);
-
-  // Payments trigger
-
-  const triggerOnReceivedPaymentCallback = payment =>
-    onReceivedPaymentCallback(payment);
-
-  const triggerOnCompletedPaymentCallback = payment =>
-    onCompletedPaymentCallback(payment);
-
-  // Channels trigger
-
-  const triggerOnOpenChannel = channel => onOpenChannel(channel);
-  const triggerOnDepositChannel = channel => onChannelDeposit(channel);
-
-  // Onboarding trigger
-
-  const triggerOnRequestClientOnboarding = addr =>
-    onRequestClientOnboarding(addr);
-  const triggerOnClientOnboardingSuccess = addr =>
-    onClientOnboardingSuccess(addr);
-
-  const callbacks = {
-    trigger: {
-      triggerOnCompletedPaymentCallback,
-      triggerOnReceivedPaymentCallback,
-      triggerOnOpenChannel,
-      triggerOnDepositChannel,
-      triggerOnRequestClientOnboarding,
-      triggerOnClientOnboardingSuccess,
-    },
-    set: {
-      setOnCompletedPaymentCallback,
-      setOnReceivedPaymentCallback,
-      setOnOpenChannelCallback,
-      setOnChannelDepositCallback,
-      setOnRequestClientOnboarding,
-      setOnClientOnboardingSuccess,
-    },
-  };
-
-  return callbacks;
+export const CALLBACKS = {
+  RECEIVED_PAYMENT,
+  COMPLETED_PAYMENT,
+  EXPIRED_PAYMENT,
+  OPEN_CHANNEL,
+  REQUEST_CLIENT_ONBOARDING,
+  CLIENT_ONBOARDING_SUCCESS,
+  DEPOSIT_CHANNEL,
+  CLOSE_CHANNEL,
+  REQUEST_OPEN_CHANNEL,
+  REQUEST_DEPOSIT_CHANNEL,
+  REQUEST_CLOSE_CHANNEL,
+  SENT_PAYMENT,
+  SIGNING_FAIL,
+  FAILED_OPEN_CHANNEL,
+  FAILED_DEPOSIT_CHANNEL,
+  FAILED_CLOSE_CHANNEL,
+  FAILED_PAYMENT,
+  FAILED_CREATE_PAYMENT,
+  CLIENT_ONBOARDING_FAILURE,
+  TIMED_OUT_OPEN_CHANNEL,
+  DEPOSIT_CHANNEL_VALUE_TOO_LOW,
+  CHANNEL_HAS_SETTLED,
+  REGISTERED_ON_CHAIN_SECRET,
+  CHANNEL_HAS_BEEN_UNLOCKED,
 };
 
-const callbacks = Callbacks();
+const Callbacks = () => {
+  const callbacks = {};
+
+  /**
+   *
+   * @param {*} CB The constant name of the callback
+   * @param  {Function} FN A function that may accept one or many arguments
+   */
+  const set = (CB, FN) => {
+    callbacks[CB] = FN;
+  };
+
+  /**
+   *
+   * @param {*} name The constant name of the callback
+   * @param  {...any} args Any number of data to pass to the callback
+   */
+  const trigger = (name, ...args) => {
+    if (callbacks[name]) return callbacks[name](...args);
+    return () => undefined;
+  };
+
+  return { set, trigger, names: CALLBACKS };
+};
+
+export const callbacks = Callbacks();
 
 export default callbacks;

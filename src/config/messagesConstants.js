@@ -7,6 +7,21 @@ export const MessageType = {
   LOCKED_TRANSFER: "LockedTransfer",
   SECRET: "Secret",
   BALANCE_PROOF: "BalanceProof",
+  LOCK_EXPIRED: "LockExpired",
+  REFUND_TRANSFER: "RefundTransfer",
+  SETTLEMENT_REQUIRED: "SettlementRequiredLightMessage",
+  REQUEST_REGISTER_SECRET: "RequestRegisterSecret",
+  UNLOCK_REQUEST: "UnlockLightRequest",
+};
+
+export const PAYMENT_SUCCESSFUL = "PaymentSuccessful";
+export const PAYMENT_EXPIRED = "PaymentExpired";
+export const LC_PROTOCOL_MESSAGE_TYPE = "LightClientProtocolMessageType";
+export const PAYMENT_REFUND = "PaymentRefund";
+
+export const LIGHT_MESSAGE_TYPE = {
+  PAYMENT_OK_FLOW: `${LC_PROTOCOL_MESSAGE_TYPE}.${PAYMENT_SUCCESSFUL}`,
+  PAYMENT_EXPIRED: `${LC_PROTOCOL_MESSAGE_TYPE}.${PAYMENT_EXPIRED}`,
 };
 
 export const MessageIdentifierKey = {
@@ -34,15 +49,17 @@ export const MessageKeyForOrder = {
 };
 
 export const MessageNumPad = {
-  [MessageType.DELIVERED]: 12,
-  [MessageType.BALANCE_PROOF]: 4,
-  UPDATE_BALANCE_PROOF: 2,
   [MessageType.PROCESSED]: 0,
+  UPDATE_BALANCE_PROOF: 4,
   [MessageType.SECRET_REQUEST]: 3,
-  [MessageType.REVEAL_SECRET]: 11,
+  [MessageType.BALANCE_PROOF]: 4,
   [MessageType.LOCKED_TRANSFER]: 7,
+  [MessageType.REVEAL_SECRET]: 11,
+  [MessageType.DELIVERED]: 12,
+  [MessageType.LOCK_EXPIRED]: 13,
 };
 
 export const MessageTypeID = {
   BALANCE_PROOF: 1,
+  UPDATE_BALANCE_PROOF: 2,
 };

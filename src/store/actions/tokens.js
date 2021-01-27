@@ -1,5 +1,7 @@
 import client from "../../apiRest";
-import { ADD_NEW_TOKEN } from "./types";
+import { ADD_NEW_TOKEN, ADD_NEW_TOKEN_NAME_SYMBOL } from "./types";
+import { requestTokenNameAndSymbol } from "../functions/tokens";
+import { getState } from "../functions";
 
 export const requestTokenAddressFromTokenNetwork = tokenNetwork => async dispatch => {
   try {
@@ -21,4 +23,30 @@ export const requestTokenNetworkFromTokenAddress = tokenAddress => async dispatc
   } catch (error) {
     console.error(error);
   }
+};
+
+export const getTokenNameAndSymbol = tokenAddress => async dispatch => {
+  const { tokenNames } = getState();
+  if (tokenNames[tokenAddress]) {
+    return {
+      token_name: tokenNames[tokenAddress].token_name,
+      token_symbol: tokenNames[tokenAddress].token_symbol,
+    };
+  }
+
+  const data = await requestTokenNameAndSymbol(tokenAddress);
+  if (!data) return { token_name: "???", token_symbol: "???" };
+  const token_name = data.name;
+  const token_symbol = data.symbol;
+  dispatch({
+    type: ADD_NEW_TOKEN_NAME_SYMBOL,
+    token_name,
+    token_symbol,
+    token_address: tokenAddress,
+  });
+
+  return {
+    token_name,
+    token_symbol,
+  };
 };
