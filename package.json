@@ -20,7 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "@rsksmart/rns": "1.5.0",
-    "axios": "0.18.1",
+    "axios": "0.21.1",
     "bignumber.js": "^9.0.0",
     "ethers": "^4.0.37",
     "json-bigint": "^0.3.0",
