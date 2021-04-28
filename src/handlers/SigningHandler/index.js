@@ -11,9 +11,8 @@ const SigningHandler = () => {
     decryptedAccount = web3.eth.accounts.privateKeyToAccount(_privateKey);
   };
 
-  const offChainSign = data => {
-    const signature = wallet.signMessage(data);
-    return signature;
+  const offChainSign = async data => {
+    return await wallet.signMessage(data);
   };
 
   const sign = async tx => {
@@ -21,7 +20,18 @@ const SigningHandler = () => {
     return signed_tx.rawTransaction;
   };
 
-  return { init, offChainSign, sign };
+  const getAccount = () => {
+    return {
+      address: decryptedAccount.address,
+      privateKey: Buffer.from(
+        decryptedAccount.privateKey.replaceAll("0x", ""),
+        "hex"
+      ),
+      privateKeyString: decryptedAccount.privateKey
+    };
+  };
+
+  return { init, offChainSign, sign, getAccount };
 };
 
 export default SigningHandler;

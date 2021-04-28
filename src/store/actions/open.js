@@ -27,8 +27,7 @@ import { ISmartWalletFactory } from "./interfaces/SmartWalletFactory";
 import { ILuminoToken } from "./interfaces/LuminoToken";
 import { getWeb3 } from "../../utils/web3";
 import { ZERO_ADDRESS } from "@rsksmart/rns/lib/constants";
-import * as Enveloping from "@rsksmart/enveloping";
-import AccountManager from "@rsksmart/enveloping/src/relayclient/AccountManager";
+import {RelayProvider, resolveConfiguration} from "@rsksmart/enveloping";
 
 /**
  * Open a channel.
@@ -219,7 +218,7 @@ async function openChannelOverEnveloping(lh, tokenAddress, clientAddress, params
 
   console.log("Resolving configuration for enveloping");
 
-  const config = await Enveloping.resolveConfiguration(web3.currentProvider, {
+  const config = await resolveConfiguration(web3.currentProvider, {
     verbose: window.location.href.includes("verbose"),
     onlyPreferredRelays: true,
     preferredRelays: ["http://localhost:8090"],
@@ -279,13 +278,9 @@ async function openChannelOverEnveloping(lh, tokenAddress, clientAddress, params
 
   console.log("Creating provider for web3");
 
-  const accountManager = new AccountManager(web3.currentProvider, chainId, config, async (dataToSign) => {
-    return await lh.sign(dataToSign);
-  });
+  const provider = new RelayProvider(web3.currentProvider, config);
 
-  const provider = new Enveloping.RelayProvider(web3.currentProvider, config, {
-    accountManager
-  });
+  provider.addAccount(lh.getAccount());
 
   web3.setProvider(provider);
 

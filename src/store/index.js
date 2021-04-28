@@ -43,8 +43,7 @@ const initStore = async (storageImpl, luminoHandler, configApiKey) => {
   let data = {};
   if (dataFromStorage) data = dataFromStorage;
   const lh = {
-    sign: luminoHandler.sign,
-    offChainSign: luminoHandler.offChainSign,
+    ...luminoHandler,
     storage,
   };
   const sagaMiddleware = createSagaMiddleware();
