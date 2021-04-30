@@ -27,7 +27,7 @@ const SigningHandler = () => {
         decryptedAccount.privateKey.replaceAll("0x", ""),
         "hex"
       ),
-      privateKeyString: decryptedAccount.privateKey
+      privateKeyString: decryptedAccount.privateKey,
     };
   };
 

@@ -41,7 +41,11 @@ export class SmartWalletFactory {
               { internalType: "address", name: "relayHub", type: "address" },
               { internalType: "address", name: "from", type: "address" },
               { internalType: "address", name: "to", type: "address" },
-              { internalType: "address", name: "tokenContract", type: "address" },
+              {
+                internalType: "address",
+                name: "tokenContract",
+                type: "address",
+              },
               { internalType: "address", name: "recoverer", type: "address" },
               { internalType: "uint256", name: "value", type: "uint256" },
               { internalType: "uint256", name: "gas", type: "uint256" },

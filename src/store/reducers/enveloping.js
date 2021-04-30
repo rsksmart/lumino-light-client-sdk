@@ -1,7 +1,7 @@
 import { STORE_WALLET } from "../actions/types";
 
 const initialState = {
-  wallets: {}
+  wallets: {},
 };
 
 const envelopingReducer = (state = initialState, action) => {

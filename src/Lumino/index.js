@@ -29,8 +29,8 @@ const Lumino = () => {
       deployVerifierContractAddress: "",
       relayHubContractAddress: "",
       smartWalletFactoryContractAddress: "",
-      preferredRelays: []
-    }
+      preferredRelays: [],
+    },
   };
 
   /**
@@ -45,7 +45,9 @@ const Lumino = () => {
         storage,
         luminoHandler,
         luminoConfig.apiKey,
-        luminoConfig.enveloping ? new Enveloping(luminoHandler, luminoConfig) : false
+        luminoConfig.enveloping
+          ? new Enveloping(luminoHandler, luminoConfig)
+          : false
       );
       actions = Store.bindActions(Actions, store.dispatch);
       // Set address
@@ -119,8 +121,8 @@ const Lumino = () => {
         relayVerifierContractAddress: "",
         deployVerifierContractAddress: "",
         relayHubContractAddress: "",
-        smartWalletFactoryContractAddress: ""
-      }
+        smartWalletFactoryContractAddress: "",
+      },
     };
   };
 

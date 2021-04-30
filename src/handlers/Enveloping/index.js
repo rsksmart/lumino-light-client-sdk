@@ -8,7 +8,6 @@ import { Lumino } from "../../index";
 import { CALLBACKS } from "../../utils/callbacks";
 
 export default class Enveloping {
-
   constructor(luminoHandler, luminoConfig) {
     this.luminoHandler = luminoHandler;
     this.luminoConfig = luminoConfig;
@@ -22,23 +21,30 @@ export default class Enveloping {
 
     const envelopingConfig = this.luminoConfig.enveloping;
 
-    const resolvedConfig = await resolveConfiguration(envelopingWeb3.currentProvider, {
-      verbose: window.location.href.includes("verbose"),
-      onlyPreferredRelays: true,
-      preferredRelays: envelopingConfig.preferredRelays,
-      factory: envelopingConfig.smartWalletFactoryContractAddress,
-      gasPriceFactorPercent: 0,
-      relayLookupWindowBlocks: 1e5,
-      chainId: this.luminoConfig.chainId,
-      relayVerifierAddress: envelopingConfig.relayVerifierContractAddress,
-      deployVerifierAddress: envelopingConfig.deployVerifierContractAddress,
-      smartWalletFactoryAddress: envelopingConfig.smartWalletFactoryContractAddress,
-    });
+    const resolvedConfig = await resolveConfiguration(
+      envelopingWeb3.currentProvider,
+      {
+        verbose: window.location.href.includes("verbose"),
+        onlyPreferredRelays: true,
+        preferredRelays: envelopingConfig.preferredRelays,
+        factory: envelopingConfig.smartWalletFactoryContractAddress,
+        gasPriceFactorPercent: 0,
+        relayLookupWindowBlocks: 1e5,
+        chainId: this.luminoConfig.chainId,
+        relayVerifierAddress: envelopingConfig.relayVerifierContractAddress,
+        deployVerifierAddress: envelopingConfig.deployVerifierContractAddress,
+        smartWalletFactoryAddress:
+          envelopingConfig.smartWalletFactoryContractAddress,
+      }
+    );
     resolvedConfig.relayHubAddress = envelopingConfig.relayHubContractAddress;
 
     console.debug("Enveloping config", resolvedConfig);
 
-    const provider = new RelayProvider(envelopingWeb3.currentProvider, resolvedConfig);
+    const provider = new RelayProvider(
+      envelopingWeb3.currentProvider,
+      resolvedConfig
+    );
     provider.addAccount(this.luminoHandler.getAccount());
     envelopingWeb3.setProvider(provider);
 
@@ -68,7 +74,7 @@ export default class Enveloping {
   async storeWallet(dispatch, getState, wallet) {
     await dispatch({
       type: STORE_WALLET,
-      wallet
+      wallet,
     });
     const wallets = getState().enveloping.wallets;
     Lumino.callbacks.trigger(CALLBACKS.WALLETS_UPDATED, wallets);
@@ -79,23 +85,39 @@ export default class Enveloping {
     return code !== "0x00" && code !== "0x";
   }
 
-  async deploySmartWallet(dispatch, getState, smartWalletAddress, smartWalletIndex, tokenAddress, tokenAmount) {
+  async deploySmartWallet(
+    dispatch,
+    getState,
+    smartWalletAddress,
+    smartWalletIndex,
+    tokenAddress,
+    tokenAmount
+  ) {
     console.debug("Checking if the wallet already exists");
-    if (!await this.smartWalletHasCode(smartWalletAddress)) {
-      const token = await new this.web3.eth.Contract(ERC20Token.getAbi(), tokenAddress);
+    if (!(await this.smartWalletHasCode(smartWalletAddress))) {
+      const token = await new this.web3.eth.Contract(
+        ERC20Token.getAbi(),
+        tokenAddress
+      );
       let balance = await token.methods.balanceOf(smartWalletAddress).call();
 
       if (balance <= 0) {
         console.warn("Funding smart wallet before deploying it...");
         const accounts = await this.web3.eth.getAccounts();
-        await token.methods.transfer(
-          smartWalletAddress,
-          this.web3.utils.toWei(tokenAmount.toString(), "ether"),
-        ).send({ from: accounts[0] });
+        await token.methods
+          .transfer(
+            smartWalletAddress,
+            this.web3.utils.toWei(tokenAmount.toString(), "ether")
+          )
+          .send({ from: accounts[0] });
         balance = await token.methods.balanceOf(smartWalletAddress).call();
-        console.debug(`Smart wallet ${smartWalletAddress} successfully funded with ${tokenAmount} lumino tokens. Balance: ${balance}`);
+        console.debug(
+          `Smart wallet ${smartWalletAddress} successfully funded with ${tokenAmount} lumino tokens. Balance: ${balance}`
+        );
       } else {
-        console.debug(`No need to fund, the smart wallet has balance ${balance}`);
+        console.debug(
+          `No need to fund, the smart wallet has balance ${balance}`
+        );
       }
 
       console.debug("Deploying smart wallet for address", smartWalletAddress);
@@ -129,34 +151,48 @@ export default class Enveloping {
     }
   }
 
-  async relayTransaction(getState, smartWalletAddress, tokenAmount, tokenAddress, unsigned_tx) {
-      console.debug("Checking if the wallet already exists");
-      if (await this.smartWalletHasCode(smartWalletAddress)) {
-        const wallet = this.getWallet(getState, smartWalletAddress);
-        if (wallet) {
-          return this.envelopingWeb3.eth.sendTransaction({
-            from: this.luminoConfig.address,
-            callVerifier: this.envelopingConfig.relayVerifierContractAddress,
-            callForwarder: smartWalletAddress,
-            isSmartWalletDeploy: false,
-            onlyPreferredRelays: true,
-            tokenAmount,
-            tokenContract: tokenAddress,
-            ...unsigned_tx,
-          });
-        }
-        throw new Error(`Smart wallet with address ${smartWalletAddress} is not owned by the user.`);
+  async relayTransaction(
+    getState,
+    smartWalletAddress,
+    tokenAmount,
+    tokenAddress,
+    unsigned_tx
+  ) {
+    console.debug("Checking if the wallet already exists");
+    if (await this.smartWalletHasCode(smartWalletAddress)) {
+      const wallet = this.getWallet(getState, smartWalletAddress);
+      if (wallet) {
+        return this.envelopingWeb3.eth.sendTransaction({
+          from: this.luminoConfig.address,
+          callVerifier: this.envelopingConfig.relayVerifierContractAddress,
+          callForwarder: smartWalletAddress,
+          isSmartWalletDeploy: false,
+          onlyPreferredRelays: true,
+          tokenAmount,
+          tokenContract: tokenAddress,
+          ...unsigned_tx,
+        });
       }
-      throw new Error(`Smart Wallet is not deployed or the address ${smartWalletAddress} is not a smart wallet.`);
+      throw new Error(
+        `Smart wallet with address ${smartWalletAddress} is not owned by the user.`
+      );
+    }
+    throw new Error(
+      `Smart Wallet is not deployed or the address ${smartWalletAddress} is not a smart wallet.`
+    );
   }
 
   async generateSmartWalletAddress(dispatch, getState, smartWalletIndex) {
     console.debug("Generating computed address for smart wallet");
     const smartWalletAddress = await new this.web3.eth.Contract(
       SmartWalletFactory.getAbi(),
-      this.envelopingConfig.smartWalletFactoryContractAddress,
+      this.envelopingConfig.smartWalletFactoryContractAddress
     ).methods
-      .getSmartWalletAddress(this.luminoConfig.address, ZERO_ADDRESS, smartWalletIndex)
+      .getSmartWalletAddress(
+        this.luminoConfig.address,
+        ZERO_ADDRESS,
+        smartWalletIndex
+      )
       .call();
     const wallet = {
       deployed: false,
@@ -167,5 +203,4 @@ export default class Enveloping {
     wallet.deployed = await this.smartWalletHasCode(smartWalletAddress);
     await this.storeWallet(dispatch, getState, wallet);
   }
-
 }

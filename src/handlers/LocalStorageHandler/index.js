@@ -6,7 +6,8 @@ const getLuminoData = () => {
   return data;
 };
 
-const saveLuminoData = data => localStorage.setItem("lumino", JSON.stringify(data));
+const saveLuminoData = data =>
+  localStorage.setItem("lumino", JSON.stringify(data));
 
 export default {
   getLuminoData,
