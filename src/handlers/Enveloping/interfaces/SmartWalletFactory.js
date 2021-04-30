@@ -1,4 +1,4 @@
-export class ISmartWalletFactory {
+export class SmartWalletFactory {
   static getAbi() {
     return [
       {

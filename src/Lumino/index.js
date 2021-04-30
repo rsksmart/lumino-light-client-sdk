@@ -9,6 +9,7 @@ import {
 import notifier from "../notifierRest";
 import { NOTIFIER_BASE_URL } from "../config/notifierConstants";
 import { AddressZero } from "ethers/constants";
+import Enveloping from "../handlers/Enveloping";
 
 const Lumino = () => {
   let actions;
@@ -23,6 +24,13 @@ const Lumino = () => {
     notifierEndPoint: NOTIFIER_BASE_URL,
     registryAddress: AddressZero,
     useNotifiers: false,
+    enveloping: {
+      relayVerifierContractAddress: "",
+      deployVerifierContractAddress: "",
+      relayHubContractAddress: "",
+      smartWalletFactoryContractAddress: "",
+      preferredRelays: []
+    }
   };
 
   /**
@@ -36,7 +44,8 @@ const Lumino = () => {
       store = await Store.initStore(
         storage,
         luminoHandler,
-        luminoConfig.apiKey
+        luminoConfig.apiKey,
+        luminoConfig.enveloping ? new Enveloping(luminoHandler, luminoConfig) : false
       );
       actions = Store.bindActions(Actions, store.dispatch);
       // Set address
@@ -106,6 +115,12 @@ const Lumino = () => {
       address: "",
       apiKey: "",
       notifierEndPoint: NOTIFIER_BASE_URL,
+      enveloping: {
+        relayVerifierContractAddress: "",
+        deployVerifierContractAddress: "",
+        relayHubContractAddress: "",
+        smartWalletFactoryContractAddress: ""
+      }
     };
   };
 

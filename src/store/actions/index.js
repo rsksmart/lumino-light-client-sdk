@@ -7,6 +7,7 @@ import * as onboardingActions from "./onboarding";
 import * as notifierActions from "./notifier";
 import * as tokenActions from "./tokens";
 import * as pollingActions from "./polling";
+import * as envelopingActions from "./enveloping";
 
 const Actions = {
   ...openActions,
@@ -18,6 +19,7 @@ const Actions = {
   ...notifierActions,
   ...tokenActions,
   ...pollingActions,
+  ...envelopingActions,
 };
 
 export default Actions;

@@ -1,4 +1,4 @@
-export class ILuminoToken {
+export class ERC20Token {
   static getAbi() {
     return [
       {

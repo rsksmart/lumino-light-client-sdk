@@ -79,3 +79,7 @@ export const ADD_NEW_TOKEN_NAME_SYMBOL = "ADD_NEW_TOKEN_NAME_SYMBOL";
 // Rns Actions
 
 export const SET_REGISTRY_ADDRESS = "SET_REGISTRY_ADDRESS";
+
+// Enveloping Actions
+
+export const STORE_WALLET = "STORE_WALLET";

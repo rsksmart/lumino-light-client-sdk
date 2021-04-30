@@ -22,6 +22,7 @@ const defaultStore = {
     pending: {},
     failed: {},
   },
+  wallets: {}
 };
 const defaultStorage = {
   getLuminoData: /* istanbul ignore next */ () => defaultStore,
@@ -37,13 +38,15 @@ const setApiKeyFromStore = (store, configApiKey) => {
   if (api_key) client.defaults.headers = { "x-api-key": api_key };
 };
 
-const initStore = async (storageImpl, luminoHandler, configApiKey) => {
+const initStore = async (storageImpl, luminoHandler, configApiKey, enveloping) => {
   if (storageImpl) storage = storageImpl;
   const dataFromStorage = await storage.getLuminoData();
   let data = {};
   if (dataFromStorage) data = dataFromStorage;
+  await enveloping.initialize();
   const lh = {
     ...luminoHandler,
+    enveloping,
     storage,
   };
   const sagaMiddleware = createSagaMiddleware();
